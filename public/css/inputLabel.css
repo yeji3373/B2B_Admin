@@ -1,0 +1,54 @@
+/* input + label */
+form.inputLabel p {
+  position: relative;
+  box-sizing: border-box;
+  margin: 0.8rem auto;
+  padding: 0.6rem 0 0;
+}
+form.inputLabel fieldset {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  border-color: #e5e5e5;
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 4.2px;
+  margin: 0.6rem auto 0;
+}
+form.inputLabel fieldset p:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0.2rem;
+}
+form.inputLabel input:not([type=radio], [type=checkbox], [type=submit]), 
+form.inputLabel select {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.4rem 0.4rem;
+  background-color: #f9f9f9;
+  border-color: #e5e5e5;
+  /* -webkit-transition: 0.35s ease-in-out;
+  -moz-transition: 0.35s ease-in-out;
+  -o-transition: 0.35s ease-in-out; */
+  /* transition: 0.35s ease-in-out; */
+  /* transition: all 0.35s ease-in-out; */
+}
+form.inputLabel p input:not([type=radio], [type=checkbox], [type=submit]) + label,
+form.inputLabel p select + label {
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  pointer-events: none;
+  text-align: left;
+  transition: all 0.3s ease-in-out;
+  transform: translate(0, 100%);
+}
+form.inputLabel p input:not([type=radio], [type=checkbox], [type=submit]):focus + label,
+form.inputLabel p input:not([type=radio], [type=checkbox], [type=submit]):valid + label,
+form.inputLabel p input.valided + label,
+form.inputLabel p select + label {
+  transform: translate(0, -1%);
+  background: linear-gradient(#fff 15%, #f9f9f9 85%);
+}
+/* input + label */

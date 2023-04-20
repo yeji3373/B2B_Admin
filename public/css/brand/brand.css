@@ -1,0 +1,17 @@
+main { font-size: 0.85rem; min-height: 92vh; }
+#productInputMain { width: 100%; }
+p { margin: 0; padding: 0; }
+table tbody { font-size: 0.8rem; }
+table tbody tr th, table tbody tr td { padding: 0.7rem 0.8rem; }
+table tbody tr th { background-color: aliceblue; }
+table tbody tr td label { font-size: 0.6rem; font-weight: bold; }
+
+form fieldset.show-legend { position: relative; padding-top: 0.8rem; margin-top: 1.2rem !important; }
+form fieldset.show-legend legend { position: absolute; top: -1rem; left: 0.8rem; background-color: white; font-size: 1rem; width: fit-content; padding: 0 0.5rem; }
+
+.brand_name { text-transform: uppercase; }
+
+.brand-list .list-items { min-width: 2.5rem; padding: 0.5rem; text-align: center; display: flex; flex-direction: row; justify-content: center; align-items: center;}
+.brand-list .brand-list-header .list-items { background-color: aliceblue; font-weight: bold; }
+
+/* .single-product-regist-edit-container { width: 50%; } */

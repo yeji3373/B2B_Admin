@@ -1,0 +1,64 @@
+/* main 기본 */
+main {
+  padding: 1.5rem 3rem;
+  box-sizing: border-box;
+  margin: auto;
+  background: #fff;
+  border-radius: 4.2px;
+  box-shadow: 0px 3px 10px -2px rgba(0, 0, 0, 0.2);
+}
+/* main 기본 */
+
+main > title { font-size: 1.25rem; display: block; }
+/* nav */
+header nav ul li { min-width: 2rem; width: fit-content; margin-right: 1rem; }
+header nav ul li a { display: block; width: 100%; padding: 0 1rem 0 0; color: #dbdbdb;}
+/* nav */
+
+/* notification */
+.notification {
+  border: 1px solid black;
+  background-color: #c7c7c7;
+  padding: 0.5rem;
+  font-weight: bold;
+}
+/* notification */
+
+.d-grid.grid-half { grid-template-columns: repeat(2, 1fr); }
+.d-grid.grid-quad { grid-template-columns: repeat(4, 1fr); }
+
+/* pager css */
+.pagination .page-item { margin: 0;}
+.pagination .page-item .page-link { text-align: center; } 
+/* .pagination .page-item .page-link:not(:last-child) { border-right-width: 0;} */
+/* pager css */
+
+/* font size */
+.fs-initial { font-size: initial; }
+.fs-inherit { font-size: inherit; }
+/* font size */
+
+/* height */
+.min-height-auto { min-height: auto;}
+/* height */
+
+
+/* width */
+.w-7p { width: 7%; }
+.w-8p { width: 8%; }
+.w-10p { width: 10%; }
+.w-15p { width: 15%; }
+.w-17p { width: 17%; }
+.w-18p { width: 18%; }
+.w-20p { width: 20%; }
+.w-30p { width: 30%; }
+.w-35p { width: 35%; }
+.w-40p { width: 40%; }
+.w-45p { width: 45%; }
+.w-55p { width: 55%; }
+.w-60p { width: 60%; }
+.w-70p { width: 70%; }
+.w-80p { width: 80%; }
+.w-85p { width: 85%; }
+.w-fit-content { width: fit-content; }
+/* width */

@@ -1,0 +1,75 @@
+@charset "utf-8";
+/* Layout */
+* { box-sizing: border-box; }
+
+body { 
+  font-size: 15px; 
+  margin: 0; 
+  padding: 0; 
+  width: 100%;
+  min-height: 100vh;
+  background: #dbdbdb;
+  color: #444;
+  /* display: flex; */
+}
+a { text-decoration: none; color: initial; }
+ul { padding: 0; margin: 0; }
+ul li { display: block; }
+
+input, select { 
+  border: 1px solid;
+  padding: 3px 4px;
+  border-radius: 3px;
+}
+
+input::-webkit-input-placeholder {
+  /* color: red; */
+  font-size: 0.7rem;
+  font-style: italic;
+}
+input:-ms-input-placeholder {
+  /* color: red; */
+  font-size: 0.7rem;
+  font-style: italic;
+}
+textarea::-webkit-input-placeholder {
+  /* color: blue; */
+  font-size: 0.7rem;
+  font-style: italic;
+}
+textarea:-ms-input-placeholder {
+  /* color: blue; */
+  font-size: 0.7rem;
+  font-style: italic;
+}
+
+input:focus, select:focus, select:active {
+  outline: none;
+}
+
+input[type=button], button, input[type=submit] {
+  display: block;
+  box-sizing: border-box;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+  padding: 0.5rem 1rem;
+  border-color: #e5e5e5;
+  cursor: pointer;
+}
+a.button { background-color: buttonface; width: fit-content; }
+
+/* 유니코드 넣기 */
+/* () */
+.parenthesis { position: relative; }
+.parenthesis::before { content: '\0028'; }
+.parenthesis::after { content: '\0029'; }
+/* [] */
+.bracket { position: relative; } 
+.bracket::after { content: '\005D'; }
+.bracket::before { content: '\005B'; }
+/* <> */
+/* .chevron { position: relative; } 
+.chevron::after { content: '\005D'; }
+.chevron::before { content: '\005B'; } */
+.plus-sign { position: relative; }
+.plus-sign::before { content: '\FE62'; }
+/* 유니코드 넣기 */

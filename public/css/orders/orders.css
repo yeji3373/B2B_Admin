@@ -1,0 +1,25 @@
+main { min-height: 94vh; font-size: 0.89rem; }
+main [type='text'], main select { border-color: #acacac; padding: 0.3rem; }
+main .order-detail-container { width: 100%; display: flex; flex-direction: column; border: 1px solid #e6e6e6; }
+main .order-detail-container > div { display: flex; flex-direction: row; border-bottom: 1px solid #e6e6e6; }
+main .order-detail-container > div:last-child { border-bottom-width: 0; }
+main .order-detail-container > div > label { width: 10rem; background-color: aliceblue; font-weight: bold; }
+main .order-detail-container > div .con { width: calc(100% - 10rem); }
+
+main .order-detail-container > div > label,
+main .order-detail-container > div > div,
+main .order-detail-container > div > div > label, 
+main .order-detail-container > div > div > div { padding: 0.35rem 0.5rem; }
+
+table th, table td { font-size: 0.8rem; }
+
+p { padding: 0; margin: 0; }
+
+main .order-detail-container .pi-group:not(:last-child) { margin-right: 0.25rem; }
+/* main .invoice-edit { min-height: 100vh; } */
+main .invoice-edit .pi-edit-container { min-height: 99vh; }
+
+main .invoice-edit .pi-edit-container > table td { width: 17%; position: relative; }
+main .invoice-edit .pi-edit-container > table td input[type='text'] { width: 60%; }
+
+.color-transparent { color: transparent !important; }

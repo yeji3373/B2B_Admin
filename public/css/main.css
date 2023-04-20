@@ -1,0 +1,9 @@
+#dashboard { display: grid; grid-template-columns: repeat(3, 1fr); min-height: 94vh; }
+#dashboard section { display: flex; flex-direction: column; font-size: 0.8rem; }
+#dashboard table tbody * { font-size: 0.8rem; text-align: center; }
+#dashboard p { margin: 0; }
+#dashboard > section { padding: 0 0.5rem; border-right: 1px solid; }
+
+
+/* https://beautynetkr.cafe24api.com/api/v2/oauth/authorize?response_type=code&client_id=45icFc2YGBpryVwZjZBkdC
+&state=MTIzNDU2Nzg=&redirect_uri=https://beautynetkorea.com/ouath/authentication.html&scope=mall.read_application,mall.write_application,mall.read_category,mall.write_category,mall.read_product,mall.read_collection,mall.read_personal,mall.write_personal,mall.read_order,mall.write_order,mall.read_community,mall.write_community,mall.read_customer,mall.read_notification,mall.write_notification,mall.read_store,mall.read_promotion,mall.write_promotion,mall.read_design,mall.write_design,mall.read_salesreport,mall.read_shipping,mall.write_shipping,mall.read_analytics */
