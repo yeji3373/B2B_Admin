@@ -121,6 +121,7 @@ class Brand extends BaseController {
       if ( !empty($data['brand']) ) {
         $brand = $data['brand'][$data['brand_id']];
         $brand['brand_id'] = $data['brand_id'];
+        $brand['brand_name'] = addslashes($brand['brand_name']);
 
         if ( !$this->brands->save($brand) ) {
           return redirect()->back()->withInput()->with('error', '브랜드 수정 중 오류');
@@ -139,12 +140,20 @@ class Brand extends BaseController {
     if ( !empty($this->request->getPost()) ) {
       $data = $this->request->getPost('brand');
 
-      $check = $this->brands->like('brand_name', $data['brand_name'], 'both')->where('available', 1)->findAll();
+      // $check = $this->brands->like('brand_name', $data['brand_name'], 'both')->where('available', 1)->findAll();
+      // 여백제거해서도 비교하기 추가할 것
+      $check = $this->brands 
+                  ->like('brand_name', $data['brand_name'], 'both')
+                  ->where('brand_name', $data['brand_name'])
+                  ->where('available', 1)->findAll();
       
       if ( empty($check) ) {
         if ( isset($data['supply_rate_by_brand']) ) {
           $data['supply_rate_by_brand'] = round(($data['supply_rate_by_brand'] / 100), 2);
         } else $data['supply_rate_by_brand'] = NULL;
+
+        $data['brand_name'] = addslashes($data['brand_name']);
+
         $this->brands->insert($data);
         return redirect()->back();
       } else {

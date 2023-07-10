@@ -6,23 +6,34 @@ use Config\Services;
 
 class Paypal extends BaseConfig
 {
-  // public $sandbox = TRUE; // TRUE:test계정 사용하기 FALSE:LIVE
-  public $sandbox = FALSE; // TRUE:test계정 사용하기 FALSE:LIVE
+  public $sandbox = TRUE; // TRUE:test계정 사용하기 FALSE:LIVE
+  // public $sandbox = FALSE; // TRUE:test계정 사용하기 FALSE:LIVE
 
-  protected $sandBoxEmail = 'sb-amddg11313806@business.example.com';
+  protected $sandboxURL = 'https://sandbox.paypal.com';
   protected $sandBoxBaseUrl = 'https://api-m.sandbox.paypal.com';
+  
+  protected $liveUrl = 'https://www.paypal.com';
+  protected $liveBaseUrl = 'https://api-m.paypal.com';
+
+  /* v2plus1v@hotmail.com 계정일 때 */
+  protected $sandBoxEmail = 'sb-amddg11313806@business.example.com';
   protected $sandBoxClientId = 'AVJV4jd9LkeLypYumyAPrbl3DAYOOdFQws0tVBjHB9DKSLoGETmDFa6B0c4BIGok8_Q211dnDMz-yctu';
   protected $sandBoxClientSecret = 'EBujP4D-WeYXLQLVIPARWwaNT73MWIFb0QUjwTVcjtqOTFOfBCsnWGrWb3Oa122jzdWGmO3eq_tgHw4x';
+
+  protected $liveEmail = 'v2plus1v@hotmail.com';
+  protected $liveClientId = 'AfWhStgsSYVOBBJtWRcJ2CNjSn7uVwGW-bditn4ZL4KXxqJJaemgdzpjK1ckk-DM7eEh5cE1jgEX5GT1';
+  protected $liveClientSecret = 'ELMz-SDSkIAXEX8q2t1qmfV8fLxsfgE6aXEtsJ6e_it2qEzPw8SQ_xYv-TsGlZv9kSTPknrGZAu7sPKL';
+  /* v2plus1v@hotmail.com 계정일 때 */
+
+  /* jmh@beautynetkorea.com */
+  // protected $sandBoxEmail = 'sb-amddg11313806@business.example.com';
   // protected $sandBoxClientId = 'AS57yt5JUkBJbyBOIM959Q_DqRmS0tpXieYWoNNJaCBUBZ9McG8b-XIN4BYHujAa6TeUY9VyQbxhnI1r';
   // protected $sandBoxClientSecret = 'EBcvXFRfInaYcjjZgAs-whqG12cPA5mQtJzHmdlKDVL6yEa8NX7yqiY3lv9MfESKq3I2kPzjKVAySy9M';
 
   // protected $liveEmail = 'jmh@beautynetkorea.com';
-  protected $liveEmail = 'v2plus1v@hotmail.com';
-  protected $liveBaseUrl = 'https://api-m.paypal.com';
   // protected $liveClientId = 'AVJV4jd9LkeLypYumyAPrbl3DAYOOdFQws0tVBjHB9DKSLoGETmDFa6B0c4BIGok8_Q211dnDMz-yctu';
   // protected $liveClientSecret = 'EBujP4D-WeYXLQLVIPARWwaNT73MWIFb0QUjwTVcjtqOTFOfBCsnWGrWb3Oa122jzdWGmO3eq_tgHw4x';
-  protected $liveClientId = 'AfWhStgsSYVOBBJtWRcJ2CNjSn7uVwGW-bditn4ZL4KXxqJJaemgdzpjK1ckk-DM7eEh5cE1jgEX5GT1';
-  protected $liveClientSecret = 'ELMz-SDSkIAXEX8q2t1qmfV8fLxsfgE6aXEtsJ6e_it2qEzPw8SQ_xYv-TsGlZv9kSTPknrGZAu7sPKL';
+  /* jmh@beautynetkorea.com */
 
   protected $needNewToken = true;
   public $accessToken;
@@ -53,13 +64,13 @@ class Paypal extends BaseConfig
       $this->clientScret = $this->sandBoxClientSecret;
       $this->baseUrl = $this->sandBoxBaseUrl;
       $this->invoicerEmail = $this->sandBoxEmail;
-      $this->invoiceViewer = 'https://sandbox.paypal.com/invoice/p/';
+      $this->invoiceViewer = $this->sandboxURL.'/invoice/p/';
     } else {
       $this->clientID = $this->liveClientId;
       $this->clientScret = $this->liveClientSecret;
       $this->baseUrl = $this->liveBaseUrl;
       $this->invoicerEmail = $this->liveEmail;
-      $this->invoiceViewer = 'https://www.paypal.com/invoice/p/';
+      $this->invoiceViewer = $this->liveURL.'/invoice/p/';
     }
 
     if ( !empty($this->accessToken) || !empty($this->accessTokenExpiry) ) {

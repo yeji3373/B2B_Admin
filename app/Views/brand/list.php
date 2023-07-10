@@ -28,7 +28,9 @@
         class='form-control form-control-sm w-100'
         placeholder='브랜드 영문 이름 입력'
         required
-        value='<?=!empty($brand['brand_name']) ? $brand['brand_name'] : ''?>'>
+        value='<?=!empty($brand['brand_name']) ? htmlspecialchars(stripslashes($brand['brand_name']),ENT_QUOTES) : ''?>'>
+        <?//=stripslashes($brand['brand_name'])?>
+        <?//=htmlspecialchars(stripslashes($brand['brand_name']))?>
     </div>
     <div class='border border-dark border-0 border-bottom border-end list-items w-17p'>
       <div class='form-check form-check-inline my-1 min-height-auto'>

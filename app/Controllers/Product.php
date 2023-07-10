@@ -325,6 +325,7 @@ class Product extends BaseController {
       $data = $this->dataFile->attachData($file);
 
       $productFileds = $this->status->getHeader('product')['fields'];
+      print_r(array_filter($this->status->getHeader('product')['export'], function($v, $k) { return $k == 'barcode'; }, ARRAY_FILTER_USE_BOTH));
       // array_unshift($productFileds, 'brand_id', 'id');
       array_unshift($productFileds, 'id');
 
@@ -339,13 +340,13 @@ class Product extends BaseController {
         $successCnt = 0;
         $failCnt = 0;
         
-      //   $brandCheck = $this->brands->where('brand_id', $this->request->getVar('brand_id'))->first();
+        $brandCheck = $this->brands->where('brand_id', $this->request->getVar('brand_id'))->first();
 
-      //   if ( !empty($brandCheck) ) {
-      //     $data = $this->dataFile->specificFiltering($data, 4, $brandCheck['brand_name']);
-      //   } else {
-      //     return redirect()->back()->with('error', '해당하는 브랜드가 없습니다.');
-      //   }
+        if ( !empty($brandCheck) ) {
+          $data = $this->dataFile->specificFiltering($data, 4, $brandCheck['brand_name']);
+        } else {
+          return redirect()->back()->with('error', '해당하는 브랜드가 없습니다.');
+        }
 
       //   foreach($data AS $i => $fileData) {
       //     array_unshift($fileData, $this->request->getVar('brand_id'));
@@ -465,6 +466,8 @@ class Product extends BaseController {
     // $fileType = 'csv';
     $brandId = (int) $this->request->uri->getSegment(3);
     $products = [];
+    $brandInfo;
+    $fileName = NULL;
 
     if ( !empty($this->request->getPost()) ) {
       $data = $this->request->getPost();
@@ -477,12 +480,12 @@ class Product extends BaseController {
     }
 
     if ( !empty($brandId) ) {
+      $brandInfo = $this->brands->where('brand_id', $brandId)->first();
       $this->products->where('product.brand_id', $brandId);
-    }
+
+      $fileName = $brandInfo['brand_name']."_".date('Ymd_his');
+    } else $fileName = 'BeautynetKorea_'.date('Ymd_his');
     
-    // $header = array_merge($this->status->getHeader('product')['header']
-    //                     , $this->status->getHeader('supplyPrice')['header']
-    //                     , $this->status->getHeader('productSpq')['header']);
     $this->dataFile->exportOptions( [ 'width' => 15 ], 
                                     [ 'bold'  =>  true, 
                                       'fill'  =>  ['color' => 'FFF5DEB3'], 
@@ -497,8 +500,6 @@ class Product extends BaseController {
       array_unshift($header, ['header' => 'id', 'opts' => ['width' => 8]]);
       $products = $this->products
                     ->select("product.id, product.barcode, product.productCode, product.img_url")
-                    // ->select("CONCAT('[', UPPER(brand.brand_name), '] ', product.name) AS name")
-                    // ->select("CONCAT('[', UPPER(brand.brand_name), '] ', product.name_en) AS name_en")
                     ->select("UPPER(brand.brand_name) AS brand_name")
                     ->select("product.name")
                     ->select("product.name_en")
@@ -533,12 +534,9 @@ class Product extends BaseController {
                     ->findAll();
                     // ->get()
                     // ->getResultArray();
-    }
-
-    // print_r($products);
-    $fileName = NULL;
-    if ( !empty($products) ) {
-      $fileName = $products[0]['brand_name'].'_'.date('Ymd_his');
+      // if ( !empty($products) ) {
+      //   $fileName = $products[0]['brand_name'].'_'.date('Ymd_his');
+      // }
     }
     $this->dataFile->exportData($header, $products, $fileName, 'xls');
   }

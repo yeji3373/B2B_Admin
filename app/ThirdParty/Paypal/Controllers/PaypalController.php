@@ -52,15 +52,15 @@ class PaypalController extends Controller
 
   public function paypal($req) {
     $this->orderInfo = $req;
-    echo invoice_detail($this->orderInfo);
+    // echo invoice_detail($this->orderInfo);
 
-    // if ( $this->config->accessTokenExpiry >= time() ) {
-    //   if ( empty($this->config->accessToken) ) {
-    //     // echo "empty ";
-    //     $this->config->getOauth();
-    //   }
-    // }
-    // $this->makeInvoice();
+    if ( $this->config->accessTokenExpiry >= time() ) {
+      if ( empty($this->config->accessToken) ) {
+        // echo "empty ";
+        $this->config->getOauth();
+      }
+    }
+    $this->makeInvoice();
   }
 
   public function makeInvoice($req) {
@@ -84,7 +84,7 @@ class PaypalController extends Controller
       $this->invoiceNumber = $generate['data']['detail']['invoice_number'];
       $this->sendInvoice();
     } else {
-      print_r($generate);
+      // print_r($generate);
       $this->result['error'] = 'invoice make error '.$generate['data']['name'].' : '.json_encode($generate['data']['details']);
       $this->result['code'] = $generate['code'];
       
@@ -144,9 +144,9 @@ class PaypalController extends Controller
     $this->result['code'] = $send['code'];
     $this->result['msg'] = json_encode($send['data']);
 
-    echo '<br/><br/><br/>';
-    print_r($this->result);
-    echo '<br/><br/><br/>';
+    // echo '<br/><br/><br/>';
+    // print_r($this->result);
+    // echo '<br/><br/><br/>';
 
     return $this->result;
   }

@@ -77,16 +77,21 @@ class Packaging extends BaseController {
           if ( $detail['in_progress'] == 1 && $detail['complete'] == 0 )  {
             unset($saveCondition['idx']);
             $status = $this->packagingStatus
-                          ->select('packaging_status.*')
-                          ->select('next_status.status_id AS next_status_id')
-                          ->join('( SELECT idx, (LEAD(idx) OVER(ORDER BY order_by)) AS status_id
-                                    FROM packaging_status) AS next_status'
-                                  , 'next_status.idx = packaging_status.idx'
-                                  , 'left outer')
-                          ->where(['packaging_status.idx' => $detail['status_id'], 'packaging_status.available' => 1])
-                          ->orderBy('packaging_status.order_by ASC')
+                          ->select('*')
+                          ->select("( SELECT idx 
+                                      FROM packaging_status 
+                                      WHERE order_by > ( SELECT order_by 
+                                                          FROM packaging_status 
+                                                          WHERE packaging_status.available = 1 
+                                                            AND packaging_status.idx = {$detail['status_id']}
+                                                          ORDER BY order_by ASC )
+                                        AND packaging_status.available = 1 
+                                      ORDER BY order_by ASC
+                                      LIMIT 1 ) AS next_status_id")
+                          ->where(['idx' => $detail['status_id'], 'available' => 1])
+                          ->orderBy('order_by ASC')
                           ->first();
-            // print_r($status);
+
             if ( !empty($status) ) {
               if ($this->packagingDetail->save(['idx' => $detail['idx'], 'complete' => 1]) ) {
                 if ( !empty($status['next_status_id']) ) {

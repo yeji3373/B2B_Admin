@@ -62,8 +62,8 @@ class Orders extends BaseController {
   public function orders() {
     return $this->order->orderJoin()
                       ->select('receipt_group.payment_status_group')
-                      ->select('CONVERT(prd_weight.shipping_weight, FLOAT) AS shipping_weight')
-                      ->select('CONVERT(delivery.delivery_price, FLOAT) AS delivery_price')
+                      ->select('CAST(prd_weight.shipping_weight AS DOUBLE) AS shipping_weight')
+                      ->select('CAST(delivery.delivery_price AS DOUBLE) AS delivery_price')
                       ->join('( SELECT orders_detail.order_id, SUM(product.shipping_weight) AS shipping_weight
                                 FROM product
                                   JOIN orders_detail ON orders_detail.prd_id = product.id
@@ -141,6 +141,8 @@ class Orders extends BaseController {
           if ( !is_null($receipt['payment_invoice_id']) ) {
             $updateData = [];
             $paypalDetail = $this->PaypalController->showInvoiceDetail($receipt['payment_invoice_id']);
+            
+            // print_r($paypalDetail);
 
             if ( $paypalDetail['data']['due_amount']['value'] == 0 && ($paypalCancelResult['data']['status'] == 'PAID' || $paypalCancelResult['data']['status'] == 'MARKED_AS_PAID') ) {
               if ( is_null($receipt['payment_invoice_number']) ) {
@@ -207,10 +209,10 @@ class Orders extends BaseController {
           if ( empty($detail['expiration_date']) ) unset($detail['expiration_date']);
           if ( $this->orderDetail->save($detail) ) {
             $detailAmounts = $this->orderDetail
-                                ->select('CONVERT(SUM(prd_price * prd_order_qty), FLOAT) AS amount')
-                                ->select('CONVERT(SUM(prd_discount * prd_order_qty), FLOAT) AS discount')
-                                ->select('CONVERT((SUM(prd_price * prd_order_qty) - SUM(prd_discount * prd_order_qty)), FLOAT) AS subtotal')
-                                ->select('CONVERT(SUM(prd_price * prd_changed_qty), FLOAT) AS difference')
+                                ->select('CAST(SUM(prd_price * prd_order_qty) AS DOUBLE) AS amount')
+                                ->select('CAST(SUM(prd_discount * prd_order_qty) AS DOUBLE) AS discount')
+                                ->select('CAST((SUM(prd_price * prd_order_qty) - SUM(prd_discount * prd_order_qty)) AS DOUBLE) AS subtotal')
+                                ->select('CAST(SUM(prd_price * prd_changed_qty) AS DOUBLE) AS difference')
                                 ->where(['order_id'=> $data['order_id'], 'order_excepted' => 0])
                                 ->first();
 
@@ -446,8 +448,8 @@ class Orders extends BaseController {
                           buyers_address.streetAddr1, buyers_address.streetAddr2,
                           buyers_address.zipcode, buyers_address.phone_code AS phonecode, buyers_address.phone')
                 ->select('currency.currency_code, currency.currency_sign, currency.currency_float')
-                ->select('CONVERT(IFNULL(amount_paid.amount_paid, 0), FLOAT) AS amount_paid')
-                ->select('SUM(CONVERT(IFNULL(delivery.delivery_price, 0), FLOAT)) OVER() AS delivery_price')
+                ->select('CAST(IFNULL(amount_paid.amount_paid, 0) AS DOUBLE) AS amount_paid')
+                ->select('SUM(CAST(IFNULL(delivery.delivery_price, 0) AS DOUBLE)) AS delivery_price')
                 ->select('orders_receipt.receipt_type, orders_receipt.payment_status')
                 ->join('buyers', 'buyers.id = orders.buyer_id')
                 ->join('users', 'users.buyer_id = buyers.id')
