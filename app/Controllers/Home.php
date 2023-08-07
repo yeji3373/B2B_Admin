@@ -33,7 +33,7 @@ class Home extends BaseController
                                     , 'currency_rate.default_set' => 1])
                               ->findAll();
     $data['default_currency'] = $this->currency->currency()->where(['currency.default_currency'=> 1, 'currency.available'=> 1, 'currency_rate.default_set' => 1, 'currency_rate.available' => 1])->first();
-    $data['orders'] = $this->orderController->orders()->orderBy('orders.id DESC')->findAll($this->limit);
+    $data['orders'] = $this->orderController->getOrders()->orderBy('orders.id DESC')->findAll($this->limit);
         
     return $this->menuLayout('dashboard/main', $data);
   }

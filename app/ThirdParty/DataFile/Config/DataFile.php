@@ -12,7 +12,7 @@ class DataFile extends BaseConfig {
   public $bodyOpts = [];
   public $coordinate = [];
   public $rows = 0;
-  public $cols = 0;
+  public $cols = 1;
 
   public function setCoordinate($headerCnt = 0) {
     if ( !empty($headerCnt) ) {
@@ -22,14 +22,12 @@ class DataFile extends BaseConfig {
     }
   }
 
-  public function setHeader($header = array(), $col = 1) {
+  public function setHeader($header = array()) {
     if ( empty($header) ) {
     } else {
-      $this->cols = $col;
       $this->setCoordinate(count($header));
       foreach($header AS $i => $head) {
         array_push($this->headers, [$this->coordinate[$i].$this->cols, $head]);
-        // echo $this->coordinate[$i].$row." ".$head."<br/>";
       }
     }
   }

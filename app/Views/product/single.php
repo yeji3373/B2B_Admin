@@ -227,7 +227,7 @@
                     ?>
                     <?=!empty($supply) && empty($supply['not_calculating_margin']) ? 'disabled' : ''?>>
             </div>
-          <?php endforeach;
+          <?php endforeach; 
           endif; ?>
           </div>
         </td>

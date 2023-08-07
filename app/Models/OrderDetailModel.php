@@ -11,9 +11,10 @@ class OrderDetailModel extends Model {
   protected $allowedFields = [
     // 'buyer_id', 'order_number',  // 교차할때 필요한 컬럼 생성 후 추가
     'order_id', 'order_excepted',  'prd_id', 
-    'stock_req', 'stock_req_qty', 'prd_order_qty',
-    'prd_changed_qty', 'prd_price_changed', 'changed_manager',
-    'prd_price_id', 'prd_price', 'prd_discount',
+    'stock_req', 'stock_req_qty', 
+    'prd_change_qty', 'prd_qty_changed',
+    'prd_change_price', 'prd_price_changed',
+    'changed_manager', 'prd_discount',
     'margin_rate_id', 'status_id', 'expiration_date'
   ];
 

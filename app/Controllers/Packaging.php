@@ -111,4 +111,11 @@ class Packaging extends BaseController {
       }
     } else return;
   }
+
+  public function getPackaging() {
+    return $this->packaging
+                ->join('packaging_detail', 'packaging_detail.packaging_id = packaging.idx')
+                ->join('packaging_status', 'packaging_status.idx = packaging_detail.status_id')
+                ->where('packaging_status.available', 1);
+  }
 }

@@ -324,61 +324,101 @@ class Product extends BaseController {
       $file = $this->request->getFile('file');      
       $data = $this->dataFile->attachData($file);
 
-      $productFileds = $this->status->getHeader('product')['fields'];
-      print_r(array_filter($this->status->getHeader('product')['export'], function($v, $k) { return $k == 'barcode'; }, ARRAY_FILTER_USE_BOTH));
-      // array_unshift($productFileds, 'brand_id', 'id');
-      array_unshift($productFileds, 'id');
-
-      $fields = array_merge($productFileds, $this->status->getHeader('supplyPrice')['fields']);
-      $fields = array_merge($fields, $this->status->getHeader('productSpq')['fields']);
+      // $fields = array_merge( $this->status->getHeader('product')['fields']
+      //                             , $this->status->getHeader('supplyPrice')['fields']
+      //                             , $this->status->getHeader('productSpq')['fields']);
+      $fields = array_merge( $this->status->getHeader('product')['export']
+                                  , $this->status->getHeader('supplyPrice')['export']
+                                  , $this->status->getHeader('productSpq')['export']);
+      array_unshift($fields, ['header'=> 'id', 'field' => 'id'], ['header' => 'Brand ID', 'field' => 'brand_id']);
 
       if ( !empty($data) ) {
+        $brandCheck = $this->brands->where('brand_id', $this->request->getVar('brand_id'))->first();
+        if ( empty($brandCheck) ) {
+          return redirect()->back()->with('error', '해당하는 브랜드가 없습니다.');
+        }
+
         $numberOfRecords = $this->dataFile->numberOfRecords;
-        // $numberOfFields = $this->dataFile->numberOfFields;
+        $numberOfFields = $this->dataFile->numberOfFields;
         $productArr = array();
         $productPriceArr = array();
         $successCnt = 0;
         $failCnt = 0;
-        
-        $brandCheck = $this->brands->where('brand_id', $this->request->getVar('brand_id'))->first();
 
-        if ( !empty($brandCheck) ) {
-          $data = $this->dataFile->specificFiltering($data, 4, $brandCheck['brand_name']);
-        } else {
-          return redirect()->back()->with('error', '해당하는 브랜드가 없습니다.');
-        }
+        $contents = array_splice($data, 1, $numberOfFields);
+       
+        foreach($contents AS $i => $fileData) :
+          for ( $j = 0; $j < $numberOfRecords; $j++) :
+            // echo $i.'<br/>';
+            if ( ($j >= 0 && $j < 26) && $j != 2 ) {
+              $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+            }
 
-      //   foreach($data AS $i => $fileData) {
-      //     array_unshift($fileData, $this->request->getVar('brand_id'));
-      //     for($j = 0; $j < $numberOfRecords; $j++ ) {
-      //       if ( count($fields) > $j ) {
-      //         if ( count($productFileds) > $j ) {
-      //           $productArr[$i][$fields[$j]] = $fileData[$j];
-      //         } else {
-      //           if ( count($productFileds) == $j ) {
-      //             $productPriceArr[$i][$fields[$j]] = $fileData[0];
-      //           }                 
-      //           $productPriceArr[$i][$fields[$j + 1]] = $fileData[$j];
-      //         }
-      //       }
-      //     }
-      //   }
+            if ( ($j > 25 && $j < 33) ) {
+              $productPriceArr[$i][$fields[$j]['field']] = $fileData[$j];
+            }
 
-      //   if ( !empty($productArr) ) {
-      //     foreach($productArr AS $i => $productData ) {
-      //       if ( !empty($productData['id']) ) {
-      //         unset($productData['barcode']);
-      //         unset($productData['name']);
-      //         unset($productData['type']);
-      //       }
-      //       $this->products->save($productData);
-      //       if ( $this->products->getInsertID() ) {
-      //         $successCnt++;
-      //         $productPriceArr[$i]['product_idx'] = $this->products->getInsertID();
-      //       }
-      //     }
-      //   }
+            if ( $j > 32 && $j <= $numberOfRecords ) {
+              $productSpqArr[$i][$fields[$j]['field']] = $fileData[$j];
+            }
+          endfor;
+        endforeach;
 
+        if ( !empty($productArr) ) :
+          foreach($productArr AS $prd_i => $product ) :
+            if ( !empty($product['id']) ) :
+              $productPriceArr[$prd_i]['product_idx'] = $product['id'];
+              $productSpqArr[$prd_i]['product_idx'] = $product['id'];
+
+              $prdInfo = $this->products->where(['barcode' => $product['barcode'], 'id' => $product['id']])->first();
+
+              if ( empty($prdInfo) ) {
+                $this->products->save($product);
+              } else {
+                if ( $prdInfo['name_en'] != $product['name_en'] ) {
+                  // print_r($prdInfo);
+                  // 이름이 다르면 다른 제품으로 판단하기
+                }
+              }
+            endif;
+          endforeach;
+
+          if ( !empty($productPriceArr) ) :
+            $supplyPriceArr = [];
+            foreach($productPriceArr AS $price_i => $price ) :
+
+              if ( !empty($price['price']) ) {
+                $_price = explode('/', $price['price']);
+
+                if ( !empty($_price) ) {
+                  $margins = $this->margin->where('available', 1)->findAll();
+
+                  foreach($margins AS $i => $margin) {
+                    array_push($supplyPriceArr, ['margin_idx' => $margin['idx']
+                                                , 'margin_level' => $margin['margin_level'],
+                                                  'price' => $_price[$i],
+                                                  'product_idx' => $price['product_idx']]);
+                  }
+                }
+              }
+
+              $prdPrice = $this->productPrice->where(['product_idx' => $price['product_idx'], 'available' => 1])->first();
+              if ( empty($prdPrice) ) {
+                // $this->productPrice->save($price);
+                // echo "없음<br/><Br/>";
+              } else {
+                print_r($prdPrice);
+                echo "<br/>";
+              }               
+            endforeach;
+          endif;
+
+          if ( !empty($supplyPriceArr) ) :
+          // print_r($supplyPriceArr);
+          // echo "<br/>";            
+          endif;
+        endif;
+        // print_r($productPriceArr);
       //   if ( !empty($productPriceArr) ) {
       //     foreach ( $productPriceArr AS $productPrice ) {
       //       $productChk = $this->productPrice
@@ -490,17 +530,22 @@ class Product extends BaseController {
                                     [ 'bold'  =>  true, 
                                       'fill'  =>  ['color' => 'FFF5DEB3'], 
                                       'align_vertical'  =>  'center',
-                                      'set_wrap'  =>  true ]);
+                                      'set_wrap'  =>  true,
+                                      'colCnt' => 2, 
+                                      'colName' => ['header', 'field']]);
     $header = array_merge($this->status->getHeader('product')['export']
                         , $this->status->getHeader('supplyPrice')['export']
                         , $this->status->getHeader('productSpq')['export']);
 
+    array_unshift($header
+                        , ['header' => 'ID', 'field' => 'id', 'opts' => ['width' => 8]]
+                        , ['header' => 'Brand ID', 'field' => 'brand_id', 'opts' => ['width' => 8]]);
+                        
     if ( $data['prd-include'] == true ) {
-      // $header2 = array_merge(['header' => 'id', 'opts' => ['width' => 8]], $header);
-      array_unshift($header, ['header' => 'id', 'opts' => ['width' => 8]]);
       $products = $this->products
-                    ->select("product.id, product.barcode, product.productCode, product.img_url")
-                    ->select("UPPER(brand.brand_name) AS brand_name")
+                    ->select("product.id")
+                    ->select("brand.brand_id, UPPER(brand.brand_name) AS brand_name")
+                    ->select("product.barcode, product.productCode, product.img_url")
                     ->select("product.name")
                     ->select("product.name_en")
                     ->select('product.box, product.in_the_box, product.contents_of_box')
@@ -532,11 +577,16 @@ class Product extends BaseController {
                     ->where('product_price.available', 1)
                     ->orderBy('brand.brand_id ASC, brand.own_brand DESC, product.id ASC')
                     ->findAll();
-                    // ->get()
-                    // ->getResultArray();
+      // echo $this->products->getLastQuery();
       // if ( !empty($products) ) {
       //   $fileName = $products[0]['brand_name'].'_'.date('Ymd_his');
       // }
+
+      if ( empty($products) && !empty($brandId) ) {
+        $products = $this->brands
+                      ->select("'' AS id, brand_id, brand_name")
+                      ->where('brand_id', $brandId)->findAll();
+      }
     }
     $this->dataFile->exportData($header, $products, $fileName, 'xls');
   }

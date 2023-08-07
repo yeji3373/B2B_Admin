@@ -62,18 +62,27 @@ class DataFileController extends Controller {
     return $column;
   }
 
-  public function exportData(Array $header, Array $data = [], String $fileName = NULL, String $fileType = 'csv' ) {
+  public function exportData(Array $header, Array $data = [], String $fileName = NULL, String $fileType = 'csv', Int $headColumnCnt = NULL, Array $opts = [] ) {
   // public function exportData(Array $header, Array $data = [], Array $opts = [], String $fileName = NULL, String $fileType = 'csv' ) {
     if ( is_null($fileName) ) $fileName = date('Ymd_his').".$fileType";
     else $fileName = $fileName.".".$fileType;
-
+    
     $spreadsheet = new Spreadsheet();
-    $spreadsheet->getDefaultStyle()->getFont()->setSize(9); //  font size 설정
-    // $activeWorksheet = $spreadsheet->setActiveSheetIndex(0); // spreadsheet index로 선택
-    // $activeWorksheet = $spreadsheet->setActiveSheetIndexByName('Sheet1') // spreadsheet 시트 이름으로 선택
+    if ( !empty($opt) ) {
+      $spreadsheet->getDefaultStyle()->getFont()->setSize($opt['fontSize']); //  font size 설정
+      $activeWorksheet = $spreadsheet->setActiveSheetIndex($opt['activeIndex']); // spreadsheet index로 선택
+      // $activeWorksheet = $spreadsheet->setActiveSheetIndexByName('Sheet1') // spreadsheet 시트 이름으로 선택
+    } else {
+      $spreadsheet->getDefaultStyle()->getFont()->setSize(9); //  font size 설정
+      $activeWorksheet = $spreadsheet->setActiveSheetIndex(0); // spreadsheet index로 선택
+      // $activeWorksheet = $spreadsheet->setActiveSheetIndexByName('Sheet1') // spreadsheet 시트 이름으로 선택
+    }
     $sheet = $spreadsheet->getActiveSheet();
+    // print_r($header);
+    // echo count($header, 1).' '.count($header, 0).'<br/>';
     // $headColCnt = (count($header, 1) / count($header, 0));
     $headColCnt = (count($header) / count($header)); // column 시작점
+    // $headColCnt = 2;
     $this->config->setHeader($header, $headColCnt);
     $this->config->setBody($data);
 
@@ -95,6 +104,10 @@ class DataFileController extends Controller {
           // echo $this->config->coordinate[$i]."<br/>";
           $sheet->getColumnDimension($this->config->coordinate[$i])->setWidth($head[1]['opts']['width']);
         }
+
+        // if ( isset($head[1]['opts']['removeColumn']) ) {
+        //   $sheet->removeColumnByIndex($head[1]['opts']['removeColumn']);
+        // }
 
         // // $sheet->getStyle($head[0])->getBorders()->getBottom()->setBorderStyle(Style\Border::BORDER_DOUBLE);
         // // $sheet->getStyle($head[0])->getBorders()->getRight()->setBorderStyle(Style\Border::BORDER_THIN);        

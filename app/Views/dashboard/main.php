@@ -46,7 +46,9 @@
           <tr>
             <th>No</th>
             <th>주문번호</th>
-            <th>주문금액</th>
+            <th>재고요청금액</th>
+            <th>주문(확정)금액</th>
+            <th>상태</th>
             <th>기타</th>
           </tr>
         </thead>
@@ -56,7 +58,9 @@
           <tr>
             <td><?=$i + 1?></td>
             <td><?=$order['order_number']?></td>
+            <td><?=$order['currency_sign'] . number_format($order['request_amount'], $order['currency_float'])?></td>
             <td><?=$order['currency_sign'] . number_format($order['order_amount'], $order['currency_float'])?></td>
+            <td><?=$order['status_name']?>
             <td><a class='btn btn-sm btn-secondary' href='/orders/detail/<?=$order['id']?>'>상세보기</a></td>
           </tr>
           <?php endforeach;

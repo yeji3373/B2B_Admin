@@ -4,11 +4,14 @@ namespace App\Controllers;
 use App\Models\CurrencyModel;
 use App\Models\OrdersModel;
 use App\Models\OrderDetailModel;
+use App\Models\OrderStatusModel;
+use App\Models\RequirementRequestModel;
 use App\Models\OrderReceiptModel;
 use App\Models\ShipmentModel;
 use App\Models\DeliveryModel;
 use App\Models\ProductModel;
 use App\Models\PackagingModel;
+use App\Models\PackagingDetailModel;
 use App\Models\PackagingStatusModel;
 
 use App\Models\PayPalModel; // 임시. invoce 발급 및 관리 목적
@@ -16,6 +19,8 @@ use App\Models\ManagerModel;
 
 use Paypal\Controllers\PaypalController;
 use Paypal\Config\Paypal;
+
+use App\Controllers\Packaging;
 
 use Status\Config\Status;
 
@@ -26,18 +31,23 @@ class Orders extends BaseController {
     $this->currency = new CurrencyModel();
     $this->order = new OrdersModel();
     $this->orderDetail = new OrderDetailModel();
+    $this->orderStatus = new OrderStatusModel();
+    $this->requirementRequest = new RequirementRequestModel();
     $this->receipt = new OrderReceiptModel();
     $this->shipment = new ShipmentModel();
     $this->delivery = new DeliveryModel();
     $this->product = new ProductModel();
     $this->packaging = new PackagingModel();
     $this->packagingStatus = new PackagingStatusModel();
+    $this->packagingDetail = new PackagingDetailModel();
 
     $this->paypalModel = new PayPalModel(); // 임시. invoice 발급 및 관리 목적
     $this->managerModel = new ManagerModel();
     
     $this->PaypalController = new PaypalController();
     $this->PaypalConfig = new Paypal();
+
+    $this->packagingController = new Packaging();
 
     $this->data['header'] = ['css' => ['/orders/orders.css', '/table.css', '/inputLabel.css']
                             , 'js' => ['/orders/orders.js']];
@@ -46,42 +56,32 @@ class Orders extends BaseController {
   }
 
   public function index() {
-    if ( !empty($this->request->getVar()) ) {
-      if ( !empty($this->request->getVar('order_number')) ) {
+    $params = $this->request->getVar();
+    if ( !empty($params) ) {
+      if ( !empty($params['order_number']) ) {
         $this->order->like('orders.order_number', $this->request->getVar('order_number'), 'both');
       }
+
+      if ( !empty($params['order_status']) ) {
+        $this->order->where('order_status.status_id', $params['order_status']);
+      }
     }
-    $this->data['orders'] = $this->orders()
+
+    $this->data['orderStatus'] = $this->orderStatus->where('available', 1)->orderBy('status_id')->findAll();
+
+    $this->data['orders'] = $this->getOrders()
+                              ->where('orders.available', 1)
                               ->orderBy('orders.id DESC')
                               ->paginate(15);
-    $this->data['orderPager'] = $this->orders()->pager;
-    // echo $this->order->getLastQuery();
+    $this->data['orderPager'] = $this->getOrders()->pager;
+    
     return $this->menuLayout('orders/main', $this->data);
-  }
-
-  public function orders() {
-    return $this->order->orderJoin()
-                      ->select('receipt_group.payment_status_group')
-                      ->select('CAST(prd_weight.shipping_weight AS DOUBLE) AS shipping_weight')
-                      ->select('CAST(delivery.delivery_price AS DOUBLE) AS delivery_price')
-                      ->join('( SELECT orders_detail.order_id, SUM(product.shipping_weight) AS shipping_weight
-                                FROM product
-                                  JOIN orders_detail ON orders_detail.prd_id = product.id
-                                GROUP BY orders_detail.order_id) AS prd_weight'
-                              , 'prd_weight.order_id = orders.id')
-                      ->join("( SELECT order_id, SUM(delivery_price) AS delivery_price
-                                FROM delivery 
-                                GROUP BY delivery.order_id ) AS delivery"
-                              , 'delivery.order_id = orders.id')
-                      ->join('( SELECT order_id, GROUP_CONCAT(receipt_type, ":", payment_status order by receipt_id) AS payment_status_group 
-                               FROM orders_receipt GROUP BY order_id ORDER BY receipt_id) AS receipt_group', 'receipt_group.order_id = orders.id', 'left outer');
-                      // ->join('( SELECT order_id, payment_status, ')
   }
 
   public function detail() {
     $orderId = $this->request->uri->getSegment(3);
     $this->data['currency'] = $this->currency->where('available', 1)->find();
-    $this->data['order'] = $this->getOrder($orderId)->first();  
+    $this->data['order'] = $this->getOrder($orderId)->first();
     $this->data['details'] = $this->getOrderDetail($orderId)->findAll();
     $this->data['receipts'] = $this->receipt->select('orders_receipt.*, delivery.delivery_price')->join('delivery', 'delivery.id = orders_receipt.delivery_id', 'left outer')->where('orders_receipt.order_id', $orderId)->findAll();
     $this->data['shipments'] = $this->shipment->findAll();
@@ -113,27 +113,30 @@ class Orders extends BaseController {
                                       ->join('packaging_status', 'packaging_status.idx = packaging_detail.status_id', 'left outer')
                                       ->where('packaging.order_id', $orderId)
                                       ->orderBy('packaging_status.order_by DESC')
-                                      // ->where('packaging')
                                       ->first();
-                                      // echo $this->packaging->getLastQuery();
-    $this->data['packagingStatus'] = $this->packagingStatus
-                                      ->select('packaging_status.*')
-                                      // ->select('packaging_detail.status_id')
-                                      ->select('packaging.complete')
-                                      ->select('packaging.in_progress')
-                                      // ->join('packaging_detail', 'packaging_detail.status_id = packaging_status.idx', 'left outer')
-                                      // ->join('packaging', 'packaging.idx = packaging_detail.packaging_id', 'left outer')
-                                      ->join("( SELECT packaging.idx, packaging.order_id
-                                                            , packaging_detail.packaging_id, packaging_detail.status_id
-                                                            , packaging_detail.in_progress, packaging_detail.complete
-                                                FROM packaging 
-                                                LEFT OUTER JOIN packaging_detail ON packaging.idx = packaging_detail.packaging_id
-                                                WHERE packaging.order_id = {$orderId}
-                                              ) AS packaging"
-                                              , "packaging.status_id = packaging_status.idx", "left outer")
-                                      ->where(['packaging_status.available' => 1])
-                                      ->orderBy('packaging_status.order_by ASC')
-                                      ->findAll();
+
+    // $this->data['packagingStatus'] = $this->packagingStatus
+    //                                       ->select('packaging_status.*')
+    //                                       ->select('packaging.complete')
+    //                                       ->select('packaging.in_progress')
+    //                                       ->join("( SELECT packaging.idx, packaging.order_id
+    //                                                       , packaging_detail.packaging_id, packaging_detail.status_id
+    //                                                       , packaging_detail.in_progress, packaging_detail.complete
+    //                                                 FROM packaging 
+    //                                                 LEFT OUTER JOIN packaging_detail ON packaging.idx = packaging_detail.packaging_id
+    //                                                 WHERE packaging.order_id = {$orderId}
+    //                                               ) AS packaging"
+    //                                               , "packaging.status_id = packaging_status.idx", "left outer")
+    //                                       ->where(['packaging_status.available' => 1])
+    //                                       ->orderBy('packaging_status.order_by ASC')
+    //                                       ->findAll();
+    $this->data['packagingStatus'] = $this->packagingStatus->packagingStatus($orderId)
+                                          ->select('packaging_status.*')
+                                          ->select('packaging.complete')
+                                          ->select('packaging.in_progress')
+                                          ->where(['packaging_status.available' => 1])
+                                          ->orderBy('packaging_status.order_by ASC')
+                                          ->findAll();
 
     if ( !empty($this->data['receipts']) ) {
       foreach($this->data['receipts'] as $i => $receipt) { 
@@ -439,7 +442,141 @@ class Orders extends BaseController {
     return redirect()->back();
   }
 
+  public function inventoryDetail() { // 재고요청상태일때
+    if ( !in_array('/orders/inventory.js', $this->data['header']['js']) ) {
+      array_push($this->data['header']['js'], '/orders/inventory.js');
+    }
+    $orderId = $this->request->uri->getSegment(3);
+    
+    $packagingStatus = $this->packaging->packaging()
+                            ->where('packaging.order_id', $orderId)
+                            ->where('packaging_detail.in_progress = 1 AND packaging_detail.complete = 0')
+                            ->orderBy('packaging_status.order_by DESC')
+                            ->first();
+    if ( !empty($packagingStatus) ) {
+      if ( $packagingStatus['order_by'] == 1 ) {
+        $nextPackagingStatus = $this->packagingStatus->where('order_by', ($packagingStatus['order_by'] + 1))->first();
+        if ( $this->packagingDetail->save(['packaging_id' => $packagingStatus['packaging_id']
+                                          , 'status_id' => $nextPackagingStatus['idx'] ])) {
+          if ( !$this->packagingDetail->save(['idx' => $packagingStatus['detail_idx'], 'complete' => 1]) ) {
+            return redirect()->to(site_url(previous_url()))->with('error', '오류');
+          } else {
+            $this->data['nextPackaging'] = $this->packagingStatus->where('order_by', ($nextPackagingStatus['order_by'] + 1))->first();
+          }
+        } else {
+          return redirect()->to(site_url(previous_url()))->with('error', '오류');
+        }
+      } else if ( $packagingStatus['order_by'] == 2 ) { 
+        $nextPackagingStatus = $this->packagingStatus->where('order_by', ($packagingStatus['order_by'] + 1))->first();
+        $this->data['nextPackaging'] = $nextPackagingStatus;
+      }
+    }
+    
+    $this->data['order'] = $this->getOrder($orderId)->first();
+    if ( empty($orderId) || empty($this->data['order']) ) return redirect()->to(site_url('order'));
+  
+    $this->data['details'] = $this->getOrderDetail($orderId)->findAll();
+    
+    if ( !empty($this->data['details']) ) :
+      $this->data['requirement'] = [];
+      foreach($this->data['details'] AS $detail ) :
+        array_push($this->data['requirement']
+                  , $this->requirementRequest->requirement(['requirement_request.order_id'=> $orderId
+                                                          , 'requirement_request.order_detail_id' => $detail['id']])->findAll());
+      endforeach;
+    endif;
+
+    return $this->menuLayout('orders/inventoryCheckDetail', $this->data);
+  }
+
+  public function inventoryEdit() {
+    $params = $this->request->getPost('detail');
+    $orderParams = $this->request->getPost('order');
+
+    print_r($orderParams);
+    echo "<br/><Br/>";
+    // // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
+    if ( !empty($params) ) {
+      foreach( $params AS $param ) :        
+        if ( !empty($param['detail']) ) {
+          if ( !empty($param['detail']['id']) && isset($param['detail']['id']) )  {
+            $detailID = $param['detail']['id'];
+            unset($param['detail']['id']);
+          }
+
+          if ( empty($param['detail']['order_excepted']) && !isset($param['detail']['order_excepted'])) {
+            if ( $param['detail']['order_excepted_check'] == 1 ) $param['detail']['order_excepted'] = 0;
+            else unset($param['detail']['order_excepted_check']);
+          }
+
+          if ( $param['detail']['prd_order_qty'] != $param['detail']['prd_change_qty'] ) {
+            unset($param['detail']['prd_order_qty']);
+            $param['detail']['prd_qty_changed'] = 1;
+          } else {
+            unset($param['detail']['prd_order_qty']);
+            unset($param['detail']['prd_change_qty']);
+          }
+
+          if ( $param['detail']['prd_price'] != $param['detail']['prd_change_price'] ) {
+            unset($param['detail']['prd_price']);
+            $param['detail']['prd_price_changed'] = 1;
+          } else {
+            unset($param['detail']['prd_price']);
+            unset($param['detail']['prd_change_price']);
+          }
+
+          // if ( !empty($param['detail']) ) {
+          //   $param['detail']['changed_manager'] = session()->userData['idx'];
+          //   $param['detail']['id'] = $detailID;
+
+          //   $this->orderDetail->save($param['detail']);
+          // }
+        }
+        
+        if ( !empty($param['requirement']) ) {
+          
+        }
+        print_r($param);
+        echo "<br/><br/>";
+      endforeach;
+    } else {
+      return redirect()->to(site_url(previous_url()))->with('error', 'input date error');
+    }
+  }
+
+  public function getOrders() {
+    return $this->order->orderJoin()
+                      ->select('packaging_status.payment_check')
+                      ->select('packaging_status.status_name')
+                      ->select('receipt_group.payment_status_group')
+                      ->select('CAST(prd_weight.shipping_weight AS DOUBLE) AS shipping_weight')
+                      ->select('CAST(delivery.delivery_price AS DOUBLE) AS delivery_price')
+                      ->join('packaging', 'packaging.order_id = orders.id')
+                      ->join('packaging_detail', 'packaging_detail.packaging_id = packaging.idx AND packaging_detail.in_progress = 1 AND packaging_detail.complete = 0')
+                      ->join('packaging_status', 'packaging_status.idx = packaging_detail.status_id')
+                      ->join('( SELECT orders_detail.order_id, SUM(product.shipping_weight) AS shipping_weight
+                                FROM product
+                                  JOIN orders_detail ON orders_detail.prd_id = product.id
+                                GROUP BY orders_detail.order_id) AS prd_weight'
+                              , 'prd_weight.order_id = orders.id', 'RIGHT')
+                      ->join("( SELECT order_id, SUM(delivery_price) AS delivery_price
+                                FROM delivery 
+                                GROUP BY delivery.order_id ) AS delivery"
+                              , 'delivery.order_id = orders.id', 'RIGHT')
+                      ->join('( SELECT order_id, GROUP_CONCAT(receipt_type, ":", payment_status order by receipt_id) AS payment_status_group 
+                               FROM orders_receipt GROUP BY order_id ORDER BY receipt_id) AS receipt_group', 'receipt_group.order_id = orders.id', 'left outer')
+                      ->where('orders.available', 1);
+  }
+
   public function getOrder($orderId = null) {
+    if ( !empty($orderId) ) {
+      $this->order->join("( SELECT order_id, SUM(rq_amount) AS amount_paid 
+                        FROM orders_receipt 
+                        WHERE order_id = {$orderId} AND payment_status = 100
+                      ) AS amount_paid", 'amount_paid.order_id = orders.id', 'left outer')
+                  ->where('orders.id', $orderId);
+    }
+
     return $this->order->orderJoin()
                 ->select('buyers.name AS buyer_name')
                 ->select('users.idx AS user_idx, users.id AS user_id, users.name AS user_name, users.email AS user_email')
@@ -447,7 +584,6 @@ class Orders extends BaseController {
                 ->select('buyers_address.consignee, buyers_address.region,
                           buyers_address.streetAddr1, buyers_address.streetAddr2,
                           buyers_address.zipcode, buyers_address.phone_code AS phonecode, buyers_address.phone')
-                ->select('currency.currency_code, currency.currency_sign, currency.currency_float')
                 ->select('CAST(IFNULL(amount_paid.amount_paid, 0) AS DOUBLE) AS amount_paid')
                 ->select('SUM(CAST(IFNULL(delivery.delivery_price, 0) AS DOUBLE)) AS delivery_price')
                 ->select('orders_receipt.receipt_type, orders_receipt.payment_status')
@@ -456,23 +592,19 @@ class Orders extends BaseController {
                 ->join('manager', 'manager.idx = buyers.manager_id')
                 ->join('delivery', 'delivery.order_id = orders.id AND delivery.delivery_code = 100', 'left outer')
                 ->join('buyers_address', 'buyers_address.idx = orders.address_id')
-                ->join("( SELECT order_id, SUM(rq_amount) AS amount_paid 
-                          FROM orders_receipt 
-                          WHERE order_id = {$orderId} AND payment_status = 100
-                        ) AS amount_paid", 'amount_paid.order_id = orders.id', 'left outer')
                 // ->join("( SELECT order_id, SUM((prd_price * prd_changed_qty))")
-                ->join("orders_receipt", "orders_receipt.order_id = orders.id", "left outer")
-                ->where('orders.id', $orderId);
+                ->join("orders_receipt", "orders_receipt.order_id = orders.id", "left outer");
   }
 
   public function getOrderDetail($orderId = null) {
     return $this->data['details'] = $this->orderDetail
+                                        ->select('currency.currency_sign AS currency_sign')
+                                        ->select('currency.currency_float AS currency_float')
                                         ->productBrandJoin()
-                                        // ->select('stocks_detail.')
-                                        // ->join('stocks', 'stocks.prd_id = product.id')
-                                        // ->join('stcoks_detail', 'stocks.id = stocks_detail.stcoks_id')
-                                        // ->join('stocks_req', 'stocks_req.stocks_id = stocks_detail.stocks_id AND stocks_req.stock_id = stocks_detail.id', 'left outer')
-                                ->where('order_id', $orderId);
+                                        ->join('orders', 'orders.id = orders_detail.order_id', 'RIGHT')
+                                        ->join("currency_rate", "currency_rate.cRate_idx = orders.currency_rate_idx", "LEFT OUTER")
+                                        ->join("currency", "currency.idx = currency_rate.currency_idx", "LEFT OUTER")
+                                ->where('orders_detail.order_id', $orderId);
   }
 
 

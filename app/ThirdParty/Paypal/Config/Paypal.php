@@ -10,9 +10,10 @@ class Paypal extends BaseConfig
   // public $sandbox = FALSE; // TRUE:test계정 사용하기 FALSE:LIVE
 
   protected $sandboxURL = 'https://sandbox.paypal.com';
-  protected $sandBoxBaseUrl = 'https://api-m.sandbox.paypal.com';
-  
   protected $liveUrl = 'https://www.paypal.com';
+  
+  /* api url */
+  protected $sandBoxBaseUrl = 'https://api-m.sandbox.paypal.com';
   protected $liveBaseUrl = 'https://api-m.paypal.com';
 
   /* v2plus1v@hotmail.com 계정일 때 */
