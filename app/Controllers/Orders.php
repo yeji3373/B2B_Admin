@@ -68,7 +68,6 @@ class Orders extends BaseController {
     }
 
     $this->data['orderStatus'] = $this->orderStatus->where('available', 1)->orderBy('status_id')->findAll();
-
     $this->data['orders'] = $this->getOrders()
                               ->where('orders.available', 1)
                               ->orderBy('orders.id DESC')
@@ -448,10 +447,11 @@ class Orders extends BaseController {
     }
     $orderId = $this->request->uri->getSegment(3);
     
-    $packagingStatus = $this->packaging->packaging()
-                            ->where('packaging.order_id', $orderId)
-                            ->where('packaging_detail.in_progress = 1 AND packaging_detail.complete = 0')
-                            ->orderBy('packaging_status.order_by DESC')
+    $packagingStatus = $this->packaging
+                            ->packaging(['where' => ['packaging.order_id' => $orderId
+                                                    , 'packaging_detail.in_progress' => 1
+                                                    , 'packaging_detail.complete' => 0]
+                                        , 'orderBy' => 'packaging_status.order_by DESC'])
                             ->first();
     if ( !empty($packagingStatus) ) {
       if ( $packagingStatus['order_by'] == 1 ) {
@@ -461,14 +461,14 @@ class Orders extends BaseController {
           if ( !$this->packagingDetail->save(['idx' => $packagingStatus['detail_idx'], 'complete' => 1]) ) {
             return redirect()->to(site_url(previous_url()))->with('error', '오류');
           } else {
-            $this->data['nextPackaging'] = $this->packagingStatus->where('order_by', ($nextPackagingStatus['order_by'] + 1))->first();
+            // $this->data['nextPackaging'] = $this->packagingStatus->where('order_by', ($nextPackagingStatus['order_by'] + 1))->first();
           }
         } else {
           return redirect()->to(site_url(previous_url()))->with('error', '오류');
         }
       } else if ( $packagingStatus['order_by'] == 2 ) { 
         $nextPackagingStatus = $this->packagingStatus->where('order_by', ($packagingStatus['order_by'] + 1))->first();
-        $this->data['nextPackaging'] = $nextPackagingStatus;
+        $this->data['nextPackaging'] = array_merge($nextPackagingStatus, ['packaging_id' => $packagingStatus['packaging_id']]);
       }
     }
     
@@ -476,13 +476,14 @@ class Orders extends BaseController {
     if ( empty($orderId) || empty($this->data['order']) ) return redirect()->to(site_url('order'));
   
     $this->data['details'] = $this->getOrderDetail($orderId)->findAll();
-    
+
     if ( !empty($this->data['details']) ) :
       $this->data['requirement'] = [];
       foreach($this->data['details'] AS $detail ) :
         array_push($this->data['requirement']
-                  , $this->requirementRequest->requirement(['requirement_request.order_id'=> $orderId
-                                                          , 'requirement_request.order_detail_id' => $detail['id']])->findAll());
+                  , $this->requirementRequest->requirement(['where' => ['requirement_request.order_id'=> $orderId
+                                                                        , 'requirement_request.order_detail_id' => $detail['id']]])
+                                              ->findAll());
       endforeach;
     endif;
 
@@ -490,57 +491,82 @@ class Orders extends BaseController {
   }
 
   public function inventoryEdit() {
-    $params = $this->request->getPost('detail');
-    $orderParams = $this->request->getPost('order');
+    $details = $this->request->getPost('detail');
+    $requirement = $this->request->getPost('requirement');
+    $order = $this->request->getPost('order');
+    $packaging = $this->request->getPost('packaging');
 
-    print_r($orderParams);
-    echo "<br/><Br/>";
-    // // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
-    if ( !empty($params) ) {
-      foreach( $params AS $param ) :        
-        if ( !empty($param['detail']) ) {
-          if ( !empty($param['detail']['id']) && isset($param['detail']['id']) )  {
-            $detailID = $param['detail']['id'];
-            unset($param['detail']['id']);
+    print_r($details);
+    echo "<Br/><Br/>";
+    print_r($requirement);
+    echo "<Br/><Br/>";
+    print_r($order);
+    echo "<Br/><Br/>";
+    print_r($packaging);
+    echo "<Br/><Br/>";
+
+    // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
+    if ( !empty($details) ) {
+      foreach( $details AS $detail ) :
+        if ( !empty($detail) ) {
+          print_r($detail);
+          echo "<br/>";
+          unset($detail['request_amount']);
+          if ( !empty($detail['id']) && isset($detail['id']) )  {
+            $detailID = $detail['id'];
+            unset($detail['id']);
           }
 
-          if ( empty($param['detail']['order_excepted']) && !isset($param['detail']['order_excepted'])) {
-            if ( $param['detail']['order_excepted_check'] == 1 ) $param['detail']['order_excepted'] = 0;
-            else unset($param['detail']['order_excepted_check']);
-          }
-
-          if ( $param['detail']['prd_order_qty'] != $param['detail']['prd_change_qty'] ) {
-            unset($param['detail']['prd_order_qty']);
-            $param['detail']['prd_qty_changed'] = 1;
+          if ( empty($detail['order_excepted_check']) ) {
+            unset($detail['order_excepted_check']);
+            unset($detail['order_excepted']);
           } else {
-            unset($param['detail']['prd_order_qty']);
-            unset($param['detail']['prd_change_qty']);
+            if ( empty($detail['order_excepted']) ) {
+              $detail['order_excepted'] = 0;
+            } else {
+              unset($detail['prd_price_changed']);
+              unset($detail['prd_qty_changed']);
+            }
           }
 
-          if ( $param['detail']['prd_price'] != $param['detail']['prd_change_price'] ) {
-            unset($param['detail']['prd_price']);
-            $param['detail']['prd_price_changed'] = 1;
-          } else {
-            unset($param['detail']['prd_price']);
-            unset($param['detail']['prd_change_price']);
+          if ( empty($detail['prd_price_changed']) ) {
+            unset($detail['prd_price_changed']);
+            unset($detail['prd_change_price']);
           }
 
-          // if ( !empty($param['detail']) ) {
-          //   $param['detail']['changed_manager'] = session()->userData['idx'];
-          //   $param['detail']['id'] = $detailID;
+          if ( empty($detail['prd_qty_changed']) ) {
+            unset($detail['prd_qty_changed']);
+            unset($detail['prd_change_qty']);
+          }
 
-          //   $this->orderDetail->save($param['detail']);
+          print_r($detail);
+          echo "<Br/><br/>";
+          // if ( !empty($detail) ) {
+          //   $detail['changed_manager'] = session()->userData['idx'];
+          //   $detail['id'] = $detailID;
+
+          //   $this->orderDetail->save($detail);
           // }
         }
-        
-        if ( !empty($param['requirement']) ) {
-          
-        }
-        print_r($param);
-        echo "<br/><br/>";
       endforeach;
-    } else {
-      return redirect()->to(site_url(previous_url()))->with('error', 'input date error');
+    // } else {
+    //   return redirect()->to(site_url(previous_url()))->with('error', 'input date error');
+    }
+
+    if ( !empty($requirement) ) {
+      foreach($requirement AS $require) :
+        $this->requirementRequest->save($require);
+      endforeach;
+    }
+
+    if ( !empty($order) ) {
+      // if ( !empty($packaging) ) {      
+        if ( array_key_exists('id', $order) ) {
+          if ( $order['request_amount'] != $order['inventory_fixed_amount'] ) {
+              $this->order->save($order);
+          }
+        }
+      // }
     }
   }
 

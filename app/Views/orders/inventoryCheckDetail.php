@@ -33,22 +33,22 @@
           <input type='hidden' 
                 name='order[inventory_fixed_amount]' 
                 value='<?=$order['inventory_fixed_amount']?>'>
-          <?=$order['currency_sign']. number_format($order['request_amount'], $order['currency_float'])?> 
-          / <?=$order['currency_sign']. number_format($order['inventory_fixed_amount'], $order['currency_float'])?>
+          <span><?=$order['currency_sign']. number_format($order['request_amount'], $order['currency_float'])?></span>
+          / <?=$order['currency_sign']?><span class='inventory_fixed_amount'><?=number_format($order['inventory_fixed_amount'], $order['currency_float'])?></span>
         </div>
       </div>
     </div>
     <div class='mt-3 d-flex flex-column'>
       <div class='text-end mb-2'>
-        <?php if ( !empty($nextPackaging) ) : 
-          print_r($nextPackaging);?>
+        <?php if ( !empty($nextPackaging) ) : ?>
         <label class='text-bg-danger'>
-          <input type='checkbox' name='packaging[]' class='value-change me-1'>
+          <input type='hidden' class='packaging' data-name='packaging[status_id]' value='<?=$nextPackaging['idx']?>'>
+          <input type='hidden' class='packaging' data-name='packaging[packaging_id]' value='<?=$nextPackaging['packaging_id']?>'>
+          <input type='checkbox' class='packaging_check value-change me-1' data-target='.packaging'>
           재고 요청 확인 완료
         </label>
-        <?php endif;?>
         <button class='btn btn-primary'>저장</button>
-        <!-- <button class='btn btn-primary confirm'>확정</button> -->
+        <?php endif;?>
       </div>
       <table>
         <thead>
@@ -71,10 +71,10 @@
         <tbody>
         <?php if ( !empty($details) ) : 
           foreach ($details AS $i => $detail ) :?>
-          <tr class='detail_items'>
+          <tr class='detail_items <?=$detail['order_excepted'] ? 'bg-danger bg-opacity-10' : ''?>'>
             <td>
               <?=$i + 1?>
-              <input type='hidden' name='detail[<?=$i?>][detail][id]' value='<?=$detail['id']?>'>
+              <input type='hidden' name='detail[<?=$i?>][id]' value='<?=$detail['id']?>'>
             </td>
             <td><?=strtoupper(htmlspecialchars(stripslashes($detail['brand_name'])))?></td>
             <td>
@@ -97,29 +97,31 @@
               <?=$detail['currency_sign']?>
               <input type='text'
                     data-compare-value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>'
-                    data-compare-target='detail[<?=$i?>][detail][prd_price_changed]'
-                    name='detail[<?=$i?>][detail][prd_change_price]' 
+                    data-compare-target='detail[<?=$i?>][prd_price_changed]'
+                    class='request-amount-change prd-price'
+                    name='detail[<?=$i?>][prd_change_price]' 
                     value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>' 
                     style='width: 5rem;'>
             </td>
             <td>
               <input type='text'
                     data-compare-value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
-                    data-compare-target='detail[<?=$i?>][detail][prd_qty_changed]'
-                    name='detail[<?=$i?>][detail][prd_change_qty]' 
+                    data-compare-target='detail[<?=$i?>][prd_qty_changed]'
+                    class='request-amount-change prd-qty'
+                    name='detail[<?=$i?>][prd_change_qty]' 
                     value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
                     style='width: 3rem;'>
             </td>
             <td>
               <label class='d-flex flex-row align-items-center justify-content-center'>
                 <input type='checkbox'
-                      class='value-change me-1'
+                      class='value-change order_excepted  me-1'
                       data-compare-value='<?=$detail['order_excepted']?>'
-                      data-compare-target='detail[<?=$i?>][detail][order_excepted_check]'
+                      data-compare-target='detail[<?=$i?>][order_excepted_check]'
                       data-cancel-parent='.detail_items'
-                      data-cancel-target='input[name="detail[<?=$i?>][detail][request_amount]"]'
+                      data-cancel-target='.request-subtotal'
                       data-cancel-value='0'
-                      name='detail[<?=$i?>][detail][order_excepted]'
+                      name='detail[<?=$i?>][order_excepted]'
                       value='<?=$detail['order_excepted']?>'
                       <?=$detail['order_excepted'] == true ? 'checked': ''?>>
                 <span>취소</span>
@@ -129,21 +131,17 @@
               <?=$detail['currency_sign']?>
               <?php 
                 $qty = 0; $price = 0;
-                if ( $detail['order_excepted'] ) {
-                  echo 0;
-                } else {
-                  if ( $detail['prd_qty_changed'] ) {
-                    $qty = $detail['prd_change_qty'];
-                  } else $qty = $detail['prd_order_qty'];
+                if ( $detail['prd_qty_changed'] ) {
+                  $qty = $detail['prd_change_qty'];
+                } else $qty = $detail['prd_order_qty'];
 
-                  if ( $detail['prd_price_changed'] ) {
-                    $price = $detail['prd_change_price'];
-                  } else $price = $detail['prd_price'];
-                }
+                if ( $detail['prd_price_changed'] ) {
+                  $price = $detail['prd_change_price'];
+                } else $price = $detail['prd_price'];
               ?>
               <input type='text' 
                 class='text-end bg-dark bg-opacity-10 request-subtotal'
-                name='detail[<?=$i?>][detail][request_amount]'
+                data-name='order[request_amount]'
                 <?php if ( $detail['order_excepted'] ) : ?>
                 value='0.00'
                 <?php else: ?>
@@ -169,17 +167,18 @@
                       <!-- <label class='d-flex flex-row' style='font-size: 0.7rem;'>
                         <input class='value-change me-1' 
                               type='checkbox' 
-                              name='detail[<?=$i?>][requirement][<?=$j?>][requirement_check]'
+                              name='requirement[<?=$j?>][requirement_check]'
                               value='<?=$require['requirement_check']?>'
                               <?=$require['requirement_check'] == true ? 'checked' : ''?>>
                         확인요청
                       </label> -->
                     </div>
+                    <input type='hidden' name='requirement[<?=$j?>][idx]' value='<?=$require['idx']?>'>
                     <textarea class='w-100' 
-                          name='detail[<?=$i?>][requirement][<?=$j?>][requirement_reply]'
+                          name='requirement[<?=$j?>][requirement_reply]'
                           placeholder='<?=$require['requirement_detail']?>'
                           row='2'
-                          style='height: 2rem;'></textarea>
+                          style='height: 2rem;'><?=$require['requirement_reply']?></textarea>
                   </div>
                   <?php endif; ?>
                 <?php endforeach;

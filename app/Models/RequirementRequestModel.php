@@ -18,9 +18,24 @@ class RequirementRequestModel extends Model {
   protected $updatedField = 'updated_at';
   protected $dateFormat = 'datetime';
 
-  public function requirement($where = []) {
-    return $this->join('requirement', 'requirement.idx = requirement_request.requirement_id')
+  protected $beforeFind = ['beforeFindMethod'];
+
+  public $where = [];
+  public $orderBy = '';
+
+  protected function beforeFindMethod(Array $data) {
+    log_message('info', json_encode($data));
+    return $data;
+  }  
+  
+  public function requirement(Array $data) {
+    if ( array_key_exists('where', $data) ) $this->where = $data['where'];
+    if ( array_key_exists('orderBy', $data) ) $this->orderby = $data['orderBy'];
+
+    return $this->select("{$this->table}.*")
+                ->select('requirement.requirement_en, requirement.requirement_kr, requirement.placeholder')
+                ->join('requirement', 'requirement.idx = requirement_request.requirement_id')
                 ->join('orders_detail', 'orders_detail.id = requirement_request.order_detail_id')
-                ->where($where);
+                ->where($this->where);
   }
 }
