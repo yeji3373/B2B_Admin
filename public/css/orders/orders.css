@@ -23,3 +23,6 @@ main .invoice-edit .pi-edit-container > table td { width: 17%; position: relativ
 main .invoice-edit .pi-edit-container > table td input[type='text'] { width: 60%; }
 
 .color-transparent { color: transparent !important; }
+
+
+.requirement-group > div:not(:last-child) { margin-right: 0.3rem; }

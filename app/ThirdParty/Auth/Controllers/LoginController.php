@@ -87,11 +87,11 @@ class LoginController extends Controller
 		// login OK, save user data to session
 		$this->session->set('isLoggedIn', true);
 		$this->session->set('userData', [
-		    'id' 			  => $user['id'],
-        'idx'       => $user['idx'],
-        'role'      => $user['role_id'],
-		    'name' 			=> $user['name'],
-		    'email' 		=> $user['email'],
+		    'id' 			    => $user['id'],
+        'idx'         => $user['idx'],
+        'role_group'  => $user['role_group_id'], // 권한수정하기
+		    'name' 			  => $user['name'],
+		    'email' 		  => $user['email'],
 		]);
 
     // return redirect()->to('account');

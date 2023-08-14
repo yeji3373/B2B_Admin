@@ -16,6 +16,12 @@ $(document).ready(function() {
       // console.log("달력이 열릴 때");
     }
   }
+  
+  if ( $('input[name=start_date]').length && $('input[name=end_date]') ) {
+    flatpickr('input[name=start_date]', $.merge({'defaultDate': new Date().setDate(new Date().getDate() - 7)}, optional_config));
+    flatpickr('input[name=end_date]', optional_config);
+  }
+  
 }).on('click', '.btn-pi', function() {
   if ( $(this).data('type') == '' || $(this).data('type').length == 0) return;
 

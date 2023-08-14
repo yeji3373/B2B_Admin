@@ -10,6 +10,7 @@ class PackagingStatusModel extends Model {
 
   protected $allowedFields = [
     'order_by', 'status_name', 'status_name_en',
+    'next_step', 'has_email', 'email_id',
     'display', 'invoice_display', 'available'
   ];
 

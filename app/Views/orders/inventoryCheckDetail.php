@@ -39,27 +39,36 @@
       </div>
     </div>
     <div class='mt-3 d-flex flex-column'>
-      <div class='text-end mb-2'>
-        <?php if ( !empty($nextPackaging) ) : ?>
-        <label class='text-bg-danger'>
-          <input type='hidden' class='packaging' data-name='packaging[status_id]' value='<?=$nextPackaging['idx']?>'>
-          <input type='hidden' class='packaging' data-name='packaging[packaging_id]' value='<?=$nextPackaging['packaging_id']?>'>
-          <input type='checkbox' class='packaging_check value-change me-1' data-target='.packaging'>
-          재고 요청 확인 완료
-        </label>
+      <div class='text-end mb-2 px-0 d-flex flex-row'>
+        <?php if ( !empty($packagingStatus) && !empty($packaging_id) ) : ?>
+        <div class='w-30 p-0 pe-2'>
+          <input type='hidden' name='packaging[packaging_id]' value='<?=$packaging_id?>'>
+          <select class='form-select packaging-status' name='packaging[status_id]'>
+            <?php foreach ($packagingStatus AS $p => $pStatus) :?>
+            <option value='<?=$pStatus['idx']?>' 
+                    data-has-email='<?=$pStatus['has_email']?>'
+                    data-email-id='<?=$pStatus['email_id']?>'
+                    <?=!empty($pStatus['selected']) ? 'selected' : ''?>>
+              <?=$pStatus['status_name']?>
+            </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <button class='email-send btn btn-primary d-none me-1'>메일보내기</button>
+        <?php endif; ?>
         <button class='btn btn-primary'>저장</button>
-        <?php endif;?>
       </div>
       <table>
         <thead>
           <tr>
             <th rowspan='2' style='width: 2%;'>No.</th>
             <th rowspan='2' style='width: 4%;'>브랜드</th>
-            <th colspan='4' style='width: auto;'>product</th>
+            <th colspan='4' style='width: auto;'>제품정보</th>
             <th rowspan='2' style='width: 4%;'>주문수량</th>
             <th rowspan='2' style='width: 4%;'>주문취소(제외)</th>
             <th rowspan='2' style='width: 4%;'>주문/요청 총금액</th>
             <th rowspan='2' style='width: auto;'>요청사항</th>
+            <th rowspan='2' style='width: 10%;'>기타</th>
           </tr>
           <tr>
             <th style='width: 3%;'>바코드</th>
@@ -94,23 +103,34 @@
               </div>
             </td>
             <td>
-              <?=$detail['currency_sign']?>
-              <input type='text'
-                    data-compare-value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>'
-                    data-compare-target='detail[<?=$i?>][prd_price_changed]'
-                    class='request-amount-change prd-price'
-                    name='detail[<?=$i?>][prd_change_price]' 
-                    value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>' 
-                    style='width: 5rem;'>
+              <div class='d-flex flex-column text-end'>
+                <p class='<?=!empty($detail['prd_price_changed']) ? 'text-decoration-line-through' : ''?>'><?=$detail['currency_sign'].$detail['prd_price']?></p>
+                <p>
+                  <?=$detail['currency_sign']?>
+                  <input type='number'
+                        step='any'
+                        data-compare-value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>'
+                        data-compare-target='detail[<?=$i?>][prd_price_changed]'
+                        class='request-amount-change prd-price'
+                        name='detail[<?=$i?>][prd_change_price]' 
+                        value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>' 
+                        style='width: 5rem;'>
+                </p>
             </td>
             <td>
-              <input type='text'
-                    data-compare-value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
-                    data-compare-target='detail[<?=$i?>][prd_qty_changed]'
-                    class='request-amount-change prd-qty'
-                    name='detail[<?=$i?>][prd_change_qty]' 
-                    value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
-                    style='width: 3rem;'>
+              <div class='d-flex flex-column text-end'>
+                <p class='<?=!empty($detail['prd_qty_changed']) ? 'text-decoration-line-through' : ''?>'><?=$detail['prd_order_qty']?></p>
+                <p>
+                  <input type='number'
+                        step='any'
+                        data-compare-value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
+                        data-compare-target='detail[<?=$i?>][prd_qty_changed]'
+                        class='request-amount-change prd-qty'
+                        name='detail[<?=$i?>][prd_change_qty]' 
+                        value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
+                        style='width: 3rem;'>
+                </p>
+              </div>
             </td>
             <td>
               <label class='d-flex flex-row align-items-center justify-content-center'>
@@ -151,12 +171,12 @@
                 style='width: 5rem;'
                 readonly>
             </td>
-            <td class='px-0 w-20p'>
-              <div class='d-flex flex-row flex-wrap justify-content-between w-100'>
+            <td class='w-20p'>
+              <div class='d-flex flex-row flex-wrap w-100 requirement-group'>
                 <?php if( !empty($requirement[$i]) ) :
                   foreach ($requirement[$i] AS $j => $require ) : ?>
                   <?php if ( !$require['requirement_check'] ) : ?>
-                  <div class='d-flex flex-column mx-1' style='width: 10rem;'>
+                  <div class='d-flex flex-column w-30p'>
                     <div class='text-start d-flex flex-row flex-nowrap justify-content-between'>
                       <p class='fw-bold' 
                             data-toggle='tooltip'
@@ -164,14 +184,6 @@
                             title='<?=$require['requirement_detail']?>'>
                         <?=$require['requirement_kr']?>
                       </p>
-                      <!-- <label class='d-flex flex-row' style='font-size: 0.7rem;'>
-                        <input class='value-change me-1' 
-                              type='checkbox' 
-                              name='requirement[<?=$j?>][requirement_check]'
-                              value='<?=$require['requirement_check']?>'
-                              <?=$require['requirement_check'] == true ? 'checked' : ''?>>
-                        확인요청
-                      </label> -->
                     </div>
                     <input type='hidden' name='requirement[<?=$j?>][idx]' value='<?=$require['idx']?>'>
                     <textarea class='w-100' 
@@ -184,6 +196,12 @@
                 <?php endforeach;
                 endif; ?>
               </div>
+            </td>
+            <td>
+              <textarea class='w-100'
+                  name='detail[<?=$i?>][detail_desc]'
+                  style='height: 2rem;'
+                  row='2'><?=$detail['detail_desc']?></textarea>
             </td>
           </tr>
         <?php endforeach;

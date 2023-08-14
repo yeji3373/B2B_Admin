@@ -9,7 +9,7 @@ class ManagerModel extends Model {
   protected $useSoftDeletes = false;
 
   protected $allowedFields = [
-    'rol_id', 'region_id', 'id', 'name', 'email', 'contact_us', 'active'
+    'role_id', 'role_group_id', 'region_id', 'id', 'name', 'email', 'contact_us', 'active'
   ];
 
   protected $useTimestamps = true;

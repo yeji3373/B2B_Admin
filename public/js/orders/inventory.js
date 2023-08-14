@@ -1,11 +1,23 @@
 $(document).ready(function() {
   inventoryAmount();
+
+  if ( $('.packaging-status').length ) {
+    if ( typeof $('.packaging-status option:selected').data('hasEmail') != 'undefined'
+        && $('.packaging-status option:selected').data('hasEmail') == true ) {
+      $(".email-send").removeClass('d-none');
+    }
+  }
 }).on('click', '.inventory-detail-container .btn', function(e) {
-  if ( $('input[name="packaging[status_id]"]').val() == 1 ) {
-    if ( !confirm('재고 요청 완료 후에는 취소가 불가능합니다.') ) {
+  if ( $(this).hasClass('email-send') ) {
+    return false;
+  }
+  if ( $('.packaging_check').val() == true ) {
+    let packagingCheck = confirm('재고 요청 완료 후에는 취소가 불가능합니다.\n계속 진행하겠습니까?');
+    if ( !packagingCheck ) {
       return false;
     }
-  }  
+  }
+
   Array.from($(".detail_items")).forEach((v, i) => {
     Array.from($(v).find('input')).forEach((value) => {
       if ( typeof $(value).data('compareTarget') != 'undefined' ) {
@@ -62,18 +74,25 @@ $(document).ready(function() {
     }
     inventoryAmount();
   }
-}).on('keyup', '.request-amount-change', function() {
-  $find = null, subtotal = 0;
+}).on('keyup', '.request-amount-change', function(e) {
+  $find = null, subtotal = 0, time = 1000;
 
   if ( $(this).hasClass('prd-price') ) $find = $(this).closest('tr').find('.prd-qty');
   if ( $(this).hasClass('prd-qty') ) $find = $(this).closest('tr').find('.prd-price');
 
   if ( $(this).val().length > 1 && $(this).closest('tr').find('.order_excepted').val() == 0) {
+    if ( e.keyCode == 13 ) time = 0;
     setTimeout(() => {
+      if ( $(this).val() == '' ) $(this).val(0);
       subtotal = parseFloat($(this).val()) * parseFloat($find.val());
       $(this).closest('tr').find('.request-subtotal').val(subtotal.toFixed(2));
       inventoryAmount();
-    }, 1000);
+    }, time);
+  }
+}).on('change', '.packaging-status', function() {
+    if ( typeof $(this).find('option:selected').data('hasEmail') != 'undefined'
+          && $(this).find('option:selected').data('hasEmail') == true ) {
+    $(".email-send").removeClass('d-none');
   }
 });
 

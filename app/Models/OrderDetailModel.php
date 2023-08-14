@@ -15,7 +15,8 @@ class OrderDetailModel extends Model {
     'prd_change_qty', 'prd_qty_changed',
     'prd_change_price', 'prd_price_changed',
     'changed_manager', 'prd_discount',
-    'margin_rate_id', 'status_id', 'expiration_date'
+    'margin_rate_id', 'status_id', 'expiration_date',
+    'detail_desc'
   ];
 
   protected $useTimestamps = true;
@@ -36,5 +37,10 @@ class OrderDetailModel extends Model {
         ->join('product', 'product.id = orders_detail.prd_id')
         ->join('brand', 'brand.brand_id = product.brand_id');
     return $this;
+  }
+
+  public function detailReasonJoin() {
+    return $this->join("order_detail_details', 'order_detail_details.detail_id = {$this->table}.id")
+                ->join('order_reason', 'order_reason.idx = order_detail_details.detail_reason_idx');
   }
 }

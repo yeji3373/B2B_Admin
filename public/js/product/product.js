@@ -158,7 +158,6 @@ $(document).on('focusin', '[name="product_price[supply_price]"]', function() {
 }).on('keyup', 'form.form-edit', function(e) {
   
 }).on('change', '[name="product_price[not_calculating_margin]"]', function() {
-  console.log($(this).val());
   if ( $(this).val() == 1 ) {
     // if ( $('[name="product_price[supply_price]"]').val() == $('[name="product_price[supply_price]"]').data('old') ) {
     //   if ( confirm('가격 변경이 없습니다. 그래도 진행하시겠습니까?') ) {
