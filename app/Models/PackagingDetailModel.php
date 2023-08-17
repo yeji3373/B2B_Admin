@@ -9,7 +9,7 @@ class PackagingDetailModel extends Model {
   protected $useSoftDeletes = true;
 
   protected $allowedFields = [
-    'packaging_id', 'status_id', 'in_progress', 'complete'
+    'packaging_id', 'status_id', 'in_progress', 'complete', 'send_email'
   ];
 
   protected $useTimestamps = true;

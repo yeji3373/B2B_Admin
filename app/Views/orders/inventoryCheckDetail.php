@@ -42,18 +42,21 @@
       <div class='text-end mb-2 px-0 d-flex flex-row'>
         <?php if ( !empty($packagingStatus) && !empty($packaging_id) ) : ?>
         <div class='w-30 p-0 pe-2'>
-          <input type='hidden' name='packaging[packaging_id]' value='<?=$packaging_id?>'>
-          <select class='form-select packaging-status' name='packaging[status_id]'>
+          <input type='hidden' class='package' data-name='packaging[packaging_id]' value='<?=$packaging_id?>'>
+          <select class='form-select package packaging-status' data-name='packaging[status_id]'>
             <?php foreach ($packagingStatus AS $p => $pStatus) :?>
             <option value='<?=$pStatus['idx']?>' 
                     data-has-email='<?=$pStatus['has_email']?>'
                     data-email-id='<?=$pStatus['email_id']?>'
+                    data-current-step='<?=!empty($pStatus['selected']) ? '1' : '0'?>'
                     <?=!empty($pStatus['selected']) ? 'selected' : ''?>>
               <?=$pStatus['status_name']?>
             </option>
             <?php endforeach; ?>
           </select>
         </div>
+        <!-- 메일 보내기 성공했을 때만 활성화. 성공여부만 체크할 것인가... 아니면 값을 갖고 있을까도 고민하기-->
+        <input type='hidden' data-name='packaging[send_email]' value='1'>
         <button class='email-send btn btn-primary d-none me-1'>메일보내기</button>
         <?php endif; ?>
         <button class='btn btn-primary'>저장</button>

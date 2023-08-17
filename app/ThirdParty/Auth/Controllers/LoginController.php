@@ -80,6 +80,9 @@ class LoginController extends Controller
 		}
 
     if ($user['role_id'] > 2 ) {
+      if ( $user['role_id'] == 1 ) {
+        // 최고 상단 권한. 권한 그룹 관리 관련 수정 필요
+      }
       // 접근권한없음.
       return redirect()->to('login')->withInput()->with('error', lang('Auth.wrongCredentials'));
     }
@@ -89,7 +92,7 @@ class LoginController extends Controller
 		$this->session->set('userData', [
 		    'id' 			    => $user['id'],
         'idx'         => $user['idx'],
-        'role_group'  => $user['role_group_id'], // 권한수정하기
+        'department'  => $user['department_id'],
 		    'name' 			  => $user['name'],
 		    'email' 		  => $user['email'],
 		]);

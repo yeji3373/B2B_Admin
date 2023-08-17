@@ -1,9 +1,11 @@
+let currentStepIndex = null;
 $(document).ready(function() {
   inventoryAmount();
 
   if ( $('.packaging-status').length ) {
+    currentStepIndex = $('.packaging-status option').index($('.packaging-status option:selected'));
     if ( typeof $('.packaging-status option:selected').data('hasEmail') != 'undefined'
-        && $('.packaging-status option:selected').data('hasEmail') == true ) {
+            && $('.packaging-status option:selected').data('hasEmail') == true ) {
       $(".email-send").removeClass('d-none');
     }
   }
@@ -90,9 +92,24 @@ $(document).ready(function() {
     }, time);
   }
 }).on('change', '.packaging-status', function() {
-    if ( typeof $(this).find('option:selected').data('hasEmail') != 'undefined'
-          && $(this).find('option:selected').data('hasEmail') == true ) {
-    $(".email-send").removeClass('d-none');
+  if ( $('.package').length ) {
+    if ( currentStepIndex >= $('.packaging-status option').index($('.packaging-status option:selected')) )  {
+      $('.package').removeAttr('name');
+    } else {
+      Array.from($('.package')).forEach((v) => {
+        if ( typeof $(v).data('name') != 'undefined' ) {
+          $(v).attr('name', $(v).data('name'));
+        }
+      });
+    } 
+  }
+
+  if ( typeof $(this).find('option:selected').data('hasEmail') != 'undefined') {
+    if ($(this).find('option:selected').data('hasEmail') == true ) {
+      $(".email-send").removeClass('d-none');
+    } else {
+      $(".email-send").addClass('d-none');
+    }
   }
 });
 
