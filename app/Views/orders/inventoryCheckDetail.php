@@ -43,12 +43,14 @@
         <?php if ( !empty($packagingStatus) && !empty($packaging_id) ) : ?>
         <div class='w-30 p-0 pe-2'>
           <input type='hidden' class='package' data-name='packaging[packaging_id]' value='<?=$packaging_id?>'>
+          <input type='hidden' class='package packaging-order-by' data-name='packaging[order_by]'>
           <select class='form-select package packaging-status' data-name='packaging[status_id]'>
             <?php foreach ($packagingStatus AS $p => $pStatus) :?>
             <option value='<?=$pStatus['idx']?>' 
                     data-has-email='<?=$pStatus['has_email']?>'
                     data-email-id='<?=$pStatus['email_id']?>'
                     data-current-step='<?=!empty($pStatus['selected']) ? '1' : '0'?>'
+                    data-order-by='<?=$pStatus['order_by']?>'
                     <?=!empty($pStatus['selected']) ? 'selected' : ''?>>
               <?=$pStatus['status_name']?>
             </option>

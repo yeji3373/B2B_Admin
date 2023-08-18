@@ -13,7 +13,8 @@
       <div class='form-group me-1'>
         <label>검색기간(주문)</label>
         <div>
-          <input type='text' name='start_date'> ~ <input type='text' name='end_date'>
+          <input type='text' name='start_date' value='<?=!empty($_GET['start_date']) ? $_GET['start_date'] : ''?>'>
+           ~ <input type='text' name='end_date' value='<?=!empty($_GET['end_date']) ? $_GET['end_date'] : ''?>'>
         </div>
       </div>
       <div class='form-group me-1'>
@@ -22,7 +23,7 @@
       <div class='form-group'>
         <label>주문현황</label>
         <select class='form-select form-select-sm' name='order_status'>
-          <option>전체</option>
+          <option value=''>전체</option>
           <?php if ( !empty($orderStatus) ) : 
             foreach ( $orderStatus AS $status ) : ?>
             <option value='<?=$status['idx']?>' <?=!empty($_GET['order_status']) ? 'selected' : ''?> ><?=$status['status_name']?></option>

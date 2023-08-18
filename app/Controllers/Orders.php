@@ -66,16 +66,18 @@ class Orders extends BaseController {
         $this->order->where('packaging_status.idx', $params['order_status']);
       }
 
-      if ( !empty($params['']) ) {}
+      if ( !empty($params['start_date']) && !empty($params['end_date']) ) {
+        $this->order->where('DATE(orders.created_at) >=', $params['start_date'] );
+        $this->order->where('DATE(orders.created_at) <=', $params['end_date'] );
+      }
     }
 
     $this->data['orderStatus'] = $this->packagingStatus->where('available', 1)->orderBy('order_by ASC')->findAll();
     $this->data['orders'] = $this->getOrders()
-                              ->where('orders.available', 1)
                               ->orderBy('orders.id DESC')
                               ->paginate(15);
     $this->data['orderPager'] = $this->getOrders()->pager;
-    
+
     return $this->menuLayout('orders/main', $this->data);
   }
 
@@ -533,66 +535,62 @@ class Orders extends BaseController {
       $nextStepStatus = [];
       $hasNextStep = false;
 
-      $packagingDetails = $this->packagingDetail->where(['packaging_id' => $packaging['packaging_id']])->orderBy('status_id DESC')->findAll();      
+      $packagingDetails = $this->packagingDetail
+                              ->packagingDetailJoinStatus(['packaging_detail.packaging_id' => $packaging['packaging_id']
+                                                          , 'complete' => 0])
+                              ->findAll();
+
       if ( !empty($packagingDetails) ) {
         foreach( $packagingDetails AS $i => $packagingDetail ) {
-          if ( $packagingDetail['complete'] == 0 ) {
-            if ( $i > 0 ) {
-              if ( $packagingDetailIds[$i - 1]['status_id'] == $packagingDetail['status_id'] ) {
-                $this->packagingDetail->where(['idx' => $packagingDetail['idx']])->delete();
-                return;
-              }
-            }
-            array_push($packagingDetailIds, $packagingDetail);
+          // 중복삭제 할 것
+          if ( $packagingDetail['order_by'] < $packaging['order_by'] ) {
+            $this->packagingDetail->save(['idx' => $packagingDetail['idx'], 'complete' => 1]);
           }
         }
+      } 
 
-        if ( !is_null($packagingDetailIds) ) {
-          $packagingStatus = $this->packagingStatus->where(['available' => 1])->orderBy('order_by ASC')->findAll();
-          if ( !empty($packagingStatus) ) {
-            foreach($packagingStatus AS $p => $pStatus) {
-              if ( $pStatus['idx'] == $packaging['status_id'] ) {
-                if ( !empty($pStatus['next_step']) && !is_null($pStatus['next_step_index']) ) {
-                  $hasNextStep = true;
-                  $complete = [];
-                  
-                  for($i = 0; $i < $pStatus['next_step']; $i++ ) {
-                    if ( $i < ($pStatus['next_step'] - 1) ) $complete = ['complete' => 1];
-                    else $complete = [];
-                    $nextStepStatus = array_merge(['packaging_id' => $packaging['packaging_id']
-                                                  , 'status_id' => $packagingStatus[$pStatus['next_step_index']]['idx']]
-                                          , $complete);
-                  }
-                }
-                break;
-              }
-            }
-          }
-
-          foreach( $packagingDetailIds AS $packagingDetailId ) {
-            if ( !$this->packagingDetail->save(['idx'=> $packagingDetailId, 'complete' => 1]) ) {
-              return redirect()->back()->with('error', 'complete 처리중 오류 발생');
-              // complete 처리 안됨.
-            }
-          }
-
-          if ( empty($this->packagingDetail->where($packaging)->findAll()) ) {
-            if ( $hasNextStep ) $packaging['complete'] = 1;
-            if ( $this->packagingDetail->save($packaging) ) {
-              if ( $hasNextStep ) {
-                if ( !$this->packagingDetail->save($nextStepStatus) ) {
-                  return redirect()->back()->with('error', 'insert error');
+      $packagingDetailIds = $this->packagingDetail
+                                ->packagingDetailJoinStatus(['packaging_detail.packaging_id' => $packaging['packaging_id']
+                                                            , 'status_id' => $packaging['status_id']])
+                                ->findAll();    
+      
+      if ( empty($packagingDetailIds) ) {
+        $packagingStatus = $this->packagingStatus->where(['available' => 1])->orderBy('order_by ASC')->findAll();
+        if ( !empty($packagingStatus) ) {
+          foreach($packagingStatus AS $p => $pStatus) {
+            if ( $pStatus['idx'] == $packaging['status_id'] ) {
+              if ( !empty($pStatus['next_step']) && !is_null($pStatus['next_step_index']) ) {
+                $hasNextStep = true;
+                $complete = [];                
+                for($i = 0; $i < $pStatus['next_step']; $i++ ) {
+                  if ( $i < ($pStatus['next_step'] - 1) ) $complete = ['complete' => 1];
+                  else $complete = [];
+                  $nextStepStatus = array_merge(['packaging_id' => $packaging['packaging_id']
+                                                , 'status_id' => $packagingStatus[$pStatus['next_step_index']]['idx']]
+                                        , $complete);
                 }
               }
-            } else return redirec()->back()->with('error', 'packaging insert error');
+              break;
+            }
           }
-        } else {
-          // complete이 0인 값이 없을 때
-          return redirect()->back()->with('errors', ['packaging' => 'packageing detail id is null']);
         }
-      } else {
-        // 주문에 해당하는 packaging detail 자체가 없음.
+        
+        if ( array_key_exists('order_by', $packaging) ) { unset($packaging['order_by']); }
+        
+        $tempDetail = $this->packagingDetail->where($packaging)->first();
+        if ( !empty($tempDetail) ) { $packaging['idx'] = $tempDetail['idx']; }
+        
+        if ( $hasNextStep ) $packaging['complete'] = 1;
+        if ( $this->packagingDetail->save($packaging) ) {
+          if ( $hasNextStep ) {
+            if ( !$this->packagingDetail->save($nextStepStatus) ) {
+              return redirect()->back()->with('error', 'insert error');
+            }
+          }
+        } else return redirec()->back()->with('error', 'packaging insert error');
       }
+    } else {
+      // 주문에 해당하는 packaging detail 자체가 없음.
     }
     return redirect()->back();
   }
@@ -634,7 +632,7 @@ class Orders extends BaseController {
                 }
               }
             }
-            $packagingStatus[$index]['selected'] = true;
+            // $packagingStatus[$index]['selected'] = true;
             array_push($status, $packagingStatus[$index]); // 현재단계
             array_push($status, $packagingStatus[$index + 1]); // 다음단계
           break;
@@ -662,8 +660,7 @@ class Orders extends BaseController {
                         , payment_method.payment
                         , payment_method.payment_val')
                 ->where('orders.available', 1)
-                ->where('packaging_detail.deleted_at', NULL);
-                // ->where(['packaging_detail.in_progress' => 1, 'packaging_detail.complete' => 0]);
+                ->where(['packaging_detail.in_progress' => 1, 'packaging_detail.complete' => 0]);
   }
 
   public function getOrder($orderId = null) {

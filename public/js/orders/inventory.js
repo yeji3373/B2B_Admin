@@ -8,6 +8,11 @@ $(document).ready(function() {
             && $('.packaging-status option:selected').data('hasEmail') == true ) {
       $(".email-send").removeClass('d-none');
     }
+    if ( typeof $('.packaging-status option:selected').data('orderBy') != 'undefined') {
+      if ( $('.packaging-status option:selected').data('orderBy') != '' ) {
+        $(".packaging-order-by").val($('.packaging-status option:selected').data('orderBy'));
+      }
+    }
   }
 }).on('click', '.inventory-detail-container .btn', function(e) {
   if ( $(this).hasClass('email-send') ) {
@@ -102,6 +107,12 @@ $(document).ready(function() {
         }
       });
     } 
+  }
+
+  if ( typeof $(this).find('option:selected').data('orderBy') != 'undefined') {
+    if ( $(this).find('option:selected').data('orderBy') != '' ) {
+      $(".packaging-order-by").val($(this).find('option:selected').data('orderBy'));
+    }
   }
 
   if ( typeof $(this).find('option:selected').data('hasEmail') != 'undefined') {
