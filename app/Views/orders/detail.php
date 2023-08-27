@@ -89,7 +89,7 @@
                 <input type='hidden' name='payment_status' value='<?=$receipt['payment_status']?>'>
                 <input type='hidden' name='payment_invoce_id' value='<?=$receipt['payment_invoice_id']?>'>
                 <input type='hidden' name='piControllType' value>
-                <?php if ( $order['payment'] == 'Paypal' && $order['order_check'] >= 0 && $receipt['payment_status'] == 0 ) : ?>
+                <?php if ( $order['payment'] == 'Paypal' && $receipt['payment_status'] == 0 ) : ?>
                 <div class='btn btn-sm btn-secondary btn-pi payment_status_check' data-type=''>결제현황 확인</div>
                 <?php endif ?>
                 <?php if ( $receipt['payment_status'] == 0 ) : ?>
@@ -267,7 +267,7 @@
           <colgroup>
             <col style='width: 8%;'>
             <col style='width: 8%;'>
-            <col style='width: 8%;'>
+            <!-- <col style='width: 8%;'> -->
             <col style='width: 8%;'>
             <col style='width: 8%;'>
           </colgroup>
@@ -275,7 +275,7 @@
             <tr>
               <th>결제수단</th>
               <th>주문금액</th>
-              <th>구간적용</th>
+              <!-- <th>구간적용</th> -->
               <th>배송비</th>
               <th>총 금액</th>
             </tr>
@@ -284,9 +284,9 @@
             <tr>
               <td><?=esc($order['payment'])?>
               <td><?=$order['currency_sign'] . number_format($order['order_amount'], $order['currency_float'])?></td>
-              <td><?=$order['currency_sign'] . number_format($order['discount_amount'], $order['currency_float'])?></td>
+              <!-- <td><?//=$order['currency_sign'] . number_format($order['fixed_amount'], $order['currency_float'])?></td> -->
               <td><?=$order['currency_sign'] . number_format($order['delivery_price'], $order['currency_float'])?></td>
-              <td><?=$order['currency_sign'] . number_format(($order['subtotal_amount'] + $order['delivery_price']), $order['currency_float'])?></td>
+              <td><?//=$order['currency_sign'] . number_format(($order['subtotal_amount'] + $order['delivery_price']), $order['currency_float'])?></td>
             </tr>
           </tbody>
         </table>
@@ -372,8 +372,16 @@
               <?=!empty($detail['stock_req']) && $detail['stock_req'] == 1 ? 'O' : ''?>
             </td>
             <td>
-              <input type='text' name='detail[<?=$i?>][prd_order_qty]' 
-                    class='form-control form-control-sm' value='<?=$detail['prd_order_qty'] - $detail['prd_changed_qty']?>'>
+              <input type='text' 
+                  class='form-control form-control-sm' 
+                  name='detail[<?=$i?>][prd_order_qty]' 
+                  value='<?php
+                    if ( !empty($detail['prd_qty_changed']) ) : 
+                      echo number_format($detail['prd_change_qty']);
+                    else:
+                      echo number_format($detail['prd_order_qty']);
+                    endif;
+                  ?>'>
             </td>
             <?php if ( $detail['order_excepted'] == 0 ) : ?>
             <td class='text-end'>

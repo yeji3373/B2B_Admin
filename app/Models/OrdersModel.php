@@ -11,7 +11,7 @@ class OrdersModel extends Model {
   protected $allowedFields = [
     'buyer_id', 'order_number', 'complete_payment',
     'request_amount', 'inventory_fixed_amount',
-    'order_amount', 'discount_amount', 'subtotal_amount', 
+    'order_amount', 'fixed_amount', 'subtotal_amount', 
     'currency_rate_idx', 'calc_currency_rate_id', 'currency_code', 
     'order_check', 'change_order_id',
     'payment_id', 'address_id'
@@ -33,6 +33,10 @@ class OrdersModel extends Model {
     return $this;
   }
 
+  public function orderDetailJoin() {
+    return $this->join('orders_detail', 'orders_detail.order_id = orders.id');
+  }
+
   public function packagingJoin() {
     return $this->join('packaging', 'packaging.order_id = orders.id')
                 ->join('packaging_detail', 'packaging_detail.packaging_id = packaging.idx AND packaging_detail.in_progress = 1 AND packaging_detail.complete = 0')
@@ -45,13 +49,16 @@ class OrdersModel extends Model {
                           FROM product
                             JOIN orders_detail ON orders_detail.prd_id = product.id
                           GROUP BY orders_detail.order_id) AS prd_weight'
-                        , 'prd_weight.order_id = orders.id', 'RIGHT')
-                ->join('( SELECT order_id, GROUP_CONCAT(receipt_type, ":", payment_status order by receipt_id) AS payment_status_group 
-                        FROM orders_receipt GROUP BY order_id ORDER BY receipt_id) AS receipt_group', 'receipt_group.order_id = orders.id', 'left outer');
+                        , 'prd_weight.order_id = orders.id', 'RIGHT');
   }
 
+  public function paymentStatusJoin() {
+    return $this->join('( SELECT order_id, GROUP_CONCAT(receipt_type, ":", payment_status order by receipt_id) AS payment_status_group 
+                  FROM orders_receipt GROUP BY order_id ORDER BY receipt_id) AS receipt_group', 'receipt_group.order_id = orders.id', 'LEFT OUTER');
+}
+
   public function deliveryJoin() {
-    return $this->select('CAST(delivery.delivery_price AS DOUBLE) AS delivery_price')
+    return $this->select('IFNULL(delivery.delivery_price, 0) AS delivery_price')
                 // ->select('SUM(CAST(IFNULL(delivery.delivery_price, 0) AS DOUBLE)) AS delivery_price')
                 ->join("( SELECT order_id, SUM(delivery_price) AS delivery_price
                           FROM delivery 

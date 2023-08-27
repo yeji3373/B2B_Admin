@@ -10,7 +10,8 @@ class RequirementRequestModel extends Model {
   
   protected $allowedFields = [
     'order_id', 'requirement_id', 'requirement_detail',
-    'requirement_reply', 'requirement_check'
+    'requirement_reply', 'requirement_check', 
+    'requirement_option_ids', 'requirement_selected_option_id'
   ];
 
   protected $useTimestamps = true;

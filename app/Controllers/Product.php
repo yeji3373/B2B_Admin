@@ -10,6 +10,7 @@ use App\Models\StockModel;
 use App\Models\ProductPriceModel;
 use App\Models\SupplyPriceModel;
 use App\Models\MarginModel;
+use App\Models\MarginRateModel;
 use Status\Config\Status;
 use DataFile\Controllers\DataFileController;
 use DataFile\Config\DataFile;
@@ -311,6 +312,7 @@ class Product extends BaseController {
       // 'file' => 'uploaded[file]|max_size[file,4096]|ext_in[file,csv],'
       'file' => 'uploaded[file]|max_size[file,4096]|ext_in[file,csv,xls,xlsx],'
     ];
+    $brand_id = NULL;
 
     if ( !$this->validate($validationRule)) {
       return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
@@ -318,25 +320,22 @@ class Product extends BaseController {
 
     if ( empty($this->request->getVar('brand_id')) ) {
       return redirect()->back()->withInput()->with('error', '브랜드 선택 안함');
-    }
+    } else $brand_id = $this->request->getvar('brand_id');
 
     if ( $this->request->getFile('file') ) {
       $file = $this->request->getFile('file');      
       $data = $this->dataFile->attachData($file);
 
-      // $fields = array_merge( $this->status->getHeader('product')['fields']
-      //                             , $this->status->getHeader('supplyPrice')['fields']
-      //                             , $this->status->getHeader('productSpq')['fields']);
       $fields = array_merge( $this->status->getHeader('product')['export']
                                   , $this->status->getHeader('supplyPrice')['export']
                                   , $this->status->getHeader('productSpq')['export']);
       array_unshift($fields, ['header'=> 'id', 'field' => 'id'], ['header' => 'Brand ID', 'field' => 'brand_id']);
 
       if ( !empty($data) ) {
-        $brandCheck = $this->brands->where('brand_id', $this->request->getVar('brand_id'))->first();
-        if ( empty($brandCheck) ) {
-          return redirect()->back()->with('error', '해당하는 브랜드가 없습니다.');
-        }
+        // $brandCheck = $this->brands->where('brand_id', $brand_id)->first();
+        // if ( empty($brandCheck) ) {
+        //   return redirect()->back()->with('error', '해당하는 브랜드가 없습니다.');
+        // }
 
         $numberOfRecords = $this->dataFile->numberOfRecords;
         $numberOfFields = $this->dataFile->numberOfFields;
@@ -350,154 +349,249 @@ class Product extends BaseController {
         foreach($contents AS $i => $fileData) :
           for ( $j = 0; $j < $numberOfRecords; $j++) :
             // echo $i.'<br/>';
-            if ( ($j >= 0 && $j < 26) && $j != 2 ) {
+            // if ( ($j >= 0 && $j < 27) && $j != 2 ) {
+            if ( ($j >= 0 && $j < 27) ) {
               $productArr[$i][$fields[$j]['field']] = $fileData[$j];
             }
 
-            if ( ($j > 25 && $j < 33) ) {
+            if ( ($j > 26 && $j < 34) ) {
               $productPriceArr[$i][$fields[$j]['field']] = $fileData[$j];
             }
 
-            if ( $j > 32 && $j <= $numberOfRecords ) {
+            if ( $j > 33 && $j <= $numberOfRecords ) {
               $productSpqArr[$i][$fields[$j]['field']] = $fileData[$j];
             }
           endfor;
         endforeach;
 
+        // var_dump($productArr);
+        // var_dump($productPriceArr);
+        var_dump($productSpqArr);
+
         if ( !empty($productArr) ) :
           foreach($productArr AS $prd_i => $product ) :
-            if ( !empty($product['id']) ) :
+            if ( is_null($product['box']) ) $product['box'] = 0;
+            if ( is_null($product['in_the_box']) ) $product['in_the_box'] = 0;
+            if ( is_null($product['container']) ) $product['container'] = 0;
+            if ( is_null($product['discontinued']) ) $product['discontinued'] = 0;
+            if ( is_null($product['display']) ) $product['display'] = 0;
+            if ( is_null($product['shipping_weight']) ) $product['shipping_weight'] = 0;
+            if ( is_null($product['type']) ) $product['type'] = '';
+            if ( is_null($product['type_en']) ) $product['type_en'] = '';
+            if ( is_null($product['name']) ) $product['name'] = '';
+            if ( is_null($product['name_en']) ) $product['name_en'] = '';
+            if ( is_null($product['productCode']) ) $product['productCode'] = 0;
+
+            if ( $brand_id != $product['brand_id'] ) {
+              $brandValidCheck = $this->brands->where('brand_id', $product['brand_id'])->first();
+
+              if ( empty($brandValidCheck) ) {
+                return redirect()->back()->with('error', '해당하는 브랜드가 없습니다.');
+              } else {
+                if ( $brandValidCheck['brand_name'] != $product['brand'] ) {
+                  return redirect()->back()->with('error', '등록하고자 하는 상품의 브랜드명이 일치하지 않습니다.');
+                } else unset($product['brand']);
+              }
+            }
+
+            if ( !empty($product['id']) || !is_null($product['id'])) :
               $productPriceArr[$prd_i]['product_idx'] = $product['id'];
               $productSpqArr[$prd_i]['product_idx'] = $product['id'];
 
-              $prdInfo = $this->products->where(['barcode' => $product['barcode'], 'id' => $product['id']])->first();
+              $prdInfo = $this->products->where(['barcode' => trim($product['barcode']), 'id' => $product['id']])->first();
 
               if ( empty($prdInfo) ) {
                 $this->products->save($product);
               } else {
                 if ( $prdInfo['name_en'] != $product['name_en'] ) {
                   // print_r($prdInfo);
-                  // 이름이 다르면 다른 제품으로 판단하기
+                  // 이름이 다르면 다른 제품으로 판단할지 체크하기
                 }
+              }
+            else :
+              $prdInfo = $this->products
+                              ->where(['barcode' => trim($product['barcode'])
+                                      , 'brand_id' => $brand_id
+                                      , 'name' => trim($product['name'])
+                                      , 'name_en' => trim($product['name_en'])
+                                      , 'type' => trim($product['type'])
+                                      , 'type_en' => trim($product['type_en'])])
+                              ->first();
+
+              if ( empty($prdInfo) ) {
+                $product['name'] = addslashes($product['name']);
+                $product['name_en'] = addslashes($product['name_en']);
+                $product['spec'] = addslashes($product['spec']);
+                $product['spec2'] = addslashes($product['spec2']);
+                $product['type'] = addslashes($product['type']);
+                $product['type_en'] = addslashes($product['type_en']);
+
+                if ($this->products->save($product)) {
+                  $productPriceArr[$prd_i]['product_idx'] = $this->products->getInsertID();
+                  $productSpqArr[$prd_i]['product_idx'] =  $this->products->getInsertID();
+                }
+              } else {
+                $productPriceArr[$prd_i]['product_idx'] = $prdInfo['id'];
+                $productSpqArr[$prd_i]['product_idx'] = $prdInfo['id'];
               }
             endif;
           endforeach;
 
           if ( !empty($productPriceArr) ) :
+            // var_dump($productPriceArr);
+            $marginRateModel = new MarginRateModel();
             $supplyPriceArr = [];
-            foreach($productPriceArr AS $price_i => $price ) :
+            $brand_id = NULL;
+            
+            $margins = $this->margin->where('available', 1)->findAll();
+            if ( !empty($margins) ) {
+              foreach($productPriceArr AS $price_i => $price ) :
+                $priceTemp = [];
+                $product_price_idx = NULL;
 
-              if ( !empty($price['price']) ) {
-                $_price = explode('/', $price['price']);
+                if ( is_null($price['retail_price']) ) $price['retail_price'] = 0;
+                if ( is_null($price['supply_rate_applied']) ) $price['supply_rate_applied'] = 0;
+                if ( is_null($price['supply_rate']) ) $price['supply_rate'] = 0;
+                if ( is_null($price['not_calculating_margin']) ) $price['not_calculating_margin'] = 0;
+                if ( is_null($price['taxation']) ) $price['taxation'] = 0;
 
-                if ( !empty($_price) ) {
-                  $margins = $this->margin->where('available', 1)->findAll();
+                if ( !empty($price['brand_id']) && is_null($brand_id) ) $brand_id = $price['brand_id'];
 
-                  foreach($margins AS $i => $margin) {
-                    array_push($supplyPriceArr, ['margin_idx' => $margin['idx']
-                                                , 'margin_level' => $margin['margin_level'],
-                                                  'price' => $_price[$i],
-                                                  'product_idx' => $price['product_idx']]);
+                if ( !empty($price['price']) ) {
+                  $priceTemp = explode('/', $price['price']);
+                  unset($price['price']);
+                }
+
+                $prdPrice = $this->productPrice->where(['product_idx' => $price['product_idx']
+                                                        , 'retail_price' => $price['retail_price']
+                                                        , 'supply_price'  => $price['supply_price']
+                                                        , 'supply_rate_applied' => $price['supply_rate_applied']
+                                                        , 'supply_rate' => $price['supply_rate']])
+                                                ->first();
+                if ( empty($prdPrice) ) {
+                  $price['available'] = 1;
+                  if ( $this->productPrice->save($price) ) {
+                    $product_price_idx = $this->productPrice->getInsertID();
+                  }
+                } else {
+                  if ( $prdPrice['available'] == 0 ) {
+                    $availiableCheck = $this->productPrice->where(['product_idx' => $price['product_idx'], 'available' => 1])->findAll();
+                    if ( !empty($availiableCheck) ) {
+                      foreach($availiableCheck AS $i => $available) {
+                        if ($this->productPrice->save(['idx' => $available['idx'], 'available' => 0]) ) {
+                          unset($availiableCheck[$i]);
+                        } else {
+                          return redirect()->back()->with('error', 'product price update error');
+                        }
+                      }
+                    }
+                    // if ( empty($availiableCheck) ) $this->productPrice->save(['idx'=> $prdPrice['idx'], 'available' => 1]);
+                    if ( $this->productPrice->save(['idx'=> $prdPrice['idx'], 'available' => 1]) ) {
+                      $product_price_idx = $this->productPrice->getInsertID();
+                    } else {
+                      return redirect()->back()->with('error', 'product price update error 2');
+                    }
+                  } else {
+                    $product_price_idx = $prdPrice['idx'];
+                  }
+                }
+
+                if ( !empty($product_price_idx) ) {
+                  if ( !empty($priceTemp) ) {
+                    foreach($margins AS $i => $margin) {
+                      array_push($supplyPriceArr, ['margin_idx' => $margin['idx']
+                                                  , 'margin_level' => $margin['margin_level']
+                                                  , 'price' => $priceTemp[$i]
+                                                  , 'product_idx' => $price['product_idx']
+                                                  , 'product_price_idx' => $product_price_idx]);
+                      
+                    }
+                  }
+                } else {
+                  return redirect()->back()->with('error', 'supply price 입력중 오류 발생. 다시 시도해주세요.');
+                }
+              endforeach;
+            } else {
+              // margin 정보가 없을 때 오류 처리하기.
+            return;
+            }
+          else :
+            // productpricearr empty
+            return;
+          endif;
+
+          if ( !empty($supplyPriceArr)) :
+            foreach($supplyPriceArr AS $supplyPrice) :
+              $supplyPriceVaildCheck = $this->supplyPrice
+                                            ->where(['product_idx' => $supplyPrice['product_idx']
+                                                    , 'product_price_idx' => $supplyPrice['product_price_idx']
+                                                    , 'margin_idx' => $supplyPrice['margin_idx']
+                                                    , 'margin_level' => $supplyPrice['margin_level']
+                                                    , 'price' => $supplyPrice['price']])
+                                            ->first();
+              if ( empty($supplyPriceVaildCheck) ) {
+                $supplyPrice['available'] = 1;
+                if (!$this->supplyPrice->save($supplyPrice) ) {
+                  return redirect()->back()->with('error', '가격 등록중에 오류가 밸생했습니다. 다시 확인 후에 시도해주세요.');
+                }
+              } else {
+                if ( $supplyPriceVaildCheck['available'] == 0 ) {
+                  $availableCheck = $this->supplyPrice
+                                          ->where(['product_idx' => $supplyPrice['product_idx']
+                                                  , 'product_price_idx' => $supplyPrice['product_price_idx']
+                                                  , 'margin_idx' => $supplyPrice['margin_idx']
+                                                  , 'available' => 1])
+                                          ->findAll();
+                  if ( !empty($availableCheck) ) {
+                    foreach($availableCheck AS $checkValue ) {
+                      if ( !$this->supplyPrice->save(['idx' => $checkValue['idx'], 'available' => 0]) ) {
+                        return redirect()->back()->with('error', 'supply price update error');
+                      }
+                    }
+                  }
+
+                  if ( !$this->supplyPrice->save(['idx' => $supplyPriceVaildCheck['idx'], 'available' => 1]) ) {
+                    return redirect()->back()->with('error', 'supply price update error 2');
                   }
                 }
               }
+            endforeach;
+          else : 
+            // supply price arr is empty 
+          endif;
 
-              $prdPrice = $this->productPrice->where(['product_idx' => $price['product_idx'], 'available' => 1])->first();
-              if ( empty($prdPrice) ) {
-                // $this->productPrice->save($price);
-                // echo "없음<br/><Br/>";
+          if ( !empty($productSpqArr) ) :
+            // var_dump($productSpqArr);
+            foreach($productSpqArr AS $productSpq) :
+              if ( empty($productSpq['product_idx']) ) {
+                return redirect()->back()->with('error', 'sqp입력 중 오류 발생');
               } else {
-                print_r($prdPrice);
-                echo "<br/>";
-              }               
+                if ( is_null($productSpq['moq']) ) $productSpq['moq'] = 10;
+                if ( is_null($productSpq['spq_inBox']) ) $productSpq['spq_inBox'] = 10;
+                if ( is_null($productSpq['spq_outBox']) ) $productSpq['spq_outBox'] = 10;
+                if ( is_null($productSpq['spq']) ) $productSpq['moq'] = 2;
+                if ( is_null($productSpq['calc_code']) ) $productSpq['calc_code'] = 0;
+                if ( is_null($productSpq['calc_unit']) ) $productSpq['calc_unit'] = 10;
+
+                $valideCheck = $this->productSpq->where(['product_idx' => $productSpq['product_idx'], 'available' => 1])->first();
+                if ( empty($valideCheck) ) {
+                  $productSpq['available'] = 1;
+                  if (!$this->productSpq->save($productSpq)) {
+                    return redirect()->back()->with('error', 'spq inser error');
+                  }
+                } else {
+                  $productSpq['available'] = 1;
+                  $productSpq['id'] = $valideCheck['id']; 
+                  if (!$this->productSpq->save($productSpq)) {
+                    return redirect()->back()->with('error', 'spq inser error');
+                  }
+                }
+              }
             endforeach;
           endif;
 
-          if ( !empty($supplyPriceArr) ) :
-          // print_r($supplyPriceArr);
-          // echo "<br/>";            
-          endif;
+          return redirect()->back()->with('error', '등록 완료');
         endif;
-        // print_r($productPriceArr);
-      //   if ( !empty($productPriceArr) ) {
-      //     foreach ( $productPriceArr AS $productPrice ) {
-      //       $productChk = $this->productPrice
-      //                         ->where(['product_idx' => $productPrice['product_idx']
-      //                                 , 'available' => 1 ])
-      //                         ->first();
-            
-      //       if ( !empty($productChk) ) {
-      //         $productPriceIdx = $productChk['idx'];
-
-      //         $this->productPrice->save(['idx' => $productPriceIdx
-      //                                   , 'retail_price' => $productPrice['retail_price']
-      //                                   , 'supply_price' => $productPrice['supply_price']
-      //                                   , 'supply_rate_applied' => $productPrice['supply_rate_applied']
-      //                                   , 'supply_rate' => $productPrice['supply_rate']
-      //                                   , 'not_calculating_margin' => $productPrice['not_calculating_margin']]);
-      //       } else {
-      //         $this->productPrice->save(['product_idx' => $productPrice['product_idx']
-      //                                   , 'retail_price' => $productPrice['retail_price']
-      //                                   , 'supply_price' => $productPrice['supply_price']
-      //                                   , 'supply_rate_applied' => $productPrice['supply_rate_applied']
-      //                                   , 'supply_rate' => $productPrice['supply_rate']
-      //                                   , 'not_calculating_margin' => $productPrice['not_calculating_margin']
-      //                                   , 'available' => 1]);
-
-      //         $productPriceIdx =$this->productPrice->getInsertID();
-      //       }
-
-      //       if (!empty($productPriceIdx) && !empty($productPrice['price'])) {
-      //         $tempPrice = explode('/', $productPrice['price']);
-      //         $supplyPriceCheck = $this->supplyPrice
-      //                                   ->where(['product_idx'=> $productPrice['product_idx']
-      //                                           , 'product_price_idx' => $productPriceIdx
-      //                                           , 'available' => 1])
-      //                                   ->orderBy('margin_level ASC')
-      //                                   ->findAll();
-      //         if ( !empty($supplyPriceCheck) ) {
-      //           print_r($supplyPriceCheck);
-      //           foreach($supplyPriceCheck AS $i => $supplies ) {
-      //             echo $tempPrice[$i]."<br/>";
-      //             echo $supplies['price']."<br/>";
-      //             if ( $tempPrice[$i] != $supplies['price'] ) {
-      //               $this->supplyPrice->save(['idx'=> $supplies['idx']
-      //                                       , 'price'=> $tempPrice[$i]]);
-      //             }
-      //           }
-      //         } else {
-      //           $marginCheck = $this->margin
-      //                             ->join('margin_rate', 'margin_rate.margin_idx = margin.idx')
-      //                             ->where('brand_id', $this->request->getVar('brand_id'))
-      //                             ->where('margin.available', 1)
-      //                             ->orderBy('margin_level ASC')
-      //                             ->findAll();
-
-      //           if ( !empty($marginCheck) ) {
-      //             foreach($marginCheck AS $i => $margin) {
-      //             $this->supplyPrice->save(['product_price_idx' => $productPriceIdx
-      //                                     , 'product_idx' => $productPrice['product_idx']
-      //                                     , 'margin_idx' => $margin['margin_idx']
-      //                                     , 'margin_level' => $margin['margin_level']
-      //                                     , 'price' => $tempPrice[$i]
-      //                                     , 'available' => 1]);
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //   }
-
-
-      //   // echo count($productArr)."<br/>";
-      //   // print_r($productArr);
-      //   // echo "<br/><Br/>";
-      //   // echo count($productPriceArr)."<br/>";
-      //   // print_r($productPriceArr);
-      //   // echo "<br/><Br/>";
-      //   return redirect()->back()->with('error', '등록 완료');
-      // } else {
-      //   return redirect()->back()->with('error', '등록할 데이터가 없습니다');
       }
     }
   }

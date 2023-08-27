@@ -25,8 +25,8 @@
         <select class='form-select form-select-sm' name='order_status'>
           <option value=''>전체</option>
           <?php if ( !empty($orderStatus) ) : 
-            foreach ( $orderStatus AS $status ) : ?>
-            <option value='<?=$status['idx']?>' <?=!empty($_GET['order_status']) ? 'selected' : ''?> ><?=$status['status_name']?></option>
+            foreach ( $orderStatus AS $oStatus ) : ?>
+            <option value='<?=$oStatus['idx']?>' <?=!empty($_GET['order_status']) ? 'selected' : ''?> ><?=$oStatus['status_name']?></option>
           <?php endforeach;
           endif; ?>
         </select>
@@ -70,9 +70,9 @@
         </tr>
         <tr>
           <th>재고요쳥금액</th>
-          <th>확정금액</th>
-          <th>주문금액</th>
-          <th>할인금액</th>
+          <th>재고확정금액</th>
+          <th>주문확정금액</th>
+          <th>최종주문금액</th>
           <th>배송비</th>
           <th class='border border-end border-dark'>주문 합계</th>
         </tr>
@@ -121,8 +121,8 @@
             <td class='text-end px-2'><?=number_format($order['shipping_weight'])?>g</td>
             <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['request_amount'], $order['currency_float'])?></td>
             <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['inventory_fixed_amount'], $order['currency_float'])?></td>
+            <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['fixed_amount'], $order['currency_float'])?></td>
             <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['order_amount'], $order['currency_float'])?></td>
-            <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['discount_amount'], $order['currency_float'])?></td>
             <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['delivery_price'], $order['currency_float'])?></td>
             <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['subtotal_amount'], $order['currency_float'])?></td>
             <td><?//=$order['order_check'] == 0 ? '-' : '특이사항있음' ?></td>

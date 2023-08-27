@@ -6,6 +6,7 @@ use App\Models\OrdersModel;
 use App\Models\OrderDetailModel;
 use App\Models\OrderStatusModel;
 use App\Models\RequirementRequestModel;
+use App\Models\RequirementOptionModel;
 use App\Models\OrderReceiptModel;
 use App\Models\ShipmentModel;
 use App\Models\DeliveryModel;
@@ -33,6 +34,7 @@ class Orders extends BaseController {
     $this->orderDetail = new OrderDetailModel();
     $this->orderStatus = new OrderStatusModel();
     $this->requirementRequest = new RequirementRequestModel();
+    $this->requirementOption = new RequirementOptionModel();
     $this->receipt = new OrderReceiptModel();
     $this->shipment = new ShipmentModel();
     $this->delivery = new DeliveryModel();
@@ -51,12 +53,12 @@ class Orders extends BaseController {
 
     $this->data['header'] = ['css' => ['/orders/orders.css', '/table.css', '/inputLabel.css']
                             , 'js' => ['/orders/orders.js']];
-    
     $this->data['status'] = $this->status;
   }
 
   public function index() {
     $params = $this->request->getVar();
+    var_dump($params);
     if ( !empty($params) ) {
       if ( !empty($params['order_number']) ) {
         $this->order->like('orders.order_number', $this->request->getVar('order_number'), 'both');
@@ -434,6 +436,8 @@ class Orders extends BaseController {
       array_push($this->data['header']['js'], '/orders/inventory.js');
     }
     $orderId = $this->request->uri->getSegment(3);
+
+    if ( empty($orderId) ) return redirect()->back()->with('error', '일치하는 order 정보가 없습니다.');
    
     $packagingDetail = $this->packaging
                       ->packaging(['where' => ['packaging.order_id' => $orderId
@@ -461,8 +465,12 @@ class Orders extends BaseController {
                                                                         , 'requirement_request.order_detail_id' => $detail['id']]])
                                               ->findAll());
       endforeach;
-    endif;
 
+      $this->data['requirementOption'] = $this->requirementOption->where('available', 1)->findAll();
+    endif;
+    // if ( !empty($this->data['packagingStatus']) && $this->data['packagingStatus'][1]['department_ids'] == false ) {
+    //   return redirect()->to(site_url("orders/detail/{$orderId}"));
+    // } else return $this->menuLayout('orders/inventoryCheckDetail', $this->data);
     return $this->menuLayout('orders/inventoryCheckDetail', $this->data);
   }
 
@@ -472,7 +480,8 @@ class Orders extends BaseController {
     $order = $this->request->getPost('order');
     $packaging = $this->request->getPost('packaging');
 
-    // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
+    // var_dump($requirement);
+    // // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
     if ( !empty($details) ) {
       foreach( $details AS $detail ) :
         if ( !empty($detail) ) {
@@ -518,7 +527,11 @@ class Orders extends BaseController {
 
     if ( !empty($requirement) ) {
       foreach($requirement AS $require) :
-        $this->requirementRequest->save($require);
+        if ( !empty($require) ) {
+          foreach($require AS $requireDetail ) {
+            $this->requirementRequest->save($requireDetail);
+          } 
+        }
       endforeach;
     }
 
@@ -617,7 +630,7 @@ class Orders extends BaseController {
             $index = $p;
 
             if ( !empty($pStatus['next_step']) && !is_null($pStatus['next_step_index'])) {
-              $complete = [];  
+              $complete = [];
               for ( $i = 0; $i < $pStatus['next_step']; $i++ ) {
                 if ( $i < $pStatus['next_step'] ) $complete = ['complete' => 1];
                 if ( $this->packagingDetail->save(array_merge(['packaging_id'=> $packagingDetail['packaging_id']
@@ -650,6 +663,7 @@ class Orders extends BaseController {
                 ->buyerJoin()
                 ->packagingJoin()
                 ->productWeight()
+                ->paymentStatusJoin()
                 ->deliveryJoin()
                 ->paymentJoin()
                 ->select('buyers.name AS buyer_name, buyers.id AS buyer_id')
@@ -665,11 +679,13 @@ class Orders extends BaseController {
 
   public function getOrder($orderId = null) {
     if ( !empty($orderId) ) {
-      $this->order->join("( SELECT order_id, SUM(rq_amount) AS amount_paid 
-                        FROM orders_receipt 
-                        WHERE order_id = {$orderId} AND payment_status = 100
-                      ) AS amount_paid", 'amount_paid.order_id = orders.id', 'left outer')
-                  ->where('orders.id', $orderId);
+      $this->order
+            ->select('IFNULL(amount_paid.amount_paid, 0) AS amount_paid')
+            ->join("( SELECT order_id, SUM(rq_amount) AS amount_paid 
+                      FROM orders_receipt 
+                      WHERE order_id = {$orderId} AND payment_status = 100
+                    ) AS amount_paid", 'amount_paid.order_id = orders.id', 'left outer')
+            ->where('orders.id', $orderId);
     }
 
     return $this->order
@@ -678,25 +694,27 @@ class Orders extends BaseController {
                 ->productWeight()
                 ->buyerJoin()
                 ->deliveryJoin()
+                ->paymentJoin()
                 ->select('buyers.name AS buyer_name')
                 ->select('users.idx AS user_idx, users.id AS user_id, users.name AS user_name, users.email AS user_email')
                 ->select('manager.name AS manager_name, manager.email AS manager_email')
                 ->select('buyers_address.consignee, buyers_address.region,
                           buyers_address.streetAddr1, buyers_address.streetAddr2,
                           buyers_address.zipcode, buyers_address.phone_code AS phonecode, buyers_address.phone')
-                ->select('CAST(IFNULL(amount_paid.amount_paid, 0) AS DOUBLE) AS amount_paid')
-                // ->select('SUM(CAST(IFNULL(delivery.delivery_price, 0) AS DOUBLE)) AS delivery_price')
-                ->select('orders_receipt.receipt_type, orders_receipt.payment_status');
+                // ->select('SUM(IFNULL(delivery.delivery_price, 0)) AS delivery_price')
+                ->select('orders_receipt.receipt_type, orders_receipt.payment_status')
+                ->select('payment_method.payment');
   }
 
   public function getOrderDetail($orderId = null) {
     return $this->data['details'] = $this->orderDetail
-                                        ->select('currency.currency_sign AS currency_sign')
-                                        ->select('currency.currency_float AS currency_float')
                                         ->productBrandJoin()
                                         ->join('orders', 'orders.id = orders_detail.order_id', 'RIGHT')
                                         ->join("currency_rate", "currency_rate.cRate_idx = orders.currency_rate_idx", "LEFT OUTER")
                                         ->join("currency", "currency.idx = currency_rate.currency_idx", "LEFT OUTER")
+                                        ->select('orders_detail.*')
+                                        ->select('currency.currency_sign AS currency_sign')
+                                        ->select('currency.currency_float AS currency_float')
                                 ->where('orders_detail.order_id', $orderId);
   }
 

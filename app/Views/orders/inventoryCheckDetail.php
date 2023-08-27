@@ -51,6 +51,7 @@
                     data-email-id='<?=$pStatus['email_id']?>'
                     data-current-step='<?=!empty($pStatus['selected']) ? '1' : '0'?>'
                     data-order-by='<?=$pStatus['order_by']?>'
+                    data-disabled='<?=is_null($pStatus['department_ids']) ? '0' : (($pStatus['department_ids'] == -1) ? 1 : 0);?>'
                     <?=!empty($pStatus['selected']) ? 'selected' : ''?>>
               <?=$pStatus['status_name']?>
             </option>
@@ -61,7 +62,7 @@
         <input type='hidden' data-name='packaging[send_email]' value='1'>
         <button class='email-send btn btn-primary d-none me-1'>메일보내기</button>
         <?php endif; ?>
-        <button class='btn btn-primary'>저장</button>
+        <button class='btn btn-primary status-save-btn'>저장</button>
       </div>
       <table>
         <thead>
@@ -177,27 +178,61 @@
                 readonly>
             </td>
             <td class='w-20p'>
-              <div class='d-flex flex-row flex-wrap w-100 requirement-group'>
+              <div class='d-flex flex-column flex-wrap w-100 requirement-group'>
                 <?php if( !empty($requirement[$i]) ) :
                   foreach ($requirement[$i] AS $j => $require ) : ?>
-                  <?php if ( !$require['requirement_check'] ) : ?>
-                  <div class='d-flex flex-column w-30p'>
-                    <div class='text-start d-flex flex-row flex-nowrap justify-content-between'>
-                      <p class='fw-bold' 
-                            data-toggle='tooltip'
-                            data-placement='top'
-                            title='<?=$require['requirement_detail']?>'>
-                        <?=$require['requirement_kr']?>
-                      </p>
+                  <div class='d-flex flex-column requirement-item w-100'>
+                    <div class='d-flex flex-row w-100'>
+                      <div class='text-start w-30p d-flex flex-row flex-nowrap justify-content-between'>
+                        <p class='fw-bold' 
+                              data-toggle='tooltip'
+                              data-placement='top'
+                              title='<?=$require['requirement_detail']?>'>
+                          <?=$require['requirement_kr']?>
+                        </p>
+                      </div>
+                      <div class='w-70p'>
+                        <input type='hidden' class='requirement_option_ids' 
+                              name='requirement[<?=$i?>][<?=$j?>][requirement_option_ids]' 
+                              value='<?=!empty($require['requirement_option_ids']) ? $require['requirement_option_ids'] : ''?>'>
+                        <input type='hidden' name='requirement[<?=$i?>][<?=$j?>][idx]' value='<?=$require['idx']?>'>
+                        <textarea class='w-100' 
+                              name='requirement[<?=$i?>][<?=$j?>][requirement_reply]'
+                              placeholder='<?=$require['requirement_detail']?>'
+                              row='2'
+                              style='height: 2rem;'><?=$require['requirement_reply']?></textarea>
+                      </div>
                     </div>
-                    <input type='hidden' name='requirement[<?=$j?>][idx]' value='<?=$require['idx']?>'>
-                    <textarea class='w-100' 
-                          name='requirement[<?=$j?>][requirement_reply]'
-                          placeholder='<?=$require['requirement_detail']?>'
-                          row='2'
-                          style='height: 2rem;'><?=$require['requirement_reply']?></textarea>
+                    <div class='d-flex flex-column w-100 text-start'>
+                      <?php if ( empty($require['requirement_check']) ) :
+                        if ( !empty($requirementOption) ) :
+                          $checkedOption = [];
+                          if ( !empty($require['requirement_option_ids']) ) :
+                            $checkedOption = explode(",", $require['requirement_option_ids']);
+                          endif;
+                        foreach( $requirementOption AS $rOption ) :
+                          // var_dump($require);
+                            if ( $rOption['requirement_idx'] == $require['requirement_id'] ) :
+                              // print_r($rOption);
+                              echo "<label>
+                                      <input type='checkbox' 
+                                        class='require-option-use'
+                                        value='{$rOption['idx']}' 
+                                        data-add-target='.requirement_option_ids'";
+                              if ( !empty($checkedOption) ) {
+                                // var_dump($rOption);
+                                if ( in_array($rOption['idx'], $checkedOption) ) {
+                                  echo " checked='true'";
+                                }
+                              }
+                              echo  ">{$rOption['option_name']}
+                                    </label>";
+                            endif;
+                          endforeach;
+                        endif;
+                      endif; ?>
+                    </div>
                   </div>
-                  <?php endif; ?>
                 <?php endforeach;
                 endif; ?>
               </div>

@@ -13,6 +13,11 @@ $(document).ready(function() {
         $(".packaging-order-by").val($('.packaging-status option:selected').data('orderBy'));
       }
     }
+
+    if ( typeof $('.packaging-status option:selected').data('disabled') != 'undefined'
+        && $('.packaging-status option:selected').data('disabled') == true ) {
+      $(".status-save-btn").attr('disabled', true);
+    }
   }
 }).on('click', '.inventory-detail-container .btn', function(e) {
   if ( $(this).hasClass('email-send') ) {
@@ -81,13 +86,13 @@ $(document).ready(function() {
     }
     inventoryAmount();
   }
-}).on('keyup', '.request-amount-change', function(e) {
+}).on('keyup change', '.request-amount-change', function(e) {
   $find = null, subtotal = 0, time = 1000;
 
   if ( $(this).hasClass('prd-price') ) $find = $(this).closest('tr').find('.prd-qty');
   if ( $(this).hasClass('prd-qty') ) $find = $(this).closest('tr').find('.prd-price');
 
-  if ( $(this).val().length > 1 && $(this).closest('tr').find('.order_excepted').val() == 0) {
+  if ( $(this).val().length >= 1 && $(this).closest('tr').find('.order_excepted').val() == 0) {
     if ( e.keyCode == 13 ) time = 0;
     setTimeout(() => {
       if ( $(this).val() == '' ) $(this).val(0);
@@ -98,6 +103,11 @@ $(document).ready(function() {
   }
 }).on('change', '.packaging-status', function() {
   if ( $('.package').length ) {
+    if ( typeof $('.packaging-status option:selected').data('disabled') != 'undefined'
+        && $('.packaging-status option:selected').data('disabled') == true ) {
+      $(".status-save-btn").attr('disabled', true);
+    }
+    
     if ( currentStepIndex >= $('.packaging-status option').index($('.packaging-status option:selected')) )  {
       $('.package').removeAttr('name');
     } else {
@@ -121,6 +131,25 @@ $(document).ready(function() {
     } else {
       $(".email-send").addClass('d-none');
     }
+  }
+}).on('change', '.require-option-use', function() {
+  if (typeof $(this).data('addTarget') == 'undefined') {
+    return;
+  }
+  let target = $(this).data('addTarget');
+  let optionIds = $(this).closest('.requirement-item').find(target);
+  console.log(optionIds.attr('name'));
+  if (optionIds.val() != '' ) {
+    optionIdsVal = optionIds.val().split(',');
+    if ( $.inArray(String($(this).val()), optionIdsVal) >= 0) {
+      _removeId = $.inArray(String($(this).val()), optionIdsVal);
+      optionIdsVal.splice(_removeId);
+    } else {
+      optionIdsVal.push($(this).val());
+    }
+    optionIds.val(optionIdsVal.join(','));
+  } else {
+    optionIds.val($(this).val());
   }
 });
 

@@ -25,4 +25,4 @@ main .invoice-edit .pi-edit-container > table td input[type='text'] { width: 60%
 .color-transparent { color: transparent !important; }
 
 
-.requirement-group > div:not(:last-child) { margin-right: 0.3rem; }
+.requirement-group > div:not(:last-child) { border-bottom: 1px solid grey; margin-bottom: 0.3rem; }

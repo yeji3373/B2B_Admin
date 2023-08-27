@@ -51,8 +51,12 @@ class Buyer extends BaseController
     $this->data['users'] = $this->users->where('buyer_id', $id)->findAll();
 
     if ( !empty($this->data['buyer']) ) {
-      $this->data['regions'] = $this->getRegion("id IN ( {$this->data['buyer']['region_ids']} )")->findAll();
-      $this->data['countries'] = $this->getCountry("id IN ( {$this->data['buyer']['countries_ids']} )")->findAll();
+      if ( !empty($this->data['buyer']['region_ids']) ) {
+        $this->data['regions'] = $this->getRegion("id IN ( {$this->data['buyer']['region_ids']} )")->findAll();
+      }
+      if ( !empty($this->data['buyer']['countries_ids']) ) {
+        $this->data['countries'] = $this->getCountry()->whereIn("id", $this->data['buyer']['countries_ids'])->findAll();
+      }
       $this->data['margin'] = $this->margin->where('available', 1)->findAll();
       $this->data['currency'] = $this->currency->currency()
                                   ->select("currency.idx, currency.currency_code, currency.default_currency")
@@ -189,10 +193,11 @@ class Buyer extends BaseController
     return $region;
   }
 
-  public function getCountry($w = NULL) {
-    $country = new CountryModel();
-    if ( !empty($w) ) $country->where($w);
-
-    return $country;
+  public function getCountry($w = []) {
+    $countryModel = new CountryModel();
+    
+    if ( !empty($w) ) $countryModel->where($w);
+    
+    return $countryModel;
   }
 }
