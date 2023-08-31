@@ -594,7 +594,7 @@ class Product extends BaseController {
           //   endforeach;
           // endif;
 
-          // return redirect()->back()->with('error', '등록 완료');
+          return redirect()->back()->with('error', '등록 완료');
         endif;
       }
     }
