@@ -58,7 +58,6 @@ class Orders extends BaseController {
 
   public function index() {
     $params = $this->request->getVar();
-    var_dump($params);
     if ( !empty($params) ) {
       if ( !empty($params['order_number']) ) {
         $this->order->like('orders.order_number', $this->request->getVar('order_number'), 'both');

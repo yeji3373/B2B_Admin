@@ -52,7 +52,7 @@
           <option value>브랜드 선택</option>
           <?php if ( !empty($brands) ) : 
             foreach ($brands as $brand) : ?>
-            <option class='text-uppercase' value='<?=$brand['brand_id']?>'><?=$brand['brand_name']?></option>
+            <option class='text-uppercase' value='<?=$brand['brand_id']?>'><?=stripslashes($brand['brand_name'])?></option>
           <?php endforeach;
             endif ?>
         </select>

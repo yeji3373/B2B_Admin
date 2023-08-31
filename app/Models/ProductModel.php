@@ -10,7 +10,7 @@ class ProductModel extends Model {
   protected $allowedFields = [
     'brand_id', 'category_ids', 'barcode', 'productCode',
     'hs_code', 'sample',  'name', 'name_en',
-    'type', 'type_en', 'box', 'in_the_box', 
+    'img_url', 'type', 'type_en', 'box', 'in_the_box', 
     'contents_of_box', 'contents_type_of_box',
     'spec', 'spec2', 'container', 'spec_detail', 'spec_pcs',
     'sales_channel', 'unit_weight', 'shipping_weight', 
