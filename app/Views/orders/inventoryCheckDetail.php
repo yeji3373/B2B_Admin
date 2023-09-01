@@ -120,7 +120,9 @@
                         class='request-amount-change prd-price'
                         name='detail[<?=$i?>][prd_change_price]' 
                         value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>' 
-                        style='width: 5rem;'>
+                        style='width: 5rem;'
+                        <?=$price_disabled == 1 ? 'disabled' : ''?>
+                        >
                 </p>
             </td>
             <td>

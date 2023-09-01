@@ -448,6 +448,7 @@ class Orders extends BaseController {
 
     if ( !empty($packagingDetail) ) {
       $this->data['packaging_id'] = $packagingDetail['packaging_id'];
+      $this->data['price_disabled'] = $packagingDetail['requirement_option_check'];
       $this->data['packagingStatus'] = $this->getCurrentStepPackageStatus($packagingDetail);
     }
     
