@@ -569,24 +569,24 @@ class Orders extends BaseController {
       
       if ( empty($packagingDetailIds) ) {
         $packagingStatus = $this->packagingStatus->where(['available' => 1])->orderBy('order_by ASC')->findAll();
-        if ( !empty($packagingStatus) ) {
-          foreach($packagingStatus AS $p => $pStatus) {
-            if ( $pStatus['idx'] == $packaging['status_id'] ) {
-              if ( !empty($pStatus['next_step']) && !is_null($pStatus['next_step_index']) ) {
-                $hasNextStep = true;
-                $complete = [];                
-                for($i = 0; $i < $pStatus['next_step']; $i++ ) {
-                  if ( $i < ($pStatus['next_step'] - 1) ) $complete = ['complete' => 1];
-                  else $complete = [];
-                  $nextStepStatus = array_merge(['packaging_id' => $packaging['packaging_id']
-                                                , 'status_id' => $packagingStatus[$pStatus['next_step_index']]['idx']]
-                                        , $complete);
-                }
-              }
-              break;
-            }
-          }
-        }
+        // if ( !empty($packagingStatus) ) {
+        //   foreach($packagingStatus AS $p => $pStatus) {
+        //     if ( $pStatus['idx'] == $packaging['status_id'] ) {
+        //       if ( !empty($pStatus['next_step']) && !is_null($pStatus['next_step_index']) ) {
+        //         $hasNextStep = true;
+        //         $complete = [];                
+        //         for($i = 0; $i < $pStatus['next_step']; $i++ ) {
+        //           if ( $i < ($pStatus['next_step'] - 1) ) $complete = ['complete' => 1];
+        //           else $complete = [];
+        //           $nextStepStatus = array_merge(['packaging_id' => $packaging['packaging_id']
+        //                                         , 'status_id' => $packagingStatus[$pStatus['next_step_index']]['idx']]
+        //                                 , $complete);
+        //         }
+        //       }
+        //       break;
+        //     }
+        //   }
+        // }
         
         if ( array_key_exists('order_by', $packaging) ) { unset($packaging['order_by']); }
         

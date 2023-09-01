@@ -128,10 +128,9 @@ class Brand extends BaseController {
         }
       }
       
-      if ( $data['margin_rate_control'] == true || $data['supply_rate_control'] == true) {
-        $this->cart->where('brand_id', $data['brand_id'])->set('supply_price_changed', 1)->update();
-      }
-
+      // // if ( $data['margin_rate_control'] == true || $data['supply_rate_control'] == true) { // supply price change 체크용
+      // //   $this->cart->where('brand_id', $data['brand_id'])->set('supply_price_changed', 1)->update();
+      // // }
       return redirect()->back();
     }
   }
@@ -155,6 +154,10 @@ class Brand extends BaseController {
         $data['brand_name'] = addslashes($data['brand_name']);
 
         $this->brands->insert($data);
+
+        // if ( !empty($data['margin_rate']) )
+        // $margin = $this->margin->where('available', 1)->findAll();
+        // if ( !empty($margin) ) {}
         return redirect()->back();
       } else {
         return redirect()->to(base_url('brand'))->withInput()->with('error', '이미 등록되어진 브랜드명');
@@ -208,7 +211,7 @@ class Brand extends BaseController {
                                 , 'margin_rate.available'=> 1])
                         ->orderBy('margin.idx ASC')
                         ->findAll();
-    
+    var_dump($marginCheck);
     if ( !empty($marginCheck) ) {
       $products = $this->products
                         ->where(['brand_id' => $data['brand_id']])
@@ -221,31 +224,33 @@ class Brand extends BaseController {
                                           , 'available'=> 1])
                                     ->first();
           // echo "<br/><br/>";
-          // print_r($productPriceCheck);
+          // var_dump($productPriceCheck);
           // echo "<br/><br/>";
           if ( !empty($productPriceCheck) ) {
-            if ( empty($productPriceCheck['not_calculating_margin']) ) { // not_calculating_margin == 0
+            if ( empty($productPriceCheck['not_calculating_margin']) ) {
               if ( !empty($productPriceCheck['supply_price']) ) {
                 $supplyPrices = $this->supplyPrice
                                         ->where(['product_price_idx'=> $productPriceCheck['idx']
                                                 , 'available' => 1])
                                         ->findAll();
+
                 if ( !empty($supplyPrices) ) {
-                  foreach($supplyPrices AS $supplyPrice ) {
+                  foreach( $supplyPrices AS $supplyPrice ) {
                     foreach($marginCheck AS $margin) {
                       if ( $margin['idx'] == $supplyPrice['margin_idx'] ) {
                         if ( !empty($margin['supply_rate_based']) && !empty($margin['supply_rate_by_brand'])) {
                           if ( $margin['supply_rate_based'] == 1 ) {
-                            if ( $productPriceCheck['supply_rate_applied'] == 1 ) {
-                              $price = $productPriceCheck['retail_price'] * ($productPriceCheck['supply_rate'] + $margin['margin_rate']);
-                            } else {
-                              $price = $productPriceCheck['retail_price'] * ($margin['supply_rate_by_brand'] + $margin['margin_rate']);
+                            if ( !empty($productPriceCheck['retail_price']) ) {
+                              if ( $productPriceCheck['supply_rate_applied'] == 1 ) {
+                                $price = $productPriceCheck['retail_price'] * ($productPriceCheck['supply_rate'] + $margin['margin_rate']);
+                              } else {
+                                $price = $productPriceCheck['retail_price'] * ($margin['supply_rate_by_brand'] + $margin['margin_rate']);
+                              }
                             }
                           }
                         } else {
                           $price = ($productPriceCheck['supply_price'] * $margin['margin_rate']);
                         }
-
                         $supplyCondition = ['idx' => $supplyPrice['idx']
                                             , 'price' => $price];
                         $this->supplyPrice->save($supplyCondition);
@@ -256,16 +261,18 @@ class Brand extends BaseController {
                   foreach($marginCheck AS $margin) {
                     if ( !empty($margin['supply_rate_based']) && !empty($margin['supply_rate_by_brand'])) {
                       if ( $margin['supply_rate_based'] == 1 ) {
-                        if ( $productPriceCheck['supply_rate_applied'] == 1 ) {
-                          $price = $productPriceCheck['retail_price'] * ($productPriceCheck['supply_rate'] + $margin['margin_rate']);
-                        } else {
-                          $price = $productPriceCheck['retail_price'] * ($margin['supply_rate_by_brand'] + $margin['margin_rate']);
+                        if ( !empty($productPriceCheck['retail_price']) ) {
+                          if ( $productPriceCheck['supply_rate_applied'] == 1 ) {
+                            $price = $productPriceCheck['retail_price'] * ($productPriceCheck['supply_rate'] + $margin['margin_rate']);
+                          } else {
+                            $price = $productPriceCheck['retail_price'] * ($margin['supply_rate_by_brand'] + $margin['margin_rate']);
+                          }
                         }
                       }
                     } else {
-                      $price = ($productPriceCheck['retail_price'] * $margin['margin_rate']);
+                      $price = ($productPriceCheck['supply_price'] * $margin['margin_rate']);
                     }
-                    echo $price."<br/><br/>";
+                    // echo $price."<br/><br/>";
                     $supplyCondition = ['product_idx' => $productPriceCheck['product_idx']
                                         , 'product_price_idx' => $productPriceCheck['idx']
                                         , 'margin_idx' => $margin['idx']
