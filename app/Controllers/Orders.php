@@ -445,10 +445,12 @@ class Orders extends BaseController {
                                               , 'packaging_status.available' => 1]
                                   , 'orderBy' => 'packaging_status.order_by DESC'])
                       ->first();
+                      echo $this->packaging->getLastQuery();
 
     if ( !empty($packagingDetail) ) {
       $this->data['packaging_id'] = $packagingDetail['packaging_id'];
       $this->data['price_disabled'] = $packagingDetail['requirement_option_check'];
+      $this->data['option_disabled'] = $packagingDetail['requirement_option_disabled'];
       $this->data['packagingStatus'] = $this->getCurrentStepPackageStatus($packagingDetail);
     }
     

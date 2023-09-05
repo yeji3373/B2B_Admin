@@ -1,5 +1,16 @@
 let currentStepIndex = null;
 $(document).ready(function() {
+  $('.inventory-detail-container input[type=checkbox].order_excepted').each(function(index, item) {
+    if ( $(item).closest($(item).data('cancelParent')).find($(item).data('cancelTarget')).length ) {
+      $target = $(item).closest($(item).data('cancelParent')).find($(item).data('cancelTarget'));
+
+      if ( $(item).val() == 1 ) { 
+        $target.closest('tr').addClass('bg-danger bg-opacity-10');
+      } else {
+        $target.closest('tr').removeClass('bg-danger bg-opacity-10');
+      }
+    }
+  });
   inventoryAmount();
 
   if ( $('.packaging-status').length ) {

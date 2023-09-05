@@ -86,6 +86,7 @@
         <tbody>
         <?php if ( !empty($details) ) : 
           foreach ($details AS $i => $detail ) :?>
+          <?php $seletedOptions = []; ?>
           <tr class='detail_items <?=$detail['order_excepted'] ? 'bg-danger bg-opacity-10' : ''?>'>
             <td>
               <?=$i + 1?>
@@ -138,6 +139,28 @@
                         value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
                         style='width: 3rem;'>
                 </p>
+                <?php if(!empty($requirement[$i])) : 
+                        $canceled = NULL;
+                        foreach($requirement[$i] AS $j => $require) : 
+                          if(!empty($require['requirement_selected_option_id'])) : 
+                            array_push($seletedOptions, $require['requirement_selected_option_id']);
+                          endif; 
+                        endforeach;
+                        if(!empty($seletedOptions)) :
+                          if(in_array('3', $seletedOptions) || in_array('4', $seletedOptions)) :
+                            echo "cancel";
+                            $canceled = 1;
+                          else :
+                            if(in_array('1', $seletedOptions)) :
+                              echo $detail['prd_change_qty'];
+                            else :
+                              echo $detail['prd_order_qty'];
+                            endif;
+                          endif;
+                        else :
+                          echo $detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty'];
+                        endif;
+                      endif; ?>
               </div>
             </td>
             <td>
@@ -147,11 +170,22 @@
                       data-compare-value='<?=$detail['order_excepted']?>'
                       data-compare-target='detail[<?=$i?>][order_excepted_check]'
                       data-cancel-parent='.detail_items'
-                      data-cancel-target='.request-subtotal'
+                      data-cancel-target='.request-subtotal' 
                       data-cancel-value='0'
                       name='detail[<?=$i?>][order_excepted]'
-                      value='<?=$detail['order_excepted']?>'
-                      <?=$detail['order_excepted'] == true ? 'checked': ''?>>
+                      <?php 
+                      $excepted = NULL;
+                      if($detail['order_excepted'] == 0) :
+                        if($canceled == 1) :
+                          $excepted = 1;
+                        else :
+                          $excepted = 0;
+                        endif;
+                      else :
+                        $excepted = 1;
+                      endif;?>
+                      value='<?=$excepted?>'
+                      <?=($detail['order_excepted'] == true || $canceled == 1) ? 'checked': ''?>>
                 <span>취소</span>
               </label>
             </td>
@@ -170,7 +204,7 @@
               <input type='text' 
                 class='text-end bg-dark bg-opacity-10 request-subtotal'
                 data-name='order[request_amount]'
-                <?php if ( $detail['order_excepted'] ) : ?>
+                <?php if ( $detail['order_excepted'] || $canceled == 1) : ?>
                 value='0.00'
                 <?php else: ?>
                 value='<?=number_format( ($qty * $price), $detail['currency_float'] )?>'
@@ -227,12 +261,16 @@
                                   echo " checked='true'";
                                 }
                               }
+                              if($option_disabled == 1) { 
+                                echo " disabled='true'";
+                              }
                               echo  ">{$rOption['option_name']}
                                     </label>";
                             endif;
                           endforeach;
                         endif;
                       endif; ?>
+                      <span><?=$require['requirement_selected_option_id']?></span>
                     </div>
                   </div>
                 <?php endforeach;
