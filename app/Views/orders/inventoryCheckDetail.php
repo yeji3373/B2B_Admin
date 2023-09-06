@@ -86,7 +86,8 @@
         <tbody>
         <?php if ( !empty($details) ) : 
           foreach ($details AS $i => $detail ) :?>
-          <?php $seletedOptions = []; ?>
+          <?php $seletedOptions = []; 
+                $canceled = 0; ?>
           <tr class='detail_items <?=$detail['order_excepted'] ? 'bg-danger bg-opacity-10' : ''?>'>
             <td>
               <?=$i + 1?>
@@ -140,7 +141,6 @@
                         style='width: 3rem;'>
                 </p>
                 <?php if(!empty($requirement[$i])) : 
-                        $canceled = NULL;
                         foreach($requirement[$i] AS $j => $require) : 
                           if(!empty($require['requirement_selected_option_id'])) : 
                             array_push($seletedOptions, $require['requirement_selected_option_id']);
@@ -155,7 +155,7 @@
                               echo $detail['prd_change_qty'];
                             else :
                               echo $detail['prd_order_qty'];
-                            endif;
+                            endif; 
                           endif;
                         else :
                           echo $detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty'];
@@ -250,7 +250,11 @@
                           // var_dump($require);
                             if ( $rOption['requirement_idx'] == $require['requirement_id'] ) :
                               // print_r($rOption);
-                              echo "<label>
+                              echo "<label ";
+                              if($require['requirement_selected_option_id'] == $rOption['idx']){
+                                echo "class='text-bg-secondary'";
+                              }
+                              echo ">
                                       <input type='checkbox' 
                                         class='require-option-use'
                                         value='{$rOption['idx']}' 
@@ -270,7 +274,6 @@
                           endforeach;
                         endif;
                       endif; ?>
-                      <span><?=$require['requirement_selected_option_id']?></span>
                     </div>
                   </div>
                 <?php endforeach;

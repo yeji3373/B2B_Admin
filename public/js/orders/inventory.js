@@ -28,6 +28,8 @@ $(document).ready(function() {
     if ( typeof $('.packaging-status option:selected').data('disabled') != 'undefined'
         && $('.packaging-status option:selected').data('disabled') == true ) {
       $(".status-save-btn").attr('disabled', true);
+    }else{
+      $(".status-save-btn").attr('disabled', false);
     }
   }
 }).on('click', '.inventory-detail-container .btn', function(e) {
@@ -117,6 +119,8 @@ $(document).ready(function() {
     if ( typeof $('.packaging-status option:selected').data('disabled') != 'undefined'
         && $('.packaging-status option:selected').data('disabled') == true ) {
       $(".status-save-btn").attr('disabled', true);
+    }else{
+      $(".status-save-btn").attr('disabled', false);
     }
     
     if ( currentStepIndex >= $('.packaging-status option').index($('.packaging-status option:selected')) )  {
