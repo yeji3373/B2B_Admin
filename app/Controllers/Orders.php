@@ -481,6 +481,8 @@ class Orders extends BaseController {
     $order = $this->request->getPost('order');
     $packaging = $this->request->getPost('packaging');
 
+    // var_dump($order);
+    // return;
     // var_dump($requirement);
     // // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
     if ( !empty($details) ) {
@@ -541,8 +543,21 @@ class Orders extends BaseController {
         if ( $order['request_amount'] != $order['inventory_fixed_amount'] ) {
             $this->order->save($order);
         }
+        if($order['order_fix']) {
+          $order_total = 0;
+          // int test = 0;
+          foreach ($order['product_total_amount'] AS $key => $value) {
+            // echo $key;
+            // print_r($value['total']);
+            $order_total+=$value['total'];
+          }
+          $order['order_amount'] = $order_total;
+          $this->order->save($order);
+        }
       }
     }
+
+    return;
 
     if ( !empty($packaging) ) {
       $packagingDetailIds = []; // 수정해야할 detail id
@@ -606,7 +621,7 @@ class Orders extends BaseController {
     } else {
       // 주문에 해당하는 packaging detail 자체가 없음.
     }
-    return redirect()->back();
+    return redirect()->back();    
   }
 
   public function getCurrentStepPackageStatus($packagingDetail = []) {

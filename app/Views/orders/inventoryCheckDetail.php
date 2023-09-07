@@ -26,15 +26,17 @@
         <div class='con'><?=$order['order_number']?> / <?=$order['created_at']?></div>
       </div>
       <div class='d-flex flex-column'>
-        <label class='border border-0 border-bottom'>재고요청 / 확정 금액</label>
+        <label class='border border-0 border-bottom'>재고요청 / 재고확정 / 주문확정금액</label>
         <div class='con'>
           <input type='hidden' name='order[id]' value='<?=$order['id']?>'>
           <input type='hidden' name='order[request_amount]' value='<?=$order['request_amount']?>'>
+          <input type='hidden' name='order[order_fix]' value='0'>
           <input type='hidden' 
                 name='order[inventory_fixed_amount]' 
                 value='<?=$order['inventory_fixed_amount']?>'>
           <span><?=$order['currency_sign']. number_format($order['request_amount'], $order['currency_float'])?></span>
           / <?=$order['currency_sign']?><span class='inventory_fixed_amount'><?=number_format($order['inventory_fixed_amount'], $order['currency_float'])?></span>
+          / <?=$order['currency_sign']?><span class='order_amount'><?=number_format($order['order_amount'], $order['currency_float'])?></span>
         </div>
       </div>
     </div>
@@ -52,6 +54,7 @@
                     data-current-step='<?=!empty($pStatus['selected']) ? '1' : '0'?>'
                     data-order-by='<?=$pStatus['order_by']?>'
                     data-disabled='<?=is_null($pStatus['department_ids']) ? '0' : (($pStatus['department_ids'] == -1) ? 1 : 0);?>'
+                    data-order-fix='<?=$pStatus['payment_request']?>'
                     <?=!empty($pStatus['selected']) ? 'selected' : ''?>>
               <?=$pStatus['status_name']?>
             </option>
@@ -194,16 +197,22 @@
               <?php 
                 $qty = 0; $price = 0;
                 if ( $detail['prd_qty_changed'] ) {
-                  $qty = $detail['prd_change_qty'];
+                  if(in_array('1', $seletedOptions)) :
+                    $qty = $detail['prd_change_qty'];
+                  else :
+                    $qty = $detail['prd_order_qty'];
+                  endif;
                 } else $qty = $detail['prd_order_qty'];
 
                 if ( $detail['prd_price_changed'] ) {
                   $price = $detail['prd_change_price'];
                 } else $price = $detail['prd_price'];
               ?>
+              <input type='hidden' name='order[product_total_amount][<?=$i?>][id]' value='<?=$detail['id']?>'>
               <input type='text' 
                 class='text-end bg-dark bg-opacity-10 request-subtotal'
                 data-name='order[request_amount]'
+                name='order[product_total_amount][<?=$i?>][total]'
                 <?php if ( $detail['order_excepted'] || $canceled == 1) : ?>
                 value='0.00'
                 <?php else: ?>

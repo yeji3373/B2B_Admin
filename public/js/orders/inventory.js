@@ -13,6 +13,8 @@ $(document).ready(function() {
   });
   inventoryAmount();
 
+  $('input[name="order[order_fix]"]').val($('.packaging-status option:selected').data('orderFix'));
+
   if ( $('.packaging-status').length ) {
     currentStepIndex = $('.packaging-status option').index($('.packaging-status option:selected'));
     if ( typeof $('.packaging-status option:selected').data('hasEmail') != 'undefined'
@@ -86,19 +88,19 @@ $(document).ready(function() {
     }
   }
   inventoryAmount();
-}).on('change', '.packaging_check', function() {
-  if ( typeof $(this).data('target') != 'undefined' ) {
-    if ( $(this).parent().find($(this).data('target')).length ) {
-      Array.from($(this).parent().find($(this).data('target'))).forEach((v) => {
-        if ( $(this).val() == 1 ) {
-          $(v).attr('name', $(v).data('name'));
-        } else {
-          $(v).removeAttr('name');
-        }
-      });
-    }
-    inventoryAmount();
-  }
+// }).on('change', '.packaging_check', function() {
+//   if ( typeof $(this).data('target') != 'undefined' ) {
+//     if ( $(this).parent().find($(this).data('target')).length ) {
+//       Array.from($(this).parent().find($(this).data('target'))).forEach((v) => {
+//         if ( $(this).val() == 1 ) {
+//           $(v).attr('name', $(v).data('name'));
+//         } else {
+//           $(v).removeAttr('name');
+//         }
+//       });
+//     }
+//     inventoryAmount();
+//   }
 }).on('keyup change', '.request-amount-change', function(e) {
   $find = null, subtotal = 0, time = 1000;
 
@@ -131,7 +133,12 @@ $(document).ready(function() {
           $(v).attr('name', $(v).data('name'));
         }
       });
-    } 
+    }
+    //결제요청을 하면 그게 곧 order_fixed란 뜻이라 packaging_status의 payment_request 컬럼값을 가져와서 orderFix로 넣었음.
+    if ( typeof $('.packaging-status option:selected').data('orderFix') != 'undefined') {
+      $('input[name="order[order_fix]"]').val($('.packaging-status option:selected').data('orderFix'));
+      $('.packaging-status option:selected').data('orderFix')
+    }
   }
 
   if ( typeof $(this).find('option:selected').data('orderBy') != 'undefined') {
@@ -184,5 +191,12 @@ function inventoryAmount() {
     if ( $(".inventory_fixed_amount").length ) {
       $(".inventory_fixed_amount").text(inventory_amount);
     }
+    // let data = '';
+    // Array.from($(".request-subtotal")).forEach((v) => {
+    //   if ($(v).attr('type') == 'text') {
+    //     data += $(v).val();
+    //   }
+    // });
+    // console.log(data);
   }
 }
