@@ -191,12 +191,5 @@ function inventoryAmount() {
     if ( $(".inventory_fixed_amount").length ) {
       $(".inventory_fixed_amount").text(inventory_amount);
     }
-    // let data = '';
-    // Array.from($(".request-subtotal")).forEach((v) => {
-    //   if ($(v).attr('type') == 'text') {
-    //     data += $(v).val();
-    //   }
-    // });
-    // console.log(data);
   }
 }
