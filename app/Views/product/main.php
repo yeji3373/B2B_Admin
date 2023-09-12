@@ -73,13 +73,14 @@
           <th rowspan='2'>Barcode</th>
           <th rowspan='2'>Description</th>
           <!-- <th rowspan='2'>type</th> -->
-          <th rowspan='2'>체품무게</th>
+          <th rowspan='2'>제품무게</th>
           <th rowspan='2'>기타</th>
           <th colspan='2'>가격(원)</th>
           <th rowspan='2'>공급률 적용<br/>(브랜드별)</th>
           <th class='w-8p' rowspan='2'>공급률 적용</th>
           <th rowspan='2'>표시여부</th>
           <th rowspan='2'>판매여부</th>
+          <th rowspan='2'>수정날짜</th>
         </tr>
         <tr>
           <th>소비자가</th>
@@ -186,6 +187,13 @@
           </td>
           <td>
             <?php if ( $product['discontinued'] == 1 ) { echo '<label>판매안함</label>'; } ?>
+          </td>
+          <td>
+            <?php 
+            if ( !empty($product['updated_at']) ) {
+              echo $product['updated_at'];
+            }
+            ?>
           </td>
         </tr>      
         <?php endforeach;

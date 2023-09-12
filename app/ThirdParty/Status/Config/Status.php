@@ -127,7 +127,9 @@ class Status extends BaseConfig {
       case 'supplyPrice' : 
         $result['export'] = [ [ 'header'  => '소비자가',
                                 'field'   => 'retail_price'],
-                              [ 'header'  => '=concat("공급가",char(10),"수동공급가,구분해서 입력",char(10),"예) 1000/1200")', 
+                              // [ 'header'  => '=concat("공급가",char(10),"수동공급가,구분해서 입력",char(10),"예) 1000/1200")', 
+                              //   'field'   => 'supply_price'],
+                              [ 'header'  => '=concat("공급가",char(10),"수동공급가 입력")', 
                                 'field'   => 'supply_price'],
                               [ 'header'  => '=concat("공급률 사용여부",char(10),"1:공급률사용")', 
                                 'field'   => 'supply_rate_applied' ],

@@ -85,10 +85,10 @@ $(document).on('click', '.brand-btn', function() {
   } else {
     if ( parseInt($(this).val()) == 0 ) $(this).closest('form').find('[name=brand_control]').val(0);
   } 
-}).on('change', '[name$="[margin_rate]"]', function() {
-  if ( $(this).val() != $(this).data('old') ) {
+}).on('keyup', '[name$="[margin_rate]"]', function() {
+  // if ( $(this).val() != $(this).data('old') ) {
     $(this).closest('form').find('[name=margin_rate_control]').val(1);
-  } else $(this).closest('form').find('[name=margin_rate_control]').val(0);
+  // } else $(this).closest('form').find('[name=margin_rate_control]').val(0);
 }).on('keypress', 'form', function(e) {
   if ( e.keyCode == 13 ) return false;
 });
