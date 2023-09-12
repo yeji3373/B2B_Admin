@@ -12,6 +12,7 @@ $(document).ready(function() {
     }
   });
   inventoryAmount();
+  // fixedAmount();
 
   $('input[name="order[order_fix]"]').val($('.packaging-status option:selected').data('orderFix'));
 
@@ -173,6 +174,21 @@ $(document).ready(function() {
   } else {
     optionIds.val($(this).val());
   }
+}).on('keyup change', '.fixed-qty', function(e) {
+  $find = null, subtotal = 0, time = 1000;
+
+  if ( $(this).hasClass('prd-price') ) $find = $(this).closest('tr').find('.fixed-qty');
+  if ( $(this).hasClass('fixed-qty') ) $find = $(this).closest('tr').find('.prd-price');
+
+  if ( $(this).val().length >= 1 && $(this).closest('tr').find('.order_excepted').val() == 0) {
+    if ( e.keyCode == 13 ) time = 0;
+    setTimeout(() => {
+      if ( $(this).val() == '' ) $(this).val(0);
+      subtotal = parseFloat($(this).val()) * parseFloat($find.val());
+      $(this).closest('tr').find('.request-subtotal').val(subtotal.toFixed(2));
+      inventoryAmount();
+    }, time);
+  }
 });
 
 function inventoryAmount() {
@@ -184,12 +200,20 @@ function inventoryAmount() {
       }
     });
 
-    inventory_amount = inventory_amount.toFixed(2);
-
-    $('input[name="order[inventory_fixed_amount]"]').val(inventory_amount);
     
-    if ( $(".inventory_fixed_amount").length ) {
-      $(".inventory_fixed_amount").text(inventory_amount);
+    inventory_amount = inventory_amount.toFixed(2);
+    if ( $(".packaging-status option:selected").data('orderFix') == true ) { 
+      $('input[name="order[order_amount]"]').val(inventory_amount);
+      if ( $(".order_amount").length ) {
+        $(".order_amount").text(inventory_amount);
+      }
+  
+    } else {
+      $('input[name="order[inventory_fixed_amount]"]').val(inventory_amount);
+      if ( $(".inventory_fixed_amount").length ) {
+        $(".inventory_fixed_amount").text(inventory_amount);
+      }
+  
     }
   }
 }

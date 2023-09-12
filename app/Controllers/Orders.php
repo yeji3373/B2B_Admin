@@ -480,11 +480,11 @@ class Orders extends BaseController {
     $requirement = $this->request->getPost('requirement');
     $order = $this->request->getPost('order');
     $packaging = $this->request->getPost('packaging');
-
-    // var_dump($order);
+    // print_r($details);
+    // print_r($order);
     // return;
     // var_dump($requirement);
-    // // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
+    // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
     if ( !empty($details) ) {
       foreach( $details AS $detail ) :
         if ( !empty($detail) ) {
@@ -515,15 +515,26 @@ class Orders extends BaseController {
             unset($detail['prd_qty_changed']);
             unset($detail['prd_change_qty']);
           }
+          
+          if ( !empty($order) ) {
+            if ( array_key_exists('order_fix', $order) ) {
+              if($order['order_fix']) {
+                $detail['changed_manager'] = session()->userData['idx'];
+                $detail['id'] = $detailID;
+                $this->orderDetail->save($detail);
+              }
+            }
+          }
 
           if ( !empty($detail) ) {
             $detail['changed_manager'] = session()->userData['idx'];
-            $detail['id'] = $detailID;
-
+            if ( !array_key_exists('id', $detail) ) $detail['id'] = $detailID;
             $this->orderDetail->save($detail);
           }
         }
+        print_r($detail);
       endforeach;
+
     } else {
       return redirect()->to(site_url(previous_url()))->with('error', 'input date error');
     }
@@ -545,10 +556,7 @@ class Orders extends BaseController {
         }
         if($order['order_fix']) {
           $order_total = 0;
-          // int test = 0;
           foreach ($order['product_total_amount'] AS $key => $value) {
-            // echo $key;
-            // print_r($value['total']);
             $order_total+=$value['total'];
           }
           $order['order_amount'] = $order_total;
@@ -556,8 +564,6 @@ class Orders extends BaseController {
         }
       }
     }
-
-    return;
 
     if ( !empty($packaging) ) {
       $packagingDetailIds = []; // 수정해야할 detail id

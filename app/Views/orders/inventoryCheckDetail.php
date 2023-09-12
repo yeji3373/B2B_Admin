@@ -31,9 +31,8 @@
           <input type='hidden' name='order[id]' value='<?=$order['id']?>'>
           <input type='hidden' name='order[request_amount]' value='<?=$order['request_amount']?>'>
           <input type='hidden' name='order[order_fix]' value='0'>
-          <input type='hidden' 
-                name='order[inventory_fixed_amount]' 
-                value='<?=$order['inventory_fixed_amount']?>'>
+          <input type='hidden' name='order[inventory_fixed_amount]' value='<?=$order['inventory_fixed_amount']?>'>
+          <input type='hidden' name='order[order_amount]' value='<?=$order['order_amount']?>'>
           <span><?=$order['currency_sign']. number_format($order['request_amount'], $order['currency_float'])?></span>
           / <?=$order['currency_sign']?><span class='inventory_fixed_amount'><?=number_format($order['inventory_fixed_amount'], $order['currency_float'])?></span>
           / <?=$order['currency_sign']?><span class='order_amount'><?=number_format($order['order_amount'], $order['currency_float'])?></span>
@@ -126,7 +125,7 @@
                         name='detail[<?=$i?>][prd_change_price]' 
                         value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>' 
                         style='width: 5rem;'
-                        <?=$price_disabled == 1 ? 'disabled' : ''?>
+                        <?=(!empty($price_disabled) && ($price_disabled == 1)) ? 'disabled' : ''?>
                         >
                 </p>
             </td>
@@ -141,29 +140,50 @@
                         class='request-amount-change prd-qty'
                         name='detail[<?=$i?>][prd_change_qty]' 
                         value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
-                        style='width: 3rem;'>
+                        style='width: 3rem;'
+                        <?=(!empty($price_disabled) && ($price_disabled == 1)) ? 'disabled' : ''?>
+                        >
                 </p>
-                <?php if(!empty($requirement[$i])) : 
-                        foreach($requirement[$i] AS $j => $require) : 
-                          if(!empty($require['requirement_selected_option_id'])) : 
-                            array_push($seletedOptions, $require['requirement_selected_option_id']);
-                          endif; 
-                        endforeach;
-                        if(!empty($seletedOptions)) :
-                          if(in_array('3', $seletedOptions) || in_array('4', $seletedOptions)) :
-                            echo "cancel";
-                            $canceled = 1;
-                          else :
-                            if(in_array('1', $seletedOptions)) :
-                              echo $detail['prd_change_qty'];
-                            else :
-                              echo $detail['prd_order_qty'];
+                <p>
+                <?php $value = 0;
+                      if(empty($detail['prd_fixed_qty'])) {
+                        if(!empty($requirement[$i])) : 
+                          foreach($requirement[$i] AS $j => $require) : 
+                            if(!empty($require['requirement_selected_option_id'])) : 
+                              array_push($seletedOptions, $require['requirement_selected_option_id']);
                             endif; 
+                          endforeach;
+                          if(!empty($seletedOptions)) :
+                            if(in_array('3', $seletedOptions) || in_array('4', $seletedOptions)) :
+                              $value = 0;
+                              $canceled = 1;
+                            else :
+                              if(in_array('1', $seletedOptions)) :
+                                $value = $detail['prd_change_qty'];
+                              else :
+                                $value = $detail['prd_order_qty'];
+                              endif;
+                            endif;
+                          else :
+                            if(empty($detail['prd_qty_changed'])) {
+                              $value = $detail['prd_order_qty'];
+                            } else {
+                              $value = $detail['prd_change_qty'];
+                            }
                           endif;
                         else :
-                          echo $detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty'];
-                        endif;
-                      endif; ?>
+                          if(empty($detail['prd_qty_changed'])) {
+                            $value = $detail['prd_order_qty'];
+                          } else {
+                            $value = $detail['prd_change_qty'];
+                          }
+                        endif; 
+                      }else{
+                        $value = $detail['prd_fixed_qty'];
+                      }
+                      echo "<input type='number' class='fixed-qty' name='detail[{$i}][prd_fixed_qty]' value='".$value."' style='width: 3rem;'>";
+                      ?>
+                </p>
               </div>
             </td>
             <td>
@@ -196,17 +216,28 @@
               <?=$detail['currency_sign']?>
               <?php 
                 $qty = 0; $price = 0;
-                if ( $detail['prd_qty_changed'] ) {
-                  if(in_array('1', $seletedOptions)) :
-                    $qty = $detail['prd_change_qty'];
-                  else :
-                    $qty = $detail['prd_order_qty'];
-                  endif;
-                } else $qty = $detail['prd_order_qty'];
+                if(empty($detail['prd_fixed_qty'])) {
+                  if ( $detail['prd_qty_changed'] ) {
+                    if(!empty($seletedOptions)) :
+                      if(in_array('1', $seletedOptions)) :
+                        $qty = $detail['prd_change_qty'];
+                      else :
+                        $qty = $detail['prd_order_qty'];
+                      endif;
+                    else :
+                      $qty = $detail['prd_change_qty'];
+                    endif;
+                  } else $qty = $detail['prd_order_qty'];
 
-                if ( $detail['prd_price_changed'] ) {
-                  $price = $detail['prd_change_price'];
-                } else $price = $detail['prd_price'];
+                  if ( $detail['prd_price_changed'] ) {
+                    $price = $detail['prd_change_price'];
+                  } else $price = $detail['prd_price'];
+                } else {
+                  $qty = $detail['prd_fixed_qty'];
+                  if ( $detail['prd_price_changed'] ) {
+                    $price = $detail['prd_change_price'];
+                  } else $price = $detail['prd_price'];
+                }
               ?>
               <input type='hidden' name='order[product_total_amount][<?=$i?>][id]' value='<?=$detail['id']?>'>
               <input type='text' 
@@ -274,7 +305,7 @@
                                   echo " checked='true'";
                                 }
                               }
-                              if($option_disabled == 1) { 
+                              if((!empty($option_disabled)) && ($option_disabled == 1)) { 
                                 echo " disabled='true'";
                               }
                               echo  ">{$rOption['option_name']}

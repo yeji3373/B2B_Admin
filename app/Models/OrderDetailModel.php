@@ -16,7 +16,7 @@ class OrderDetailModel extends Model {
     'prd_change_price', 'prd_price_changed',
     'changed_manager', 'prd_discount',
     'margin_rate_id', 'status_id', 'expiration_date',
-    'detail_desc'
+    'detail_desc', 'prd_fixed_qty'
   ];
 
   protected $useTimestamps = true;
