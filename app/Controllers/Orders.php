@@ -483,9 +483,7 @@ class Orders extends BaseController {
     $requirement = $this->request->getPost('requirement');
     $order = $this->request->getPost('order');
     $packaging = $this->request->getPost('packaging');
-    // print_r($details);
-    // print_r($order);
-    // return;
+
     // var_dump($requirement);
     // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
     if ( !empty($details) ) {
@@ -535,7 +533,7 @@ class Orders extends BaseController {
             $this->orderDetail->save($detail);
           }
         }
-        // print_r($detail);
+
       endforeach;
 
     } else {

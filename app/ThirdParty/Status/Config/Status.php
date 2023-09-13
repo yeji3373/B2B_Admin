@@ -6,7 +6,8 @@ use CodeIgniter\Config\BaseConfig;
 define('IMAGEURL', 'https://beautynetkorea.daouimg.com');
 
 class Status extends BaseConfig {
-  public function imageSrc($url = '', Array $src = []) {
+  // public function imageSrc($url = '', Array $src = []) {
+  public function imageSrc($url = '', $src = '') {
     $imageSrc;
     
     switch($url) {
@@ -15,6 +16,7 @@ class Status extends BaseConfig {
         break;
       case 'prd' :
         $imageSrc = $src;
+        break;
       default :
         $imageSrc = IMAGEURL."/b2b/documents/common/no-image.png";
         break;
