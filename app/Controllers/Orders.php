@@ -133,17 +133,20 @@ class Orders extends BaseController {
             $updateData = [];
             $paypalDetail = $this->PaypalController->showInvoiceDetail($receipt['payment_invoice_id']);
             
-            // print_r($paypalDetail);
+            var_dump($this->PaypalController->result);
+            if ( $this->PaypalController->result['code'] != 404 ) {
+              // print_r($paypalDetail);
 
-            if ( $paypalDetail['data']['due_amount']['value'] == 0 && ($paypalCancelResult['data']['status'] == 'PAID' || $paypalCancelResult['data']['status'] == 'MARKED_AS_PAID') ) {
-              if ( is_null($receipt['payment_invoice_number']) ) {
-                $updateData['payment_invoice_number'] = $paypalDetail['data']['detail']['invoice_number'];
+              if ( $paypalDetail['data']['due_amount']['value'] == 0 && ($paypalCancelResult['data']['status'] == 'PAID' || $paypalCancelResult['data']['status'] == 'MARKED_AS_PAID') ) {
+                if ( is_null($receipt['payment_invoice_number']) ) {
+                  $updateData['payment_invoice_number'] = $paypalDetail['data']['detail']['invoice_number'];
+                }
+                $updateData['payment_date'] = $paypalDetail['data']['payments']['transactions'][0]['payment_date'];
+                $updateData['payment_status'] = 100;
+                $this->receipt->where('receipt_id', $receipt['receipt_id'])->set($updateData)->update();
+
+                $this->data['receipts'][$i]['payment_status'] = 100;
               }
-              $updateData['payment_date'] = $paypalDetail['data']['payments']['transactions'][0]['payment_date'];
-              $updateData['payment_status'] = 100;
-              $this->receipt->where('receipt_id', $receipt['receipt_id'])->set($updateData)->update();
-
-              $this->data['receipts'][$i]['payment_status'] = 100;
             }
           }
         }
@@ -689,7 +692,7 @@ class Orders extends BaseController {
                 ->deliveryJoin()
                 ->paymentJoin()
                 ->select('buyers.name AS buyer_name, buyers.id AS buyer_id')
-                ->select('users.id AS user_id, users.email AS user_email')
+                ->select('users.email AS user_email')
                 ->select('packaging_status.status_name')
                 ->select('receipt_group.payment_status_group')
                 ->select('payment_method.id AS payment_method_id
@@ -718,7 +721,7 @@ class Orders extends BaseController {
                 ->deliveryJoin()
                 ->paymentJoin()
                 ->select('buyers.name AS buyer_name')
-                ->select('users.idx AS user_idx, users.id AS user_id, users.name AS user_name, users.email AS user_email')
+                ->select('users.idx AS user_idx, users.name AS user_name, users.email AS user_email')
                 ->select('manager.name AS manager_name, manager.email AS manager_email')
                 ->select('buyers_address.consignee, buyers_address.region,
                           buyers_address.streetAddr1, buyers_address.streetAddr2,
