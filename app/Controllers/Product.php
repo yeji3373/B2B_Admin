@@ -584,9 +584,9 @@ class Product extends BaseController {
                                           ->orderBy('margin.margin_level ASC')->findAll();
                         if ( !empty($brandMargin) ) {
                           foreach($brandMargin AS $i => $margin ) :
-                            array_push($supplyPriceArr, [ 'margin_idx' => $brandMargin['margin_idx']
-                                                        , 'margin_level' => $brandMargin['margin_level']
-                                                        , 'price' => round(( $price['supply_price'] * $brandMargin['margin_rate'] ), 2)
+                            array_push($supplyPriceArr, [ 'margin_idx' => $margin['margin_idx']
+                                                        , 'margin_level' => $margin['margin_level']
+                                                        , 'price' => round(( $price['supply_price'] * $margin['margin_rate'] ), 2)
                                                         , 'product_idx' => $price['product_idx']
                                                         , 'product_price_idx' => $product_price_idx]);
                           endforeach;

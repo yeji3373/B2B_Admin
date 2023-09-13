@@ -9,7 +9,8 @@ class Status extends BaseConfig {
   // public function imageSrc($url = '', Array $src = []) {
   public function imageSrc($url = '', $src = '') {
     $imageSrc;
-    
+
+    if ( $src = 'img/no-image.png' ) { $url = NULL; }    
     switch($url) {
       case 'brand' :
         $imageSrc = IMAGEURL."/b2b/{$src['brand']}/{$src['name']}";
