@@ -10,7 +10,7 @@ class OrdersModel extends Model {
 
   protected $allowedFields = [
     'buyer_id', 'order_number', 'complete_payment',
-    'request_amount', 'inventory_fixed_amount',
+    'request_amount', 'inventory_fixed_amount', 'order_fixed',
     'order_amount', 'fixed_amount', 'subtotal_amount', 
     'currency_rate_idx', 'calc_currency_rate_id', 'currency_code', 
     'order_check', 'change_order_id',

@@ -7,11 +7,12 @@
         <label class='border border-0 border-bottom'>업체(buyer)명</label>
         <div class='con'>
           <?=$order['buyer_name']?> 
-          <?php if ( !empty($order['user_email']) ) :
-            echo mailto($order['user_email'], $order['user_name']);
-          else :
-            echo "{$order['user_name']}";
-          endif;
+          <?php 
+          // if ( !empty($order['user_email']) ) :
+            // echo mailto($order['user_email'], $order['user_id']."(".$order['user_name'].")");
+          // else :
+            // echo "{$order['user_id']}({$order['user_name']})";
+          // endif;
           ?>
         </div>
       </div>
@@ -181,7 +182,11 @@
                       }else{
                         $value = $detail['prd_fixed_qty'];
                       }
-                      echo "<input type='number' class='fixed-qty' name='detail[{$i}][prd_fixed_qty]' value='".$value."' style='width: 3rem;'>";
+                      echo "<input type='number' class='fixed-qty' name='detail[{$i}][prd_fixed_qty]' value='".$value."' style='width: 3rem;'";
+                            if(!empty($order['order_fixed']) && $order['order_fixed'] == 1){
+                              echo " disabled='true'";
+                            }
+                      echo ">";
                       ?>
                 </p>
               </div>
@@ -206,7 +211,11 @@
                         endif;
                       else :
                         $excepted = 1;
-                      endif;?>
+                      endif;
+                      if(!empty($order['order_fixed']) && $order['order_fixed'] == 1) {
+                        echo " disabled = 'true'";
+                      }
+                      ?>
                       value='<?=$excepted?>'
                       <?=($detail['order_excepted'] == true || $canceled == 1) ? 'checked': ''?>>
                 <span>취소</span>
@@ -276,7 +285,11 @@
                               name='requirement[<?=$i?>][<?=$j?>][requirement_reply]'
                               placeholder='<?=$require['requirement_detail']?>'
                               row='2'
-                              style='height: 2rem;'><?=$require['requirement_reply']?></textarea>
+                              style='height: 2rem;'
+                              <?php if((!empty($option_disabled)) && ($option_disabled == 1)) {
+                                      echo " disabled='true'";
+                                    }?>
+                              ><?=$require['requirement_reply']?></textarea>
                       </div>
                     </div>
                     <div class='d-flex flex-column w-100 text-start'>

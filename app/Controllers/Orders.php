@@ -535,7 +535,7 @@ class Orders extends BaseController {
             $this->orderDetail->save($detail);
           }
         }
-        print_r($detail);
+        // print_r($detail);
       endforeach;
 
     } else {
@@ -552,17 +552,20 @@ class Orders extends BaseController {
       endforeach;
     }
 
+    
+
     if ( !empty($order) ) {
       if ( array_key_exists('id', $order) ) {
         if ( $order['request_amount'] != $order['inventory_fixed_amount'] ) {
             $this->order->save($order);
         }
-        if($order['order_fix']) {
+        if($order['order_fix'] == 1) {
           $order_total = 0;
           foreach ($order['product_total_amount'] AS $key => $value) {
             $order_total+=$value['total'];
           }
           $order['order_amount'] = $order_total;
+          $order['order_fixed'] = $order['order_fix'];
           $this->order->save($order);
         }
       }

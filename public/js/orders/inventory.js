@@ -199,21 +199,24 @@ function inventoryAmount() {
         inventory_amount += parseFloat($(v).val());
       }
     });
-
     
     inventory_amount = inventory_amount.toFixed(2);
-    if ( $(".packaging-status option:selected").data('orderFix') == true ) { 
+    if ( $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected")) - 1).data("orderFix") == 1
+        && $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected"))).data("orderFix") == 0
+        ) { 
       $('input[name="order[order_amount]"]').val(inventory_amount);
       if ( $(".order_amount").length ) {
         $(".order_amount").text(inventory_amount);
       }
-  
     } else {
-      $('input[name="order[inventory_fixed_amount]"]').val(inventory_amount);
-      if ( $(".inventory_fixed_amount").length ) {
-        $(".inventory_fixed_amount").text(inventory_amount);
+      if ( $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected")) - 1).data("orderFix") == 0
+        && $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected"))).data("orderFix") == 0
+        ) {
+        $('input[name="order[inventory_fixed_amount]"]').val(inventory_amount);
+        if ( $(".inventory_fixed_amount").length ) {
+          $(".inventory_fixed_amount").text(inventory_amount);
+        }
       }
-  
     }
   }
 }
