@@ -8,9 +8,9 @@
         <div class='con'>
           <?=$order['buyer_name']?> 
           <?php if ( !empty($order['user_email']) ) :
-            echo mailto($order['user_email'], $order['user_id']."(".$order['user_name'].")");
+            echo mailto($order['user_email'], $order['user_name']);
           else :
-            echo "{$order['user_id']}({$order['user_name']})";
+            echo "{$order['user_name']}";
           endif;
           ?>
         </div>

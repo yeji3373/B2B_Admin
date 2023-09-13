@@ -94,7 +94,6 @@
                 </a>
               </p>
               <p>
-                <?=$order['user_id']?>
                 <?=$order['user_email']?>
               </p>
             </td>

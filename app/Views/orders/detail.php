@@ -6,9 +6,9 @@
       <div class='con'>
         <?=$order['buyer_name']?><br/>
         <?php if ( !empty($order['user_email']) ) :
-          echo mailto($order['user_email'], $order['user_id']."(".$order['user_name'].")");
+          echo mailto($order['user_email'], $order['user_name']);
         else :
-          echo "{$order['user_id']}({$order['user_name']})";
+          echo "{$order['user_name']}";
         endif;
         ?>
       </div>
@@ -101,7 +101,6 @@
                   <input type='hidden' name='request_amount' value='<?=$receipt['due_amount']?>'>
                   <!-- <input type='hidden' name='remain_amount' value='0'> -->
                   <input type='hidden' name='buyer_name' value='<?=$order['buyer_name']?>'>
-                  <input type='hidden' name='user_id' value='<?=$order['user_id']?>'>
                   <input type='hidden' name='user_idx' value='<?=$order['user_idx']?>'>
                   <input type='hidden' name='receipt_type' value='<?=($receipt['receipt_type'] + 1)?>'>
                 <div class='btn btn-sm btn-secondary btn-pi' data-type='receipt'><?=($receipt['receipt_type'] + 1)?>차 발행</div>
