@@ -168,13 +168,13 @@
       <div class='d-flex flex-column'>
         <?php foreach($users as $i =>  $user) : ?>
         <div class='d-flex flex-row border border-dark p-0 buyer-memeber-list'>
-          <div class='buyer-member d-flex flex-column border-end border-dark'>
-            <?=form_hidden("user[{$i}][idx]", $user['idx'])?>
+          <?=form_hidden("user[{$i}][idx]", $user['idx'])?>
+          <!-- <div class='buyer-member d-flex flex-column border-end border-dark'>            
             <label class='w-100 border-bottom border-dark p-1'>ID</label>
             <div class='p-1 text-center'>
-              <?=$user['id']?>
+              <?//=$user['email']?>
             </div>
-          </div>
+          </div> -->
           <div class='buyer-member d-flex flex-column border-end border-dark'>
             <label class='w-100 border-bottom border-dark p-1'>Name</label>
             <div class='p-1 text-center'>
