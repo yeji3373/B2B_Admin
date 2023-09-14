@@ -3,23 +3,28 @@ namespace Status\Config;
 
 use CodeIgniter\Config\BaseConfig;
 
-define('IMAGEURL', 'https://beautynetkorea.daouimg.com');
+define('IMAGEURL', '//beautynetkorea.daouimg.com');
 
 class Status extends BaseConfig {
-  public function imageSrc($url = '', Array $src = []) {
-    $imageSrc;
-    
-    switch($url) {
-      case 'brand' :
-        $imageSrc = IMAGEURL."/b2b/{$src['brand']}/{$src['name']}";
-        break;
-      case 'prd' :
-        $imageSrc = $src;
-      default :
-        $imageSrc = IMAGEURL."/b2b/documents/common/no-image.png";
-        break;
-    }
+  // public function imageSrc($url = '', Array $src = []) {
+  public function imageSrc($url = NULL, $src = NULL) {
+    $imageSrc = IMAGEURL."/b2b/documents/common/no-image.png";
 
+    if ( strpos($src, 'no-image') === false ) {
+      $imageSrc = $src;
+    }
+    // if ( strpos($src, 'no-image.png') === true ) { $url = NULL; }
+    // switch($url) {
+    //   case 'brand' :
+    //     $imageSrc = IMAGEURL."/b2b/{$src['brand']}/{$src['name']}";
+    //     break;
+    //   case 'prd' :
+    //     $imageSrc = $src;
+    //     break;
+    //   default :
+    //     $imageSrc = IMAGEURL."/b2b/documents/common/no-image.png";
+    //     break;
+    // }
     return $imageSrc;
   }
 

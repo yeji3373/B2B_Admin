@@ -211,7 +211,7 @@ class Brand extends BaseController {
                                 , 'margin_rate.available'=> 1])
                         ->orderBy('margin.idx ASC')
                         ->findAll();
-    var_dump($marginCheck);
+    
     if ( !empty($marginCheck) ) {
       $products = $this->products
                         ->where(['brand_id' => $data['brand_id']])

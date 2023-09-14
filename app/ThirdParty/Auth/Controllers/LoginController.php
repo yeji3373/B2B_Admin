@@ -61,9 +61,7 @@ class LoginController extends Controller
 		];
 
 		if (! $this->validate($rules)) {
-			return redirect()->to('login')
-				->withInput()
-				->with('errors', $this->validator->getErrors());
+			return redirect()->to('login')->withInput()->with('errors', $this->validator->getErrors());
 		}
 
 		// check credentials

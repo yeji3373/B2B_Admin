@@ -55,7 +55,8 @@ class Buyer extends BaseController
         $this->data['regions'] = $this->getRegion("id IN ( {$this->data['buyer']['region_ids']} )")->findAll();
       }
       if ( !empty($this->data['buyer']['countries_ids']) ) {
-        $this->data['countries'] = $this->getCountry()->whereIn("id", $this->data['buyer']['countries_ids'])->findAll();
+        $countries_ids = explode(",", $this->data['buyer']['countries_ids']);
+        $this->data['countries'] = $this->getCountry()->whereIn("id", $countries_ids)->findAll();
       }
       $this->data['margin'] = $this->margin->where('available', 1)->findAll();
       $this->data['currency'] = $this->currency->currency()

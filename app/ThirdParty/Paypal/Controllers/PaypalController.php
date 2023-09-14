@@ -78,11 +78,11 @@ class PaypalController extends Controller
     if ( $generate['code'] == 201 ) {   // successful request returns code 
       $this->invoiceId = $generate['data']['id'];
       $this->invoiceNumber = $this->orderInfo['invoice_number'];
-      // $this->sendInvoice();
+      $this->sendInvoice();
     } else if ( $generate['code'] == 200 ) {
       $this->invoiceId = $generate['data']['id'];
       $this->invoiceNumber = $generate['data']['detail']['invoice_number'];
-      // $this->sendInvoice();
+      $this->sendInvoice();
     } else {
       // // print_r($generate);
       // if ( $generate['code'] == 422 && $generate['error']['issue'] == 'DUPLICATE_INVOICE_NUMBER' ) {

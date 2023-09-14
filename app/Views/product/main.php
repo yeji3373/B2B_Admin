@@ -108,7 +108,7 @@
           </td>
           <td class='text-start'>
             <div class='d-flex flex-row'>
-              <img src='<?=$status->imageSrc($product['img_url'])?>' style='width: 3rem; height: 3rem;' class='me-1'>
+              <img src='<?=$status->imageSrc('prd', $product['img_url'])?>' style='width: 3rem; height: 3rem;' class='me-1'>
               <a href='<?=base_url("product/edit/{$product['id']}/{$product['brand_id']}")?>'>
                 <div>
                   <span class='brand_name bracket'><?=$product['brand_name']?></span>

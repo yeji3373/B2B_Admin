@@ -412,9 +412,16 @@ class Product extends BaseController {
                 $this->products->save($product);
               } else {
                 if ( $prdInfo['brand_id'] == $product['brand_id'] 
+                    && $prdInfo['barcode'] == $product['barcode']
                     && strtoupper(preg_replace("/\s+/", "", $prdInfo['name_en'])) == strtoupper(preg_replace("/\s+/", "", $product['name_en']))
                     && strtoupper(preg_replace("/\s+/", "", $prdInfo['type_en'])) == strtoupper(preg_replace("/\s+/", "", $product['type_en'])) ) {
                   
+                  unset($product['name_en']);
+                  unset($product['type_en']);
+                  unset($product['brand_id']);
+                  unset($product['brand']);
+                  unset($product['barcode']);
+
                   if ( $this->products->save($product) ) {
                     $productPriceArr[$prd_i]['product_idx'] = $prdInfo['id'];
                     $productSpqArr[$prd_i]['product_idx'] =  $prdInfo['id'];
@@ -487,9 +494,9 @@ class Product extends BaseController {
             // var_dump($productPriceArr);
             $marginRateModel = new MarginRateModel();
             $supplyPriceArr = [];
-            $brand_id = NULL;
+            // $brand_id = NULL;
             
-            $margins = $this->margin->where('available', 1)->findAll();
+            $margins = $this->margin->where('available', 1)->orderBy('margin_level ASC')->findAll();
             if ( !empty($margins) ) {
               foreach($productPriceArr AS $price_i => $price ) :
                 $priceTemp = [];
@@ -502,14 +509,19 @@ class Product extends BaseController {
                   if ( is_null($price['not_calculating_margin']) ) $price['not_calculating_margin'] = 0;
                   if ( is_null($price['taxation']) ) $price['taxation'] = 0;
 
-                  if ( !empty($price['brand_id']) && is_null($brand_id) ) $brand_id = $price['brand_id'];
+                  // if ( !empty($price['brand_id']) ) $brand_id = $price['brand_id'];
 
                   if ( !empty($price['not_calculating_margin']) ) {
                     if ( !empty($price['price']) ) {
                       $priceTemp = explode('/', $price['price']);
                       unset($price['price']);
                     } else array_push($failedData, $contents[$prid_id]);
-                  } else unset($price['price']);
+                  } else {
+                    // unset($price['price']);
+                    if ( empty($price['supply_price']) ) {
+                      array_push($failedData, $contents[$prd_i]);
+                    }
+                  }
 
                   // if ( !empty($price['supply_price']) ) {
                   //   $supplyPriceTemp = explode('/', $price['supply_price']);
@@ -541,29 +553,54 @@ class Product extends BaseController {
                         } else {
                           array_push($failedData, $contents[$prd_i]);
                         }
+                      } else {
+                        $product_price_idx = $prdPrice['idx'];
                       }
                     }
                   }
-
+                  
                   if ( !empty($product_price_idx) ) {
-                    if ( !empty($priceTemp) ) {
-                      foreach($margins AS $i => $margin) {
-                        array_push($supplyPriceArr, ['margin_idx' => $margin['idx']
-                                                    , 'margin_level' => $margin['margin_level']
-                                                    , 'price' => $priceTemp[$i]
-                                                    , 'product_idx' => $price['product_idx']
-                                                    , 'product_price_idx' => $product_price_idx]);
-                        
+                    // echo "brand_id : {$brand_id}";
+                    if ( !empty($price['not_calculating_margin']) ) {
+                      if ( !empty($priceTemp) ) {
+                        foreach($margins AS $i => $margin) {
+                          array_push($supplyPriceArr, [ 'margin_idx' => $margin['idx']
+                                                      , 'margin_level' => $margin['margin_level']
+                                                      , 'price' => $priceTemp[$i]
+                                                      , 'product_idx' => $price['product_idx']
+                                                      , 'product_price_idx' => $product_price_idx]);
+                        }
+                      } else {
+                        array_push($failedData, $contents[$prd_i]);
+                      }
+                    } else {
+                      if ( !empty($price['supply_price']) ) {
+                        $brandMargin = $this->margin
+                                          ->select("margin.margin_level AS margin_level")
+                                          ->select('margin_rate.margin_idx AS margin_idx, margin_rate.margin_rate AS margin_rate')
+                                          ->join('margin_rate', 'margin_rate.margin_idx = margin.idx')
+                                          ->where(['margin_rate.brand_id'=> $brand_id
+                                                  , 'margin_rate.available' => 1])
+                                          ->orderBy('margin.margin_level ASC')->findAll();
+                        if ( !empty($brandMargin) ) {
+                          foreach($brandMargin AS $i => $margin ) :
+                            array_push($supplyPriceArr, [ 'margin_idx' => $margin['margin_idx']
+                                                        , 'margin_level' => $margin['margin_level']
+                                                        , 'price' => round(( $price['supply_price'] * $margin['margin_rate'] ), 2)
+                                                        , 'product_idx' => $price['product_idx']
+                                                        , 'product_price_idx' => $product_price_idx]);
+                          endforeach;
+                        } else {
+                          // brand margin이 없으면 제외
+                        }
                       }
                     }
-                  // } else {
-                  //   return redirect()->back()->with('error', 'supply price 입력중 오류 발생. 다시 시도해주세요.');
                   }
                 }
               endforeach;
             } else {
               // margin 정보가 없을 때 오류 처리하기.
-            return;
+              return;
             }
           else :
             // productpricearr empty
@@ -571,38 +608,27 @@ class Product extends BaseController {
           endif;
 
           if ( !empty($supplyPriceArr)) :
+            // var_dump($supplyPriceArr);
             foreach($supplyPriceArr AS $supplyPrice) :
               if ( !empty($supplyPrice['product_idx']) && !empty($supplyPrice['product_price_idx']) && !empty($supplyPrice['price']) ) {
                 $supplyPriceVaildCheck = $this->supplyPrice
-                                              ->where(['product_idx' => $supplyPrice['product_idx']
-                                                      , 'product_price_idx' => $supplyPrice['product_price_idx']
-                                                      , 'margin_idx' => $supplyPrice['margin_idx']
-                                                      , 'margin_level' => $supplyPrice['margin_level']
-                                                      , 'price' => $supplyPrice['price']])
-                                              ->first();
+                                          ->where([ 'product_idx' => $supplyPrice['product_idx']
+                                                  , 'product_price_idx' => $supplyPrice['product_price_idx']
+                                                  , 'margin_idx'  => $supplyPrice['margin_idx']
+                                                  , 'margin_level'  => $supplyPrice['margin_level']
+                                                  , 'available' => 1])
+                                          ->first();
                 if ( empty($supplyPriceVaildCheck) ) {
-                  $supplyPrice['available'] = 1;
-                  if (!$this->supplyPrice->save($supplyPrice) ) {
-                    return redirect()->back()->with('error', '가격 등록중에 오류가 밸생했습니다. 다시 확인 후에 시도해주세요.');
+                  // $supplyPrice['available'] = 1;
+                  if ( !$this->supplyPrice->save(array_merge($supplyPrice, ['available' => 1])) ) {
+                    array_push($failedData, $contents[$prd_i]);
+                    // return redirect()->back()->with('error', '가격 등록중에 오류가 밸생했습니다. 다시 확인 후에 시도해주세요.');
                   }
                 } else {
-                  if ( $supplyPriceVaildCheck['available'] == 0 ) {
-                    $availableCheck = $this->supplyPrice
-                                            ->where(['product_idx' => $supplyPrice['product_idx']
-                                                    , 'product_price_idx' => $supplyPrice['product_price_idx']
-                                                    , 'margin_idx' => $supplyPrice['margin_idx']
-                                                    , 'available' => 1])
-                                            ->findAll();
-                    if ( !empty($availableCheck) ) {
-                      foreach($availableCheck AS $checkValue ) {
-                        if ( !$this->supplyPrice->save(['idx' => $checkValue['idx'], 'available' => 0]) ) {
-                          return redirect()->back()->with('error', 'supply price update error');
-                        }
-                      }
-                    }
-
-                    if ( !$this->supplyPrice->save(['idx' => $supplyPriceVaildCheck['idx'], 'available' => 1]) ) {
-                      return redirect()->back()->with('error', 'supply price update error 2');
+                  if ( $supplyPriceVaildCheck['price'] != $supplyPrice['price'] )  {
+                    if ( !$this->supplyPrice->save(['idx' => $supplyPriceVaildCheck['idx'], 'price' => $supplyPrice['price']]) ) {
+                      array_push($failedData, $contents[$prd_i]);
+                      // return redirect()->back()->with('error', 'supply price update error 2');
                     }
                   }
                 }
@@ -618,9 +644,9 @@ class Product extends BaseController {
               if ( empty($productSpq['product_idx']) ) {
                 return redirect()->back()->with('error', 'sqp입력 중 오류 발생');
               } else {
-                if ( is_null($productSpq['moq']) ) $productSpq['moq'] = 10;
+                if ( is_null($productSpq['moq']) ) $productSpq['moq'] = !is_null($productSpq['spq_inBox']) ? $productSpq['spq_inBox'] : (!is_null($productSpq['spq_outBox']) ? $productSpq['spq_outBox'] : 10 );
                 if ( is_null($productSpq['spq_inBox']) ) $productSpq['spq_inBox'] = 0;
-                if ( is_null($productSpq['spq_outBox']) ) $productSpq['spq_outBox'] = 10;
+                if ( is_null($productSpq['spq_outBox']) ) $productSpq['spq_outBox'] = 0;
                 if ( is_null($productSpq['spq']) ) $productSpq['spq'] = NULL;
                 if ( is_null($productSpq['calc_code']) ) $productSpq['calc_code'] = 0;
                 if ( is_null($productSpq['calc_unit']) ) $productSpq['calc_unit'] = NULL;
@@ -701,7 +727,7 @@ class Product extends BaseController {
                         , $this->status->getHeader('productSpq')['export']);
 
     array_unshift($header
-                        , ['header' => 'ID', 'field' => 'id', 'opts' => ['width' => 8]]
+                        , ['header' => 'ID', 'field' => 'id', 'opts' => ['width' => 0]]
                         , ['header' => 'Brand ID', 'field' => 'brand_id', 'opts' => ['width' => 8]]);
                         
     if ( $data['prd-include'] == true ) {
