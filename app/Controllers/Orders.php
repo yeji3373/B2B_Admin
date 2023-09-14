@@ -468,6 +468,8 @@ class Orders extends BaseController {
                   , $this->requirementRequest->requirement(['where' => ['requirement_request.order_id'=> $orderId
                                                                         , 'requirement_request.order_detail_id' => $detail['id']]])
                                               ->findAll());
+                                              //echo $this->requirementRequest->getLastQuery();
+                                              //print_r($this->data['requirement']);
       endforeach;
 
       $this->data['requirementOption'] = $this->requirementOption->where('available', 1)->findAll();

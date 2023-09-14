@@ -79,4 +79,13 @@ class OrdersModel extends Model {
                 ->join('buyers_address', 'buyers_address.idx = orders.address_id')
                 ->join("orders_receipt", "orders_receipt.order_id = orders.id", "left outer");
   }
+
+  public function requestRequirement($order_id) {
+    $this->select("{$this->table}.id, orders_detail.id AS orders_detail_id")
+        ->join("( SELECT requirement_request.*, orders_detail.id AS orders_detail_idx
+                  FROM orders_detail
+                  RIGHT OUTER JOIN requirement_request on requirement_request.order_detail_id = orders_detail.id
+                ) orders_detail on orders_detail.order_id = orders.id")
+        ->where("{$this->table}.id", $order_id);
+  }
 }

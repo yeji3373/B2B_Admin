@@ -300,9 +300,7 @@
                             $checkedOption = explode(",", $require['requirement_option_ids']);
                           endif;
                         foreach( $requirementOption AS $rOption ) :
-                          // var_dump($require);
                             if ( $rOption['requirement_idx'] == $require['requirement_id'] ) :
-                              // print_r($rOption);
                               echo "<label ";
                               if($require['requirement_selected_option_id'] == $rOption['idx']){
                                 echo "class='text-bg-secondary'";
@@ -313,7 +311,6 @@
                                         value='{$rOption['idx']}' 
                                         data-add-target='.requirement_option_ids'";
                               if ( !empty($checkedOption) ) {
-                                // var_dump($rOption);
                                 if ( in_array($rOption['idx'], $checkedOption) ) {
                                   echo " checked='true'";
                                 }
