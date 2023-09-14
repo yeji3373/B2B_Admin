@@ -533,7 +533,6 @@ class Orders extends BaseController {
             $this->orderDetail->save($detail);
           }
         }
-
       endforeach;
 
     } else {
@@ -549,8 +548,6 @@ class Orders extends BaseController {
         }
       endforeach;
     }
-
-    
 
     if ( !empty($order) ) {
       if ( array_key_exists('id', $order) ) {

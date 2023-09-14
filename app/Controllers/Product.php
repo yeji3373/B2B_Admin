@@ -727,7 +727,7 @@ class Product extends BaseController {
                         , $this->status->getHeader('productSpq')['export']);
 
     array_unshift($header
-                        , ['header' => 'ID', 'field' => 'id', 'opts' => ['width' => 8]]
+                        , ['header' => 'ID', 'field' => 'id', 'opts' => ['width' => 0]]
                         , ['header' => 'Brand ID', 'field' => 'brand_id', 'opts' => ['width' => 8]]);
                         
     if ( $data['prd-include'] == true ) {
