@@ -41,7 +41,8 @@
     </div>
     <div class='mt-3 d-flex flex-column'>
       <div class='text-end mb-2 px-0 d-flex flex-row'>
-        <?php if ( !empty($packagingStatus) && !empty($packaging_id) ) : ?>
+        <?php if ( !empty($packagingStatus) && !empty($packaging_id) ) :
+          //print_r($packagingStatus); ?>
         <div class='w-30 p-0 pe-2'>
           <input type='hidden' class='package' data-name='packaging[packaging_id]' value='<?=$packaging_id?>'>
           <input type='hidden' class='package packaging-order-by' data-name='packaging[order_by]'>
@@ -114,18 +115,19 @@
             </td>
             <td>
               <div class='d-flex flex-column text-end'>
-                <p class='<?=!empty($detail['prd_price_changed']) ? 'text-decoration-line-through' : ''?>'><?=$detail['currency_sign'].$detail['prd_price']?></p>
+                <p class='<?=!empty($detail['prd_change_price']) ? 'text-decoration-line-through' : ''?>'>
+                  <?=$detail['currency_sign'].number_format($detail['prd_price'], 2)?>
+                </p>
                 <p>
                   <?=$detail['currency_sign']?>
-                  <input type='number'
-                        step='any'
-                        data-compare-value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>'
+                  <input type='number' step='any'
+                        data-compare-value='<?=!empty($detail['prd_change_price']) ? $detail['prd_change_price'] : $detail['prd_price']?>'
                         data-compare-target='detail[<?=$i?>][prd_price_changed]'
-                        class='request-amount-change prd-price'
+                        class='request-amount-change prd-price <?=!empty($price_disabled) ? 'bg-dark bg-opacity-10': ''?>'
                         name='detail[<?=$i?>][prd_change_price]' 
                         value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>' 
                         style='width: 5rem;'
-                        <?=(!empty($price_disabled) && ($price_disabled == 1)) ? 'disabled' : ''?>
+                        <?=!empty($price_disabled) ? 'disabled' : ''?>
                         >
                 </p>
             </td>
@@ -135,59 +137,62 @@
                 <p>
                   <input type='number'
                         step='any'
-                        data-compare-value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
+                        data-compare-value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
                         data-compare-target='detail[<?=$i?>][prd_qty_changed]'
-                        class='request-amount-change prd-qty'
+                        class='request-amount-change prd-qty <?=!empty($price_disabled) ? 'bg-dark bg-opacity-10' : ''?>'
                         name='detail[<?=$i?>][prd_change_qty]' 
-                        value='<?=$detail['prd_qty_changed'] ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
+                        value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
                         style='width: 3rem;'
-                        <?=(!empty($price_disabled) && ($price_disabled == 1)) ? 'disabled' : ''?>
-                        >
+                        <?=!empty($price_disabled) ? 'disabled' : ''?>
+                  >
                 </p>
-                <p>
-                <?php $value = 0;
-                      if(empty($detail['prd_fixed_qty'])) {
-                        if(!empty($requirement[$i])) : 
-                          foreach($requirement[$i] AS $j => $require) : 
-                            if(!empty($require['requirement_selected_option_id'])) : 
-                              array_push($seletedOptions, $require['requirement_selected_option_id']);
-                            endif; 
-                          endforeach;
-                          if(!empty($seletedOptions)) :
-                            if(in_array('3', $seletedOptions) || in_array('4', $seletedOptions)) :
-                              $value = 0;
-                              $canceled = 1;
-                            else :
-                              if(in_array('1', $seletedOptions)) :
-                                $value = $detail['prd_change_qty'];
-                              else :
-                                $value = $detail['prd_order_qty'];
-                              endif;
-                            endif;
-                          else :
-                            if(empty($detail['prd_qty_changed'])) {
-                              $value = $detail['prd_order_qty'];
-                            } else {
-                              $value = $detail['prd_change_qty'];
-                            }
-                          endif;
-                        else :
-                          if(empty($detail['prd_qty_changed'])) {
-                            $value = $detail['prd_order_qty'];
-                          } else {
-                            $value = $detail['prd_change_qty'];
-                          }
+                <?php if ( !empty($price_disabled) ) : ?>
+                <p class='mt-1'>
+                  <?php 
+                  $value = 0;
+                  if(empty($detail['prd_fixed_qty'])) {
+                    if(!empty($requirement[$i])) : 
+                      foreach($requirement[$i] AS $j => $require) : 
+                        if(!empty($require['requirement_selected_option_id'])) : 
+                          array_push($seletedOptions, $require['requirement_selected_option_id']);
                         endif; 
-                      }else{
-                        $value = $detail['prd_fixed_qty'];
+                      endforeach;
+                      if(!empty($seletedOptions)) :
+                        // requirement_option_check
+                        if(in_array('3', $seletedOptions) || in_array('4', $seletedOptions)) :
+                          $value = 0;
+                          $canceled = 1;
+                        else :
+                          if(in_array('1', $seletedOptions)) :
+                            $value = $detail['prd_change_qty'];
+                          else :
+                            $value = $detail['prd_order_qty'];
+                          endif;
+                        endif;
+                      else :
+                        if(empty($detail['prd_qty_changed'])) {
+                          $value = $detail['prd_order_qty'];
+                        } else {
+                          $value = $detail['prd_change_qty'];
+                        }
+                      endif;
+                    else :
+                      if(empty($detail['prd_qty_changed'])) {
+                        $value = $detail['prd_order_qty'];
+                      } else {
+                        $value = $detail['prd_change_qty'];
                       }
-                      echo "<input type='number' class='fixed-qty' name='detail[{$i}][prd_fixed_qty]' value='".$value."' style='width: 3rem;'";
-                            if(!empty($order['order_fixed']) && $order['order_fixed'] == 1){
-                              echo " disabled='true'";
-                            }
-                      echo ">";
-                      ?>
+                    endif; 
+                  } else {
+                    $value = $detail['prd_fixed_qty'];
+                  } 
+                    
+                  echo "<input type='number' class='fixed-qty' name='detail[{$i}][prd_fixed_qty]' value='".$value."' style='width: 3rem;'";
+                    if(!empty($order['order_fixed']) && $order['order_fixed'] ) echo " disabled='true'";
+                  echo ">";
+                  ?>
                 </p>
+                <?php endif; ?>
               </div>
             </td>
             <td>
@@ -309,14 +314,10 @@
                                         class='require-option-use'
                                         value='{$rOption['idx']}' 
                                         data-add-target='.requirement_option_ids'";
-                              if ( !empty($checkedOption) ) {
-                                if ( in_array($rOption['idx'], $checkedOption) ) {
-                                  echo " checked='true'";
-                                }
+                              if ( !empty($checkedOption) && in_array($rOption['idx'], $checkedOption) ) {
+                                echo " checked='true'";
                               }
-                              if((!empty($option_disabled)) && ($option_disabled == 1)) { 
-                                echo " disabled='true'";
-                              }
+                              if ( !empty($option_disabled) || !empty($price_disabled) ) echo " disabled='true'";
                               echo  ">{$rOption['option_name']}
                                     </label>";
                             endif;

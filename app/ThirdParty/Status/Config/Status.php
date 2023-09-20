@@ -166,11 +166,11 @@ class Status extends BaseConfig {
                                 'field'   => 'spq_inBox'],
                               [ 'header'  => '아웃박스 수량', 
                                 'field'   => 'spq_outBox'], 
-                              [ 'header'  => '=concat("0:인박스 수량 기준",char(10),"1:아웃박스 수량 기준")', 
-                                'field'   => 'spq'],
+                              [ 'header'  => '=concat("수량 변경 기준", char(10), 1:인박스 수량 기준",char(10),"2:아웃박스 수량 기준")', 
+                                'field'   => 'spq_criteria'],
                               [ 'header'  => '=concat("연산방식",char(10),"0:더하기",char(10),"1:배수")', 
                                 'field'   => 'calc_code'],
-                              [ 'header'  => '연산할 단위', 
+                              [ 'header'  => '=concat("연산할 단위", char(10), "숫자입력", char(10), "연산방식에 주의")', 
                                 'field'   => 'calc_unit'] ];
         break;
       default: 

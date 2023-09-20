@@ -101,7 +101,7 @@
       </li>
       <li>
         <form action="<?//=site_url('product/attachProductSpq')?>" method="post" enctype="multipart/form-data">
-          <input type='hidden' name='type' value='spq'>
+          <input type='hidden' name='type' value='spq_criteria'>
           <p>
             <input type="file" name="file" class="form-control" id="file">
             <label>SPQ csv로 입력</label>

@@ -8,7 +8,7 @@ class ProductSpqModel extends Model {
   protected $useSoftDeletes = false;
 
   protected $allowedFields = [
-    'product_idx', 'moq', 'spq', 'spq_inBox', 'spq_outBox', 
+    'product_idx', 'moq', 'spq', 'spq_criteria', 'spq_inBox', 'spq_outBox', 
     'calc_code', 'calc_unit', 'available'
   ];
 

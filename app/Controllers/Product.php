@@ -647,7 +647,7 @@ class Product extends BaseController {
                 if ( is_null($productSpq['moq']) ) $productSpq['moq'] = !is_null($productSpq['spq_inBox']) ? $productSpq['spq_inBox'] : (!is_null($productSpq['spq_outBox']) ? $productSpq['spq_outBox'] : 10 );
                 if ( is_null($productSpq['spq_inBox']) ) $productSpq['spq_inBox'] = 0;
                 if ( is_null($productSpq['spq_outBox']) ) $productSpq['spq_outBox'] = 0;
-                if ( is_null($productSpq['spq']) ) $productSpq['spq'] = NULL;
+                if ( is_null($productSpq['spq_criteria']) ) $productSpq['spq_criteria'] = NULL; // 수량 번경 기준. NULL : 제약없이 MOQ기준 연산단위, 연산수량을 기준으로 변경되고 +1씩 가능
                 if ( is_null($productSpq['calc_code']) ) $productSpq['calc_code'] = 0;
                 if ( is_null($productSpq['calc_unit']) ) $productSpq['calc_unit'] = NULL;
 
@@ -753,7 +753,7 @@ class Product extends BaseController {
                     ->select('product_price.not_calculating_margin')
                     ->select(' IF (product_price.not_calculating_margin = 1, supply_price.price, "") AS price')
                     ->select("product_price.taxation")
-                    ->select('product_spq.moq, product_spq.spq_inBox, product_spq.spq_outBox, product_spq.spq,
+                    ->select('product_spq.moq, product_spq.spq_inBox, product_spq.spq_outBox, product_spq.spq_criteria,
                               product_spq.calc_code, product_spq.calc_unit')
                     ->join("brand", "brand.brand_id = product.brand_id")
                     ->join("brand_opts", "brand_opts.brand_id = brand.brand_id", 'left outer')
@@ -936,7 +936,7 @@ class Product extends BaseController {
           $num = count($filedata);
           if ( $i > 0 && $num == $numberOfFields ) {
             $csvArr[$i]['product_idx'] = trim($filedata[0]);
-            $csvArr[$i]['spq'] = trim($filedata[6]);
+            $csvArr[$i]['spq_criteria'] = trim($filedata[6]);
           }
           $i++;
         }
