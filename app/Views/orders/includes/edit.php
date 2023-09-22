@@ -6,8 +6,7 @@
     </div>
   <?php endif; ?>
   <?=form_open('/orders/pInvoice')?>
-  <input type='hidden' name='subtotal_amount' value='<?=$order['subtotal_amount']?>'>
-  <input type='hidden' name='discount_amount' value='<?=$order['discount_amount']?>'>
+
   <input type='hidden' name='order_amount' value='<?=$order['order_amount']?>'>
   <input type='hidden' name='amount_paid' value='<?=$order['amount_paid']?>'>
   <input type='hidden' name='order_id' value='<?=$order['id']?>'>

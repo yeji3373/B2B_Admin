@@ -102,7 +102,7 @@ $(document).ready(function() {
 //     }
 //     inventoryAmount();
 //   }
-}).on('keyup change', '.request-amount-change', function(e) {
+}).on('keyup, change', '.request-amount-change', function(e) {
   $find = null, subtotal = 0, time = 1000;
 
   if ( $(this).hasClass('prd-price') ) $find = $(this).closest('tr').find('.prd-qty');

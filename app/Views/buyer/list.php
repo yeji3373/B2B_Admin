@@ -13,6 +13,7 @@
       <col style='width: 5%;'>
       <col style='width: 5%;'>
       <col style='width: 5%;'>
+      <col style='width: 5%;'>
       <col style='width: 10%;'>
     </colgroup>
     <thead>
@@ -22,6 +23,7 @@
         <th rowspan='2'>담당자</th>
         <th rowspan='2'>margin구간</th>
         <th rowspan='2'>결제율</th>
+        <th rowspan='2'>가입일</th>
         <th rowspan='2'>view</th>
       </tr>
       <tr>
@@ -42,8 +44,10 @@
           <?=$buyer['name']?>
         </td>
         <td class='p-1'>
-          <?php if ( !empty($buyer['certificate_business']) ) : ?>
-            <img class='business_certificate' src='<?="http://beautynetkorea.daouimg.com/b2b/documents/register/certification/".$buyer['certificate_business']?>' alt='사업자등록증' style='width: 2rem;'>
+          <?php if ( !empty($buyer['certificate_business']) ) :           
+            $ext = substr(strchr($buyer['certificate_business'], '.'), 1);
+            $path = "//beautynetkorea.daouimg.com/b2b/documents/register/certification/"; ?>
+            <span class='business_certificate_show' data-src='<?=$path.$buyer['certificate_business']?>' data-ext='<?=$ext?>'>사업자등록증 확인</span>
           <?php else : ?>
             <span class='text-bg-danger'>사업자등록증 미등록</span>
           <?php endif; ?>
@@ -77,6 +81,9 @@
         </td>
         <td class='p-1'>
           <?=$buyer['deposit_rate'] * 100 ?>%
+        </td>
+        <td>
+          <?=date('Y-m-d', strtotime($buyer['created_at']))?>
         </td>
         <td class='p-1'>
           <a class='btn-link' href='/buyer/detail/<?=$buyer['id']?>'>변경</a>

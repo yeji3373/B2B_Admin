@@ -438,16 +438,15 @@ class Orders extends BaseController {
       array_push($this->data['header']['js'], '/orders/inventory.js');
     }
     $orderId = $this->request->uri->getSegment(3);
-
     if ( empty($orderId) ) return redirect()->back()->with('error', '일치하는 order 정보가 없습니다.');
    
     $packagingDetail = $this->packaging
-                      ->packaging(['where' => ['packaging.order_id' => $orderId
-                                              , 'packaging_detail.in_progress' => 1
-                                              , 'packaging_detail.complete' => 0
-                                              , 'packaging_status.available' => 1]
-                                  , 'orderBy' => 'packaging_status.order_by DESC'])
-                      ->first();
+                            ->packaging(['where' => ['packaging.order_id' => $orderId
+                                                    , 'packaging_detail.in_progress' => 1
+                                                    , 'packaging_detail.complete' => 0
+                                                    , 'packaging_status.available' => 1]
+                                        , 'orderBy' => 'packaging_status.order_by DESC'])
+                            ->first();
 
     if ( !empty($packagingDetail) ) {
       $this->data['packaging_id'] = $packagingDetail['packaging_id'];
@@ -468,8 +467,6 @@ class Orders extends BaseController {
                   , $this->requirementRequest->requirement(['where' => ['requirement_request.order_id'=> $orderId
                                                                         , 'requirement_request.order_detail_id' => $detail['id']]])
                                               ->findAll());
-                                              //echo $this->requirementRequest->getLastQuery();
-                                              //print_r($this->data['requirement']);
       endforeach;
 
       $this->data['requirementOption'] = $this->requirementOption->where('available', 1)->findAll();
@@ -535,8 +532,7 @@ class Orders extends BaseController {
             $this->orderDetail->save($detail);
           }
         }
-      endforeach;
-
+        endforeach;
     } else {
       return redirect()->to(site_url(previous_url()))->with('error', 'input date error');
     }
@@ -550,6 +546,8 @@ class Orders extends BaseController {
         }
       endforeach;
     }
+
+    
 
     if ( !empty($order) ) {
       if ( array_key_exists('id', $order) ) {

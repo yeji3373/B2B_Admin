@@ -30,26 +30,45 @@ $(document).on('change', '[name=currency_id]', function() {
       }
     }  
   }
-}).on('click', 'img.business_certificate', function() {
-  let src = $(this).attr('src');
+}).on('click', '.business_certificate_show', function() {
+  let src = $(this).data('src');
+  let ext = $(this).data('ext');
   let main = $(this).closest('main');
+  let object = "";
+
+  if ( ext.toLowerCase() == 'pdf' ) {
+    object = "<object data='" + src + "' style='width: 100%; height: 100vh;'>";
+  } else {
+    object = "<img src='" + src +"' style='width: auto%; max-height: 100%;'>";
+  }
 
   if ( main.length > 0 ) {
-    main.addClass('position-relative');
+    if ( !main.hasClass('position-relative')) main.addClass('position-relative');
     if ( $(".certificate_viewer").length == 0 ) {
-      main.append("<div class='certificate_viewer'>\
+      main.append("<div class='certificate_viewer " + (ext.toLowerCase() == 'pdf' ? 'object' : '') + "'>\
                     <div class='position-relative'>\
                       <button class='bg-white btn btn-close'></button>\
-                      <img src='" + src +"' style='width: 100%; height: 100%;'>\
                     </div> \
                   </div>");
     } else {
       $(".certificate_viewer").removeClass('d-none');
       $(".certificate_viewer img").attr('src', src);
     }
+
+    if ( !$('.certificate_viewer .position-relative img').length 
+      ||  !$('.certificate_viewer .position-relative object').length ) {
+      $('.certificate_viewer .position-relative').append(object);
+    }
   }
 }).on('click', '.certificate_viewer .btn-close', function() {
-  console.log("btn click");
+  if ( $(".certificate_viewer .position-relative img").length ) {
+    $(".certificate_viewer .position-relative img").remove();
+  }
+
+  if ( $(".certificate_viewer .position-relative object").length ) {
+    $(".certificate_viewer .position-relative object").remove();
+  }
+
   $(".certificate_viewer").addClass('d-none');
 }).on('submit', 'form', function(e) {
   // e.preventDefault();
