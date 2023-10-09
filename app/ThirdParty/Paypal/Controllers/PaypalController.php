@@ -21,7 +21,7 @@ class PaypalController extends Controller
   protected $invoiceId;
   protected $invoiceNumber;
 
-  public $result;
+  public $result = Array();
 
   public function __construct() {
     // helper('date');
@@ -51,20 +51,24 @@ class PaypalController extends Controller
   }
 
   public function paypal($req) {
-    $this->orderInfo = $req;
-    // echo invoice_detail($this->orderInfo);
-
+    if ( !empty($this->result) ) $this->result = Array();
     if ( $this->config->accessTokenExpiry >= time() ) {
       if ( empty($this->config->accessToken) ) {
         // echo "empty ";
         $this->config->getOauth();
       }
     }
-    $this->makeInvoice();
+
+    $this->orderInfo = $req;
+    if ( !empty($this->orderInfo) ) $this->makeInvoice();
+    else {
+      $this->result['code'] = 500;
+      $this->result['error'] = 'response data is null';
+    }
+    return $this->result;
   }
 
-  public function makeInvoice($req) {
-    $this->orderInfo = $req;
+  public function makeInvoice() {
     $header = array_merge($this->header, ['Prefer: return=representation']);
     $invoiceData = invoice_detail($this->orderInfo);
 
@@ -94,9 +98,8 @@ class PaypalController extends Controller
       // }
       $this->result['error'] = 'invoice make error '.$generate['data']['name'].' : '.json_encode($generate['data']['details']);
       $this->result['code'] = $generate['code'];
-      
-      return $this->result;
     }
+    return $this->result;
   }
 
   protected function sendInvoice() {
@@ -106,7 +109,7 @@ class PaypalController extends Controller
       '{"send_to_invoicer": true}',
       'POST'
     );    
-    // print_r($send);
+    print_r($send);
     
     // successful code 202 : 인보이스 발행 날짜가 미래인 경우
     if ( $send['code'] == 200 || $send['code'] == 201 || $send['code'] == 202 ) { 
@@ -114,11 +117,11 @@ class PaypalController extends Controller
       $this->result['payment_invoice_id'] = $this->invoiceId;
       $this->result['payment_invoice_number'] = $this->invoiceNumber;
       $this->result['data'] = $send;
+      $this->result['code'] = 200;
     } else {
+      $this->result['code'] = $send['code'];
       $this->result['error'] = 'invoice send error '.$send['data']['name'].' : '.json_encode($send['data']['details']);
     }    
-    $this->result['code'] = $send['code'];
-    
     return $this->result;
   }
 
@@ -140,7 +143,7 @@ class PaypalController extends Controller
 
   public function fullyUpdateInvoice($invoiceId, Array $amount) {
     $data = update_invoice_body($this->showInvoiceDetail($invoiceId), $amount);
-    print_r($data);
+
     $send = $this->curlRequest(
       $this->config->baseUrl.$this->invoiceUrl.'/'.$invoiceId,
       $this->header,

@@ -1,0 +1,59 @@
+.invoice-delivery-edit-container {
+  padding: 0;
+  margin: 0;
+  border: 1px solid black;
+  display: table;
+  font-size: 0.8rem;
+}
+.invoice-delivery-edit-container .header-container {
+  display: table-header-group;
+}
+.invoice-delivery-edit-container .body-container {
+  display: table-row-group;
+}
+.invoice-delivery-edit-container .table-row {
+  display: table-row;
+}
+.invoice-delivery-edit-container .table-cell { 
+  display: table-cell; 
+  vertical-align: middle;
+}
+
+.invoice-delivery-edit-container .body-container .table-cell {
+  height: 2.4rem;
+}
+
+/* .invoice-delivery-edit-container {
+  padding: 0;
+  margin: 0;
+  border: 1px solid black;
+}
+.invoice-delivery-edit-container .header-container {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 5% 7% 15% 7% 12% 20% 20%;
+}
+.invoice-delivery-edit-container .grid-item {
+  margin: 0;
+  padding: 0;
+  min-height: 1rem;
+  border-right: 1px solid black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.invoice-delivery-edit-container .grid-half {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.invoice-delivery-edit-container .grid-three-equal-parts {
+  display: grid;
+  grid-template-columns: 7% 10% 3%;
+}
+
+.invoice-delivery-edit-container .grid-item.item-end {
+  border-right-width: 0;
+} */

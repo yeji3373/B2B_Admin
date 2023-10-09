@@ -36,6 +36,8 @@ header nav ul li a { display: block; width: 100%; padding: 0 1rem 0 0; color: #d
 /* font size */
 .fs-initial { font-size: initial; }
 .fs-inherit { font-size: inherit; }
+.fs-7 { font-size: 0.75rem; }
+.fs-8 { font-size: 0.5rem; }
 /* font size */
 
 /* height */
@@ -44,17 +46,26 @@ header nav ul li a { display: block; width: 100%; padding: 0 1rem 0 0; color: #d
 
 
 /* width */
+.w-3p { width: 3%; }
+.w-4p { width: 4%; }
+.w-5p { width: 5%; }
+.w-6p { width: 6%; }
 .w-7p { width: 7%; }
 .w-8p { width: 8%; }
 .w-10p { width: 10%; }
+.w-14p { width: 14%; }
 .w-15p { width: 15%; }
 .w-17p { width: 17%; }
 .w-18p { width: 18%; }
 .w-20p { width: 20%; }
+.w-27p { width: 27%; }
+.w-28p { width: 28%; }
+.w-29p { width: 29%; }
 .w-30p { width: 30%; }
 .w-35p { width: 35%; }
 .w-40p { width: 40%; }
 .w-45p { width: 45%; }
+.w-48p { width: 48%; }
 .w-55p { width: 55%; }
 .w-60p { width: 60%; }
 .w-70p { width: 70%; }

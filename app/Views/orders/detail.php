@@ -43,8 +43,6 @@
             <tr>
               <th rowspan='2' style='width: 2%'>No</th>
               <th colspan='3' style='width: 25%'>결제금액(<?=$order['currency_code']?>)</th>
-              <!-- <th colspan='2' style='width: 10%'>배송비</th> -->
-              <!-- <th rowspan='2' style='width: 10%'>남은금액</th> -->
               <th rowspan='2' style='width: 8%'>결제현황</th>
               <th rowspan='2' style='width: 8%'>표시여부</th>
               <th rowspan='2' style='width: 15%'>결제수단</th>
@@ -95,7 +93,7 @@
                 <?php if ( $receipt['payment_status'] == 0 ) : ?>
                 <div class='btn btn-sm btn-secondary btn-pi' data-type='cancel'>취소</div>
                 <?php endif; ?>
-                <div class='btn btn-sm btn-secondary btn-pi' data-type='edit'>수정</div>
+                <!-- <div class='btn btn-sm btn-secondary btn-pi' data-type='edit'>수정</div> -->
                 <?php if ( $receipt['payment_status'] == 100 && $receipt['due_amount'] > 0 ) : 
                   if (count($receipts) <= ($i + 1)) : ?>
                   <input type='hidden' name='request_amount' value='<?=$receipt['due_amount']?>'>
@@ -317,9 +315,10 @@
               <th rowspan='2' style='width: 2%'>주문제외</th>
               <!-- <th rowspan='2' style='width: 3%'>주문변경</th> -->
               <th rowspan='2' style='width: 6%'>HS Code</th>
-              <th rowspan='2' style='width: 6%'>유통기한</th>
+              <!-- <th rowspan='2' style='width: 6%'>유통기한</th> -->
               <th rowspan='2' style='width: 6%'>Brand</th>
-              <th colspan='4' style='width: 40%'>Description</th>
+              <!-- <th colspan='4' style='width: 40%'>Description</th> -->
+              <th colspan='3' style='width: 40%'>Description</th>
               <th rowspan='2' style='width: 5%'>수량</th>
               <th rowspan='2' style='width: 6%'>가격</th>
               <th rowspan='2' style='width: 6%'>할인</th>
@@ -330,7 +329,7 @@
               <th class='w-auto'>제품명</th>
               <th class='w-8p'>옵션</th>
               <th style='width: 4%;'>용량</th>
-              <th style='width: 4%;'>재고요청</th>
+              <!-- <th style='width: 4%;'>재고요청</th> -->
             </tr>
           </thead>
           <tbody>
@@ -351,9 +350,9 @@
               <input type='hidden' name='product[<?=$i?>][id]' value='<?=$detail['product_idx']?>'>
               <input type='text' name='product[<?=$i?>][hs_code]' class='form-control form-control-sm' value=<?=!empty($detail['hs_code']) ? $detail['hs_code'] : ''?>>
             </td>
-            <td>
+            <!-- <td>
               <input type='text' name='detail[<?=$i?>][expiration_date]' class='form-control form-control-sm expiration_date' value='<?=!empty($detail['expiration_date']) ? $detail['expiration_date'] : ''?>'>
-            </td>
+            </td> -->
             <td class='text-uppercase'>
               <?=$detail['brand_name']?>
             </td>
@@ -367,9 +366,9 @@
             <td class='text-end'>
               <?=$detail['spec']?>
             </td>
-            <td>
+            <!-- <td>
               <?=!empty($detail['stock_req']) && $detail['stock_req'] == 1 ? 'O' : ''?>
-            </td>
+            </td> -->
             <td>
               <input type='text' 
                   class='form-control form-control-sm' 

@@ -5,8 +5,8 @@ use CodeIgniter\Config\BaseConfig;
 use Config\Services;
 
 class Paypal extends BaseConfig {
-  // public $sandbox = TRUE; // TRUE:test계정 사용하기
-  public $sandbox = FALSE; // FALSE:LIVE 계정사용하기
+  public $sandbox = TRUE; // TRUE:test계정 사용하기
+  // public $sandbox = FALSE; // FALSE:LIVE 계정사용하기
 
   protected $sandboxURL = 'https://sandbox.paypal.com';
   protected $liveURL = 'https://www.paypal.com';

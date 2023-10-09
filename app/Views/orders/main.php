@@ -51,7 +51,7 @@
         <col style='width: 6%;'>
         <col style='width: 6%;'>
         <col style='width: 6%;'>
-        <col style='width: 6%;'>
+        <!-- <col style='width: 6%;'> -->
         <col style='width: 5%;'>
         <col style='width: 5%;'>
       </colgroup>
@@ -64,7 +64,8 @@
           <th rowspan='2'>결제현황/수단</th>
           <th rowspan='2'>영/과세</th>
           <th rowspan='2'>총무게</br><span style='font-size: 0.5rem;'>(단위:g)</span></th>
-          <th colspan='6'>주문합계</th>
+          <!-- <th colspan='6'>주문합계</th> -->
+          <th colspan='5'>주문합계</th>
           <th rowspan='2'>기타</th>
           <th rowspan='2'></th>
         </tr>
@@ -73,8 +74,9 @@
           <th>재고확정금액</th>
           <th>주문확정금액</th>
           <th>최종주문금액</th>
-          <th>배송비</th>
-          <th class='border border-end border-dark'>주문 합계</th>
+          <!-- <th>배송비</th> -->
+          <th class='border border-end border-dark'>배송비</th>
+          <!-- <th class='border border-end border-dark'>주문 합계</th> -->
         </tr>
         <tbody>
           <?php if ( !empty($orders) ) : 
@@ -120,19 +122,21 @@
             <td class='text-end px-2'><?=number_format($order['shipping_weight'])?>g</td>
             <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['request_amount'], $order['currency_float'])?></td>
             <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['inventory_fixed_amount'], $order['currency_float'])?></td>
-            <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['fixed_amount'], $order['currency_float'])?></td>
+            <!-- <td class='text-end px-2'><?php // echo $order['currency_sign'] . number_format($order['fixed_amount'], $order['currency_float'])?></td> -->
             <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['order_amount'], $order['currency_float'])?></td>
+            <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['decide_amount'], $order['currency_float'])?></td>
             <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['delivery_price'], $order['currency_float'])?></td>
-            <td class='text-end px-2'><?=$order['currency_sign'] . number_format($order['subtotal_amount'], $order['currency_float'])?></td>
+            <!-- <td class='text-end px-2'><?php // echo $order['currency_sign'] . number_format($order['subtotal_amount'], $order['currency_float'])?></td> -->
             <td><?//=$order['order_check'] == 0 ? '-' : '특이사항있음' ?></td>
             <td>
-              <a class='btn btn-sm btn-secondary' 
+              <!-- <a class='btn btn-sm btn-secondary' 
                 <?php if ( $order['payment_id'] ) : ?>
                   href='/orders/detail/<?=$order['id']?>'>상세보기
                 <?php else: ?>
                   href='/orders/inventoryDetail/<?=$order['id']?>'>재고확인
                 <?php endif; ?>
-              </a>
+              </a> -->
+              <a class='btn btn-sm btn-secondary' href='/orders/inventoryDetail/<?=$order['id']?>'>재고확인</a>
             </td>              
           </tr>
           <?php endforeach; 

@@ -1,7 +1,8 @@
 <main class='position-rel0ative'>
   <title>재고 확인 요청 상세</title>
-  <form method='post' action='<?=site_url('orders/inventoryEdit')?>'>
   <div class='order-detail-container inventory-detail-container border-0'>
+    <?php if ( !empty($order)) : ?> 
+    <!-- <?php var_dump($order) ?> -->
     <div class='d-grid grid-quad border'>
       <div class='d-flex flex-column border border-0 border-end'>
         <label class='border border-0 border-bottom'>업체(buyer)명</label>
@@ -26,19 +27,37 @@
         <div class='con'><?=$order['order_number']?> / <?=$order['created_at']?></div>
       </div>
       <div class='d-flex flex-column'>
-        <label class='border border-0 border-bottom'>재고요청 / 재고확정 / 주문확정금액</label>
+        <label class='border border-0 border-bottom'>재고요청 / 재고확정 / 주문확정금액 / 최종확정금액</label>
         <div class='con'>
-          <input type='hidden' name='order[id]' value='<?=$order['id']?>'>
-          <input type='hidden' name='order[request_amount]' value='<?=$order['request_amount']?>'>
-          <input type='hidden' name='order[order_fix]' value='0'>
-          <input type='hidden' name='order[inventory_fixed_amount]' value='<?=$order['inventory_fixed_amount']?>'>
-          <input type='hidden' name='order[order_amount]' value='<?=$order['order_amount']?>'>
           <span><?=$order['currency_sign']. number_format($order['request_amount'], $order['currency_float'])?></span>
           / <?=$order['currency_sign']?><span class='inventory_fixed_amount'><?=number_format($order['inventory_fixed_amount'], $order['currency_float'])?></span>
           / <?=$order['currency_sign']?><span class='order_amount'><?=number_format($order['order_amount'], $order['currency_float'])?></span>
+          / <?=$order['currency_sign']?><span class='decide_amout'><?=number_format($order['decide_amount'], $order['currency_float'])?></span>
         </div>
       </div>
     </div>
+    <?php if ( !empty($order['receipt_type'])) { ?>
+    <div class='w-100 mt-2 d-flex flex-column'>
+      <p class='fw-bold'>Invoice List</p>
+      <!-- <?//=view('orders/includes/invoice')?> -->
+      <?=view('orders/includes/invoiceDelivery')?>
+    </div>
+    <!-- <?php if ( !empty($deliveries) ) { ?>
+    <div class='w-70p mt-2 d-flex flex-column'>
+      <p class='fw-bold'>배송관리</p>
+      <?//=view('orders/includes/delivery')?>
+    </div>
+    <?php } ?> -->
+    <?php } ?>
+    <?php endif; ?>
+    <form method='post' action='<?=site_url('orders/inventoryEdit')?>'>
+    <?php if ( !empty($order)) : ?>
+    <input type='hidden' name='order[id]' value='<?=$order['id']?>'>
+    <input type='hidden' name='order[request_amount]' value='<?=$order['request_amount']?>'>
+    <input type='hidden' name='order[order_fix]' value='0'>
+    <input type='hidden' name='order[inventory_fixed_amount]' value='<?=$order['inventory_fixed_amount']?>'>
+    <input type='hidden' name='order[order_amount]' value='<?=$order['order_amount']?>'>
+    <?php endif; ?>
     <div class='mt-3 d-flex flex-column'>
       <div class='text-end mb-2 px-0 d-flex flex-row'>
         <?php if ( !empty($packagingStatus) && !empty($packaging_id) ) :
@@ -185,12 +204,45 @@
                     endif; 
                   } else {
                     $value = $detail['prd_fixed_qty'];
-                  } 
+                  }
+                  $disabled = NULL;
+                  $class = NULL;
+                  if(isset($order['order_fixed']) && $order['order_fixed'] ) {
+                    $disabled = "disabled";
+                    $class = "bg-dark bg-opacity-10";
+                  }
                     
-                  echo "<input type='number' class='fixed-qty' name='detail[{$i}][prd_fixed_qty]' value='".$value."' style='width: 3rem;'";
-                    if(!empty($order['order_fixed']) && $order['order_fixed'] ) echo " disabled='true'";
-                  echo ">";
+                  echo "<input type='number' class='fixed-qty {$class}' name='detail[{$i}][prd_fixed_qty]' value='{$value}' style='width: 3rem;' {$disabled}>";
                   ?>
+                </p>
+                <?php endif; ?>
+                
+                <?php if ( isset($order['order_fixed']) && $order['order_fixed']) : 
+                  $disabled = NULL;
+                  $class = NULL;
+                  $value = 0;
+
+                  if ( !empty($detail['prd_final_qty']) ) :
+                    $value = $detail['prd_final_qty'];
+                  else : 
+                    if ( !empty($detail['prd_fixed_qty']) ) :
+                      $value = $detail['prd_fixed_qty'];  
+                    else:
+                      if ( !empty($detail['prd_change_qty']) ) :
+                        $value = $detail['prd_change_qty'];
+                      else :
+                        $value = $detail['prd_order_qty'];
+                      endif;
+                    endif;
+                  endif;
+                  
+                  if ( !empty($detail['order_excepted']) ) :
+                    $disabled = 'disabled';
+                    $class = 'bg-dark bg-opacity-10';
+                  endif;?>
+                <p class='mt-1'>
+                  <input type='numnber' class='final_qty <?=!empty($class) ? $class : ''?>' name='detail[<?=$i?>][prd_final_qty]' value='<?=$value?>' style='width: 3rem;' <?=!empty($disabled) ? ' disabled' : ''?>
+                  >
                 </p>
                 <?php endif; ?>
               </div>
@@ -344,4 +396,5 @@
     </div>
   </div>
   </form>
+  <div class='invoice-edit position-fixed top-0 start-0 d-none w-100 bg-dark bg-opacity-25 overflow-auto h-100'>
 </main>

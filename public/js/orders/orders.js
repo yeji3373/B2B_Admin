@@ -21,75 +21,83 @@ $(document).ready(function() {
     flatpickr('input[name=start_date]', $.merge({'defaultDate': new Date().setDate(new Date().getDate() - 7)}, optional_config));
     flatpickr('input[name=end_date]', optional_config);
   }
-  
+
+  if ( $('.delivery_apply_check').length ) {
+    console.log("a");
+    if ( typeof $('.delivery_apply_check').data('disabledTarget') != 'undefined' ) {
+      disabled = $('.delivery_apply_check').data('disabledTarget');
+      if ( $('.delivery_apply_check').is(':checked') ) {
+        $(disabled).removeAttr('disabled');
+      } else {
+        $(disabled).attr('disabled', true);
+      }
+    }
+  }
 }).on('click', '.btn-pi', function() {
   if ( $(this).data('type') == '' || $(this).data('type').length == 0) return;
 
-  $form = $(this).parent('form');
+  $form = $(this).closest('form.pi-form');
   $type = $(this).data('type');
 
   if ( $(this).hasClass('display-except') ) $display = 0;
   else $display = 1;
 
-  if ( $type != '' ) {
-    if ( $type == 'edit' ) {
-      if ( $display == 1 ) {
-        if ( $('.invoice-edit').hasClass('d-none') ) {
-          getData('/orders/editForm', 
-                  $form.serializeArray(),
-                  {append: true, target: $('.invoice-edit'), init: true});
-          // $form.removeAttr('action').attr('data-action', action);
-          console.log("aaaa ", $form.serializeArray());
-          // $('body').css('overflow-y', 'hidden');
-          $('body').addClass('overflow-hidden');
-          $('.invoice-edit').removeClass('d-none');
-          flatpickr("#payment_date", optional_config);
-          flatpickr(".expiration_date", $.merge({'defaultDate': ''}, optional_config));
-        } else {
-          // $('body').css('overflow-y', '');
-          $('body').removeClass('overflow-hidden');
-          $('.invoice-edit').addClass('d-none');
-          $form.attr('action', action);
-        }
-      } else {
-        if ( $form.length == 0 ) $form = $(this).closest("form");
-        // $form.submit();
-        // return false;
-      }
+  $form.children('[name=piControllType]').val($type);
+
+  if ( $type == 'edit' ) {
+    if ( !$form[0].reportValidity() ) return;
+    
+    // if ( $("[name='order[order_amount]']").length && $("[name='order[order_amount]']").val() > 0 ) {
+    //   if ( !$form.find('[name=order_amount]').length ) {
+    //     $form.append($("<input/>")
+    //                       .attr({'type' : 'hidden', 'name': 'order_amount'})
+    //                       .val($.trim($("[name='order[order_amount]']").val())));
+    //   } else {
+    //     $form.children('[name=order_amount]').val($.trim($("[name='order[order_amount]']").val()));
+    //   }
+    // } else {
+    //   alert('수정 불가');
+    //   return;
+    // }
+
+    $form.submit();
+  }
+
+  if ( $type == 'receipt' ) {
+    if ( $form.children('[name=payment_status]').val() == 100 ) {
+      $form.submit();
     } else {
-      $form.children('[name=piControllType]').val($type);
-
-      if ( $type == 'receipt' ) {
-        if ( $form.children('[name=payment_status]').val() == 100 ) {
-          $form.submit();
-        } else {
-          if ( $form.children('[name=payment_status]').val() == 0 ) {
-            alert('결제 전인 경우에는 2차 PI 발행이 되지 않음');
-            return;
-          }
-        }
-      }
-
-      if ( $type == 'cancel') {
-        if ( confirm('취소하시겠습니까?') ) {
-          $form.submit();
-        }
-      }
-
-      if ( $type == 'refund') {
-        console.log($form.serializeArray());
-        // return false;
-        if ( confirm('환불하시겠습니까?') ) {
-          $form.submit();
-        }
-      }
-
-      if ( $type == 'delivery') {
+      if ( $form.children('[name=payment_status]').val() == 0 ) {
+        alert('결제 전인 경우에는 2차 PI 발행이 되지 않음');
         return;
       }
     }
   }
-  // return false;
+
+  if ( $type == 'cancel') {
+    if ( confirm('취소하시겠습니까?') ) {
+      $form.submit();
+    }
+  }
+
+  if ( $type == 'refund') {
+    console.log($form.serializeArray());
+    // return false;
+    if ( confirm('환불하시겠습니까?') ) {
+      $form.submit();
+    }
+  }
+  return false;
+}).on('change', '.delivery_apply_check', function() {
+  if ( typeof $(this).data('disabledTarget') != 'undefined' ) {
+    disabled = $(this).data('disabledTarget');
+
+    if ( $(this).is(':checked') ) {
+      $(this).closest('form').find(disabled).removeAttr('disabled');
+    } else {
+      $(this).closest('form').find(disabled).attr('disabled', true);
+    }
+  }
 }).on('click', '.invoice-edit', function(e) {
   if ( e.target.classList.contains('invoice-edit') ) {
     // $('body').css('overflow-y', '');
@@ -97,20 +105,24 @@ $(document).ready(function() {
     $('.invoice-edit').addClass('d-none');
   }
 }).on('change', '.pi-edit-container [name="receipt[rq_percent]"]', function() {
-  let amount = parseFloat($('[name=subtotal_amount]').val());
-  let paid = parseFloat($('[name=amount_paid]').val());
+  // let amount = parseFloat($('[name=order_amount]').val());
+  let amount = parseFloat($('[name="order[order_amount]"]').val());
+  let paid = parseFloat($(this).closest('form').find('[name=amount_paid]').val());
   let rqAmount = 0, dueAmount = 0;
   let per = $(this).val();
 
+  if ( typeof $('[name="order[order_amount]"]') == 'undefined' || amount <= 0 ) return;
   if ( per != '-') {
     rqAmount = ((amount - paid) * per).toFixed(2);
     dueAmount = ((amount - paid) - rqAmount).toFixed(2);
-
-    $('[name="receipt[rq_percent]"]').val(per);
-    $('.receipt-rq-amount').text(rqAmount);
-    $('[name="receipt[rq_amount]"]').val(rqAmount);
-    $('.receipt-due-amount').text(dueAmount);
-    $('[name="receipt[due_amount]"]').val(dueAmount);
+    
+    console.log('change amount : ', amount, ' paid : ', paid, ' rqAmount : ', rqAmount, ' dueAmount : ', dueAmount,  ' per : ', per);
+    
+    $(this).closest('form').find('[name="receipt[rq_percent]"]').val(per);
+    $(this).closest('form').find('.receipt-rq-amount').text(rqAmount);
+    $(this).closest('form').find('[name="receipt[rq_amount]"]').val(rqAmount);
+    $(this).closest('form').find('.receipt-due-amount').text(dueAmount);
+    $(this).closest('form').find('[name="receipt[due_amount]"]').val(dueAmount);
 
     if ( $(".receipt_num") == 1 ) {
       if ( parseFloat(per) == parseFloat(1) ) {
@@ -125,17 +137,17 @@ $(document).ready(function() {
       }
     }
   } else {
-    $('[name="receipt[rq_percent]"]').val(0);
-    $('.receipt-rq-amount').text(0);
-    $('[name="receipt[rq_amount]"]').val(0);
-    $('.receipt-due-amount').text(0);
-    $('[name="receipt[due_amount]"]').val(0);
+    $(this).closest('form').find('[name="receipt[rq_percent]"]').val(0);
+    $(this).closest('form').find('.receipt-rq-amount').text(0);
+    $(this).closest('form').find('[name="receipt[rq_amount]"]').val(0);
+    $(this).closest('form').find('.receipt-due-amount').text(0);
+    $(this).closest('form').find('[name="receipt[due_amount]"]').val(0);
   }
 }).on('click', '.pi-edit-container .receipt-rq-amount', function() {
   let classes = 'color-transparent btn-outline-secondary btn-close';
   let pClasses = 'd-flex flex-row align-items-center justify-content-center';
   let tempP1 = parseFloat($(this).text().trim());
-  let tempP2 = parseFloat($('[name=subtotal_amount]').val() - $('[name=amount_paid]').val() - parseFloat(tempP1)).toFixed(2);
+  let tempP2 = parseFloat($('[name="order[order_amount]"]').val() - $('[name=amount_paid]').val() - parseFloat(tempP1)).toFixed(2);
   
   console.log("temp 1 ", tempP1, ' temp 2 ', tempP2);
   if ( $(this).hasClass(classes) ) {
@@ -150,14 +162,19 @@ $(document).ready(function() {
     $(this).parent().addClass(pClasses);
     $("[name='receipt[rq_percent]']").attr('disabled', true);
     $("[name='receipt[due_amount]'").attr('disabled', false);
-    $("[name='receipt[rq_amount]']").attr('type', 'text').addClass('mx-1');
+    $("[name='receipt[rq_amount]']").attr('type', 'text').addClass('mx-1').focus();
   }
-}).on('keyup', '.pi-edit-container [name="receipt[rq_amount]"]', function() {
-  let remainPrice = ($('[name=subtotal_amount]').val() - $('[name=amount_paid]').val());
+}).on('keyup', '.pi-edit-container [name="receipt[rq_amount]"]', function(e) {
+  let remainPrice = ($('[name="order[order_amount]"]').val() - $('[name=amount_paid]').val());
+  if ( e.keyCode == 27 ) {
+    $('.pi-edit-container .receipt-rq-amount').click();
+    return;
+  }
+  
   if ( $(this).val().length > 2 ) {
     $this = $(this);
     setTimeout(function() {
-      remainPrice = ($('[name=subtotal_amount]').val() - $('[name=amount_paid]').val());
+      remainPrice = ($('[name="order[order_amount]"]').val() - $('[name=amount_paid]').val());
 
       if ( parseFloat($this.val()) <= 0 ) {
         alert('입력값은 0보다 커야합니다');

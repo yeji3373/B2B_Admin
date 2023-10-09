@@ -29,15 +29,16 @@ class Status extends BaseConfig {
   }
 
   public $deliveryCode = [
-    0 => '택배비 산정 중',
-    100 => '산정완료',
+      0  => '택배비 산정 중',
+    100  => '산정완료',
   ];
 
   public $paymentStatus = [
-    0 => '결제 전',
-    100 => '결제 완료',
-    -100 => '결제 취소',
-    -200 => '환불'
+      -1  => '오류 또는 처리중',
+    -100  => '결제 취소',
+    -200  => '환불',
+       0  => '결제 전',
+     100  => '결제 완료',
   ];
 
   public function paymentStatus($i = null) {

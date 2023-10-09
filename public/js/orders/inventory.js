@@ -12,7 +12,6 @@ $(document).ready(function() {
     }
   });
   inventoryAmount();
-  // fixedAmount();
 
   $('input[name="order[order_fix]"]').val($('.packaging-status option:selected').data('orderFix'));
 
@@ -189,6 +188,18 @@ $(document).ready(function() {
       inventoryAmount();
     }, time);
   }
+}).on('keyup change', '.final_qty', function(e) {
+  let timeout = 1000, subtotal = 0;
+
+  if ( $(this).val().length >= 1 && $(this).closest('tr').find('.order_excepted').val() == 0 ) {
+    if ( e.keyCode == 13 ) timeout = 0;
+    setTimeout(() => {
+      if ( $(this).val() == '' ) $(this).val($(this).closest('tr').find('.fixed_qty').val());
+      subtotal = parseFloat($(this).val() * $(this).closest('tr').find('.prd-price').val());
+      $(this).closest('tr').find('.request-subtotal').val(subtotal.toFixed(2)); 
+    }, timeout); 
+  }
+  // focusout 됐을때, 입력값이 없거나 0이면 이전 input의 값으로 대체하게 처리 
 });
 
 function inventoryAmount() {

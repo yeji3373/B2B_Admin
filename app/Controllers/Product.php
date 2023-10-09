@@ -406,13 +406,14 @@ class Product extends BaseController {
               $productPriceArr[$prd_i]['product_idx'] = $product['id'];
               $productSpqArr[$prd_i]['product_idx'] = $product['id'];
 
-              $prdInfo = $this->products->where(['barcode' => trim($product['barcode']), 'id' => $product['id']])->first();
+              $prdInfo = $this->products->where(['REPLACE(barcode, " ", "")' => preg_replace("/\s+/", "", $product['barcode'])
+                                                , 'REPLACE(id, " ", "")' => preg_replace("/\s+/", "", $product['id'])])->first();
 
               if ( empty($prdInfo) ) {
                 $this->products->save($product);
               } else {
-                if ( $prdInfo['brand_id'] == $product['brand_id'] 
-                    && $prdInfo['barcode'] == $product['barcode']
+                if ( preg_replace("/\s+/", "", $prdInfo['brand_id']) == preg_replace("/\s+/", "", $product['brand_id'])
+                    && preg_replace("/\s+/", "", $prdInfo['barcode']) == preg_replace("/\s+/", "", $product['barcode'])
                     && strtoupper(preg_replace("/\s+/", "", $prdInfo['name_en'])) == strtoupper(preg_replace("/\s+/", "", $product['name_en']))
                     && strtoupper(preg_replace("/\s+/", "", $prdInfo['type_en'])) == strtoupper(preg_replace("/\s+/", "", $product['type_en'])) ) {
                   
@@ -435,20 +436,18 @@ class Product extends BaseController {
                 // var_dump($prdInfo);
               }
             else :
-              // if ( $product['img_url'] != 'img/no-image.png' ) unset($product['img_url']);
               $prdInfo = $this->products
-                              ->where(['brand_id' => $brand_id])
-                              ->where(['REPLACE(barcode, " ", "")' => str_replace(" ", "", $product['barcode'])])
-                              ->Where(['UPPER(REPLACE(name_en, " ", ""))' => str_replace(" ", "", strtoupper($product['name_en']))])
-                              ->where(['UPPER(REPLACE(type_en, " ", ""))' => str_replace(" ", "", strtoupper($product['type_en']))])
-                              ->where(['UPPER(REPLACE(spec, " ", ""))' => str_replace(" ", "", strtoupper($product['spec']))])
-                                      // // , 'REPLACE(name, " ", "")' => str_replace(" ", "", $product['name'])
-                                      // , 'UPPER(REPLACE(name_en, " ", ""))' => str_replace(" ", "", strtoupper($product['name_en']))
-                                      // // , 'REPLACE(type, " " ,"")' => str_replace(" ", "", $product['type'])
-                                      // , 'UPPER(REPLACE(type_en, " ", ""))' => str_replace(" ", "", strtoupper($product['type_en']))])
+                              ->select("id, brand_id, '' AS brand_name, barcode, productCode, img_url
+                                      , name, name_en, box, contents_type_of_box
+                                      , in_the_box, contents_of_box, package_detail, spec, spec2, container
+                                      , spec_detail, spec_pcs, shipping_weight, sample, type, type_en
+                                      , package, renewal, etc, discontinued, display")
+                              ->where(['REPLACE(brand_id, " ", "")' => $brand_id])
+                              ->where(['REPLACE(barcode, " ", "")' => preg_replace("/\s+/", "", $product['barcode'])])
                               ->first();
               
               if ( empty($prdInfo) ) {
+                // echo "바코드가 같은 게 없음<br/>";
                 $product['name'] = addslashes($product['name']);
                 $product['name_en'] = addslashes($product['name_en']);
                 $product['spec'] = addslashes($product['spec']);
@@ -456,36 +455,45 @@ class Product extends BaseController {
                 $product['type'] = addslashes($product['type']);
                 $product['type_en'] = addslashes($product['type_en']);
 
-                if ($this->products->save($product)) {
-                  $productPriceArr[$prd_i]['product_idx'] = $this->products->getInsertID();
-                  $productSpqArr[$prd_i]['product_idx'] =  $this->products->getInsertID();
-                }
+                // if ($this->products->save($product)) {
+                //   $productPriceArr[$prd_i]['product_idx'] = $this->products->getInsertID();
+                //   $productSpqArr[$prd_i]['product_idx'] =  $this->products->getInsertID();
+                // }
               } else {
-                // if ( $prdInfo['brand_id'] == $product['brand_id'] 
-                //   && preg_replace("/\s+/", "", $prdInfo['barcode']) == preg_replace("/\s+/", "", $prdInfo['barcode']) 
-                //   && strtoupper(preg_replace("/\s+/", "", $prdInfo['name_en'])) == strtoupper(preg_replace("/\s+/", "", $product['name_en']))
-                //   && strtoupper(preg_replace("/\s+/", "", $prdInfo['type_en'])) == strtoupper(preg_replace("/\s+/", "", $product['type_en'])) 
-                //   && strtoupper(preg_replace("/\s+/", "", $prdInfo['spec'])) == strtoupper(preg_replace("/\s+/", "", $product['spec']))) {
+                // echo "같은 바코드가 있음";
                 if ( $prdInfo['brand_id'] == $product['brand_id'] 
                   && preg_replace("/\s+/", "", $prdInfo['barcode']) == preg_replace("/\s+/", "", $prdInfo['barcode']) 
                   && strtoupper(preg_replace("/\s+/", "", $prdInfo['name_en'])) == strtoupper(preg_replace("/\s+/", "", $product['name_en']))
-                  && strtoupper(preg_replace("/\s+/", "", $prdInfo['type_en'])) == strtoupper(preg_replace("/\s+/", "", $product['type_en'])) ) {
-                    unset($product['barcode']);
-                    unset($product['name_en']);
-                    unset($product['type_en']);
-                    // unset($product['spec']);
-                    unset($product['brand_id']);
-
-                    $product['id'] = $prdInfo['id'];
-                    $product['display'] = 1;
+                  && strtoupper(preg_replace("/\s+/", "", $prdInfo['type_en'])) == strtoupper(preg_replace("/\s+/", "", $product['type_en'])) 
+                  && strtoupper(preg_replace("/\s+/", "", $prdInfo['spec'])) == strtoupper(preg_replace("/\s+/", "", $product['spec']))) {
+                // if ( strtoupper(preg_replace("/\s+/", "", $prdInfo['name_en'])) == strtoupper(preg_replace("/\s+/", "", $product['name_en']))
+                //   && strtoupper(preg_replace("/\s+/", "", $prdInfo['type_en'])) == strtoupper(preg_replace("/\s+/", "", $product['type_en'])) 
+                //   && strtoupper(preg_replace("/\s+/", "", $prdInfo['spec'])) == strtoupper(preg_replace("/\s+/", "", $product['spec']))) {
+                  // echo " 이름, 타입, 스펙이 같음<br/>";
+                  // unset($product['barcode']);
+                  // unset($product['name_en']);
+                  // unset($product['type_en']);
+                  // unset($product['brand_id']);
+                  
+                  // if ( empty($prdInfo['display']) ) {
+                  //   $product['id'] = $prdInfo['id'];
+                  //   $this->products->save(['id' => preg_replace("/\s+/", "", $prdInfo['id'])
+                  //                         , 'display' => 1]);
+                  // }
+                  $productPriceArr[$prd_i]['product_idx'] = $prdInfo['id'];
+                  $productSpqArr[$prd_i]['product_idx'] = $prdInfo['id'];
                 } else {
-                  $contents[$prd_i][0] = $prdInfo['id'];
-                  var_dump($contents[$prd_i]);
+                  // echo " 이름, 타입, 스텍이 다름<br/>"; 
+                  // 옵션등 재체크 요청하기 위해 데이터 넘기기
+                  array_push($failedData, $prdInfo);
+                  // $contents[$prd_i][0] = $prdInfo['id'];
+                  array_push($failedData, $contents[$prd_i]);
                 }
-                // var_dump($product);
-                // var_dump($prdInfo);
-                $productPriceArr[$prd_i]['product_idx'] = $prdInfo['id'];
-                $productSpqArr[$prd_i]['product_idx'] = $prdInfo['id'];
+                // // var_dump($contents[$prd_i]);
+                // // var_dump($product);
+                // // var_dump($prdInfo);
+                // $productPriceArr[$prd_i]['product_idx'] = $prdInfo['id'];
+                // $productSpqArr[$prd_i]['product_idx'] = $prdInfo['id'];
               }
             endif;
           endforeach;
@@ -641,9 +649,7 @@ class Product extends BaseController {
           if ( !empty($productSpqArr) ) :
             // var_dump($productSpqArr);
             foreach($productSpqArr AS $productSpq) :
-              if ( empty($productSpq['product_idx']) ) {
-                return redirect()->back()->with('error', 'sqp입력 중 오류 발생');
-              } else {
+              if ( !empty($productSpq['product_idx']) ) { // product id가 있는 것만 spq 등록하기
                 if ( is_null($productSpq['moq']) ) $productSpq['moq'] = !is_null($productSpq['spq_inBox']) ? $productSpq['spq_inBox'] : (!is_null($productSpq['spq_outBox']) ? $productSpq['spq_outBox'] : 10 );
                 if ( is_null($productSpq['spq_inBox']) ) $productSpq['spq_inBox'] = 0;
                 if ( is_null($productSpq['spq_outBox']) ) $productSpq['spq_outBox'] = 0;
@@ -706,6 +712,7 @@ class Product extends BaseController {
           $brandId = $data['brand_id'];
         }
       }
+      // 미표기, 판매안하는 상품 포함 및 제외 처리하기
     }
 
     if ( !empty($brandId) ) {
@@ -765,7 +772,7 @@ class Product extends BaseController {
                             , 'supply_price.product_idx = product_price.product_idx'
                             , 'left outer')
                     ->join('product_spq', 'product_spq.product_idx = product.id AND product_spq.available = 1', 'left outer')
-                    // ->where(['product.discontinued' => 0, 'product.display' => 1])
+                    ->where(['product.discontinued' => 0, 'product.display' => 1])
                     ->where('product_price.available', 1)
                     ->orderBy('brand.brand_id ASC, brand.own_brand DESC, product.id ASC')
                     ->findAll();

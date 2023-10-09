@@ -51,7 +51,8 @@ class Orders extends BaseController {
 
     $this->packagingController = new Packaging();
 
-    $this->data['header'] = ['css' => ['/orders/orders.css', '/table.css', '/inputLabel.css']
+    $this->data['header'] = ['css' => ['/orders/orders.css', '/orders/invoiceDelivery.css'
+                                      , '/table.css', '/inputLabel.css']
                             , 'js' => ['/orders/orders.js']];
     $this->data['status'] = $this->status;
   }
@@ -87,7 +88,10 @@ class Orders extends BaseController {
     $this->data['currency'] = $this->currency->where('available', 1)->find();
     $this->data['order'] = $this->getOrder($orderId)->first();
     $this->data['details'] = $this->getOrderDetail($orderId)->findAll();
-    $this->data['receipts'] = $this->receipt->select('orders_receipt.*, delivery.delivery_price')->join('delivery', 'delivery.id = orders_receipt.delivery_id', 'left outer')->where('orders_receipt.order_id', $orderId)->findAll();
+    $this->data['receipts'] = $this->receipt
+                                ->select('orders_receipt.*, delivery.delivery_price')
+                                ->join('delivery', 'delivery.id = orders_receipt.delivery_id', 'left outer')
+                                ->where('orders_receipt.order_id', $orderId)->findAll();
     $this->data['shipments'] = $this->shipment->findAll();
     // $this->data['deliveries'] = $this->delivery
     //                                 ->select('delivery.*, IFNULL(orders_receipt.delivery_id, 0) AS receipt_included')
@@ -133,7 +137,7 @@ class Orders extends BaseController {
             $updateData = [];
             $paypalDetail = $this->PaypalController->showInvoiceDetail($receipt['payment_invoice_id']);
             
-            var_dump($this->PaypalController->result);
+            // var_dump($this->PaypalController->result);
             if ( $this->PaypalController->result['code'] != 404 ) {
               // print_r($paypalDetail);
 
@@ -163,6 +167,7 @@ class Orders extends BaseController {
     $this->data['shipments'] = $this->shipment->joinDelivery()->select('shipment.*, IFNULL(delivery.forward, 0) AS forword')->findAll();
     $this->data['details'] = $this->getOrderDetail($data['order_id'])->findAll();
     $this->data['order'] = $this->getOrder($data['order_id'])->first();
+    $this->data['currency'] = $this->currency->where('available', 1)->find();
     // $this->data['deliveries'] = $this->delivery->select('CONVERT(SUM(delivery_price), FLOAT) AS delivery_price')->where('order_id', $data['order_id'])->groupBy('order_id')->findAll();
     $this->data['deliveries'] = $this->delivery->where('order_id', $data['order_id'])->findAll();
 
@@ -171,7 +176,6 @@ class Orders extends BaseController {
 
   public function pInvoice() {
     $data = $this->request->getPost();
-
     if ( empty($data['piControllType']) ) return redirect()->back();
     else {
       $data['type'] = $data['piControllType'];
@@ -180,171 +184,213 @@ class Orders extends BaseController {
     
     if ( $data['type'] == 'cancel' ) {
       // 가격도 환불할건지 체크해서 가격은 유지할 경우, credit으로 등록
-      if ( isset($data['payment_invoce_id']) && !empty($data['payment_invoce_id'])) {
-        $paypalCancelResult = $this->PaypalController->cancelSentInvoice($data['payment_invoce_id']);
+      if ( isset($data['receipt']['payment_invoce_id']) && !empty($data['receipt']['payment_invoce_id'])) {
+        $paypalCancelResult = $this->PaypalController->cancelSentInvoice($data['receipt']['payment_invoce_id']);
 
         if ( $paypalCancelResult['code'] != 204 ) {
           return redirect()->back()->with('error', 'paypal cancel error');
         }
       }
-
-      $this->receipt->set('payment_status', -100)->where('receipt_id', $data['receipt_id'])->update();
+      $this->receipt->set('payment_status', -100)->where('receipt_id', $data['receipt']['receipt_id'])->update();
       $this->order->set('order_check', -1)->where('id', $data['order_id'])->update();
     }
 
     if ( $data['type'] == 'edit' ) {
-      $exceptCnt = 0;
-      $shippingFee = 0;
-      $minusOrderAmount = 0;
-      print_r($data);
-      if ( !empty($data['detail']) ) {
-        foreach($data['detail'] AS $detail) {
-          if ( $detail['order_excepted'] == 1 ) $exceptCnt++;
-          if ( empty($detail['expiration_date']) ) unset($detail['expiration_date']);
-          if ( $this->orderDetail->save($detail) ) {
-            $detailAmounts = $this->orderDetail
-                                ->select('CAST(SUM(prd_price * prd_order_qty) AS DOUBLE) AS amount')
-                                ->select('CAST(SUM(prd_discount * prd_order_qty) AS DOUBLE) AS discount')
-                                ->select('CAST((SUM(prd_price * prd_order_qty) - SUM(prd_discount * prd_order_qty)) AS DOUBLE) AS subtotal')
-                                ->select('CAST(SUM(prd_price * prd_changed_qty) AS DOUBLE) AS difference')
-                                ->where(['order_id'=> $data['order_id'], 'order_excepted' => 0])
-                                ->first();
-
-            if ( !empty($detailAmounts) ) {
-              $data['order_amount'] = $detailAmounts['amount'];
-              $data['discount_amount'] = $detailAmounts['discount'];
-              $data['subtotal_amount'] = $detailAmounts['subtotal'];
-            }
-          }
-        }
-      }
-
-      if ( !empty($data['product']) ) {
-        foreach($data['product'] AS $product) {
-          if ( !empty($product['idx']) && !empty($product['hs_code']) ) {
-            $this->product->save($product);
-          }
-        }
-      }
-
-      if ( $exceptCnt > 0 ) {
-        $data['order']['id'] = $data['order_id'];
-        $data['order']['order_check'] = ( $exceptCnt > 0 ) ? 1 : 0 ;
-        $data['order']['order_amount'] = $data['order_amount'];
-        $data['order']['discount_amount'] = $data['discount_amount'];
-        $data['order']['subtotal_amount'] = $data['subtotal_amount'];
-        
-        // echo "<Br/>order";
-        // print_r($data['order']);
-        // echo "<Br/>";
-        $this->order->save($data['order']);
-      }
-
-      if ( !empty($data['delivery']) ) {
-        foreach($data['delivery'] as $delivery) : 
-          if ( isset($delivery['delivery_code'])) {
-            if ($delivery['delivery_code'] == 'on') $delivery['delivery_code'] = 100;
-          } else $delivery['delivery_code'] = 0;
-
-          // if ( isset($delivery['forward'])) {
-          //   if ( $delivery['forward'] == 'on' ) $delivery['forward'] = 1;
-          // } else $delivery['forward'] = 0;
-
-          $shippingFee += $delivery['delivery_price'];
-          
-          // if ( !$this->delivery->save($delivery)) {
-          //   // print_r($this->delivery->errors());
-          // } else {
-          //   $data['receipt']['delivery_id'] = $delivery['id'];
-          // }
-        endforeach;
-      }
-
       if ( !empty($data['receipt']) ) {
-        // echo $data['subtotal_amount']." ".$detailAmounts['subtotal_amount'];
-        if ( !empty($detailAmounts['subtotal_amount']) ) {
-          if ( !empty($data['receipt']['rq_percent']) ) {
-            $data['receipt']['rq_amount'] = floatval(sprintf('%0.2f', (($data['subtotal_amount'] - $data['paid']) * $data['receipt']['rq_percent'])));
-            $data['receipt']['due_amount'] = floatval(sprintf('%0.2f', (($data['subtotal_amount'] - $data['paid']) - $data['receipt']['rq_amount'])));
-          } else {
-            $data['receipt']['rq_percent'] = -1;
-            // $data['receipt']['due_amount'] = ($detailAmounts['subtotal_amount'] - $data['receipt']['rq_amount']);
+        if ( !empty($data['order_id']) ) {
+          $getOrder = $this->order->where(['id'=> $data['order_id'], 'available' => 1])->first();
+          if ( !empty($getOrder) ) {
+            if ( !$getOrder['complete_payment'] ) {
+              if ( $getOrder['order_amount'] != $data['order_amount'] ) return redirect()->back()->with('error', 'order amount error')->withInput();
+            } else {
+              return redirect()->back()->with('error', '이미 결제 완료된 주문입니다. 재확인 해주세요');
+            }
           }
         }
-        // echo "<br/>";
-        // print_r($data['receipt']);
-        // echo "<br/><br/>";
-        
-        if ($this->receipt->save($data['receipt'])) {
-          if ( $data['receipt']['due_amount'] <= 0 ) {
-            $this->order->set(['complete_payment' => 1])->where(['id' => $data['order_id']])->update();
-          }
 
-          if ( isset($data['receipt']['invoice_id']) && !empty($data['receipt']['invoice_id'])) {
-            $paypalData = [ 'amount' => ($data['receipt']['rq_amount'] + $shippingFee)
-                          , 'unit_amount' => $data['receipt']['rq_amount']
-                          , 'currency_code' => $data['currency_code']];
+        $receiptModification = false;
+        $tempRequestPecent = null;
+        if ( !empty($data['receipt']['receipt_id']) ) {
+          $getReceipt = $this->receipt->where(['receipt_id' => $data['receipt']['receipt_id']])->first();
+          if ( !empty($getReceipt) ) {
+            $tempRequestPecent = $getReceipt['rq_percent'];
 
-            if ( !empty($data['delivery']) ) {
-              $paypalData['shippingFee'] = $shippingFee;
-            }
-
-            $paypalResult = $this->PaypalController->fullyUpdateInvoice(
-                                    $data['receipt']['invoice_id'],
-                                    $paypalData
-                            );
-            // echo "<br/>";
-            // print_r($paypalResult);
-            // echo "<br/>";
-
-            if ( $paypalResult['code'] != 200 ) {
-              // return redirect()->back()->withInput()->with('error', 'paypal update error');
-              echo 'paypal update error';
+            if ( !empty($data['receipt']['rq_percent']) ) {
+              if ( $getReceipt['rq_percent'] != $data['receipt']['rq_percent'] ) {
+                $receiptModification = true;
+                $data['receipt']['rq_amount'] = floatval(sprintf('%0.2f', (($data['order_amount'] - $data['amount_paid']) * $data['receipt']['rq_percent'])));
+                $data['receipt']['due_amount'] = floatval(sprintf('%0.2f', (($data['order_amount'] - $data['amount_paid']) - $data['receipt']['rq_amount'])));
+              }            
+            } else {
+              $receiptModification = true;
+              $data['receipt']['rq_percent'] = -1;            
             }
           }
+        }
+
+        if ( floatval(sprintf('%0.2f', $data['receipt']['rq_amount'] + $data['receipt']['due_amount'] + $data['amount_paid'])) != $data['order_amount'] ) {
+          return redirect()->back()->with('error', 'PI 가격 계산 중 오류 발생')->withInput();
+        }
+
+        if ( !$this->receipt->save($data['receipt']) ) {
+          return redirect()->back()->with('error', '영수중 수정중 오류 발생');
+        } else {
+          $shippingFee = 0;
+          
+          if ( !empty($data['delivery']) && isset($data['delivery']['delivery_price'])) {
+            $receiptModification = true;
+            $shippingFee = $data['delivery']['delivery_price'];
+          }
+
+          if ( isset($data['receipt']['payment_invoce_id']) && !empty($data['receipt']['payment_invoce_id'])) {
+            if ( $receiptModification ) {
+              $paypalData = ['amount' => ($data['receipt']['rq_amount'] + $shippingFee)
+                            , 'unit_amount' => $data['receipt']['rq_amount']
+                            , 'currency_code' => $data['currency_code']
+                            , 'shippingFee' => $shippingFee];
+
+              $paypalResult = $this->PaypalController->fullyUpdateInvoice($data['receipt']['payment_invoce_id'], $paypalData);
+
+              if ( $paypalResult['code'] != 200 ) {
+                $data['receipt']['rq_percent'] = $tempRequestPecent;
+                $data['receipt']['rq_amount'] = floatval(sprintf('%0.2f', (($data['order_amount'] - $data['amount_paid']) * $data['receipt']['rq_percent'])));
+                $data['receipt']['due_amount'] = floatval(sprintf('%0.2f', (($data['order_amount'] - $data['amount_paid']) - $data['receipt']['rq_amount'])));
+
+                $this->receipt->save($data['receipt']);
+                return redirect()->back()->with('error', 'paypal invoice 수정오류');
+              }
+            }
+          }
+        }
+      }
+
+      if ( !empty($data['delivery']) && !empty($data['order_id']) ) {
+        $data['delivery']['order_id'] = $data['order_id'];
+
+        if ( isset($data['delivery']['forward'])) {
+          if ( $data['delivery']['forward'] == 'on' ) $data['delivery']['forward'] = 1;
+        } else $data['delivery']['forward'] = 0;
+
+
+        if ( !$this->delivery->save($data['delivery']) ) {
+          return redirect()->back()->with('error', $this->delivery->errors());
+        } else {
+          $data['receipt']['delivery_id'] = $this->delivery->getInsertID();
         }
       }
     }
 
     if ( $data['type'] == 'receipt' ) {
-      if ( $data['payment_status'] != 100 ) return redirect()->back();
-      $insertData = [ 'order_id' => $data['order_id']
-                      , 'receipt_type'=> $data['receipt_type']
-                      , 'due_amount' => 0
-                      , 'rq_amount' => $data['request_amount']
-                      , 'rq_percent' => 1
-                    ];
-      
-      if ( isset($data['payment_invoce_id']) && !empty($data['payment_invoce_id']) ) {
-        $invoiceDetail = $this->PaypalController->showInvoiceDetail($data['payment_invoce_id']);
+      // $invoice_number = NULL;
+      $isPaypal = false;
+      $invoice_data = NULL;
+      if ( !empty($data['order_id']) ) {
+        $getOrder = $this->order->where(['id' => $data['order_id'], 'available' => 1])->first();
+        if ( !empty($getOrder) ) {
+          if ( !empty($getOrder['order_amount']) ) {
+            $tempTotal = floatval(sprintf('%0.2f', ($data['amount_paid'] + $data['request_amount'])));
 
-        if ( !empty($invoiceDetail) ) {
-          $data['primary_recipients'] = $invoiceDetail['data']['primary_recipients'];
-          $data['buyerName'] = $data['buyer_name'];
-          $data['unit_amount'] = $data['request_amount'];
-
-          // $this->PaypalController->paypal($data);
-          $this->PaypalController->makeInvoice($data);
-          
-          if ( !empty($this->PaypalController->result) ) {
-            $newInvoice = $this->PaypalController->result;
-
-            if ( $newInvoice['code'] == 200 || $newInvoice['code'] == 201 ) {
-              $insertData['payment_invoice_id'] = $newInvoice['payment_invoice_id'];
-              $insertData['payment_invoice_number'] = $newInvoice['payment_invoice_number'];
-              $insertData['payment_url'] = $newInvoice['payment_url'];
-            } else {
-              return redirect()->back()->with('error', ($data['receipt_type'] + 1).'차 paypal invoice 발행 오류');
+            if ( $tempTotal != $getOrder['order_amount'] ) {
+              return redirect()->back()->with('error', '주문금액 재확인 요청');
             }
-          }
-        } else return redirect()->back()->with('error', ($data['receipt_type'] + 1).'차 paypal invoice 발행 오류');
+
+            if ( $getOrder['payment_id'] == 1 ) $isPaypal = true;
+          } else return redirect()->back()->with('error', '주문처리가 완료되기 전 주문인거 같습니다.');
+        } else {
+          return redirect()->back()->with('error', '해당하는 주문 정보가 없습니다.');
+        }
       }
 
-      $this->receipt->save($insertData);
+      $receipt = Array();
+      if ( $data['payment_status'] != 100 ) return redirect()->back()->with('error', '이전 결제 처리가 완료되지 않았습니다.');
+      if ( $data['amount_paid'] >= $data['order_amount'] ) return redirect()->back()->with('error', '결제 금액처리가 잘못되었습니다.');
+      if ( !empty($data['receipt']) && !empty($data['order_id']) ) {
+        $getReceipt = $this->receipt->where(['receipt_id' => $data['receipt']['receipt_id'], 'payment_status >=' => 0])->first();
+
+        if ( !empty($getReceipt) ) {
+          // if ( $getReceipt['payement_status'] != 100 ) return redirect()->back()->with('error', '이전 결제 처리가 완료되지 않았습니다.');
+          if ( !empty($getReceipt['payment_invoice_id']) ) {
+            $isPaypal = true;
+            $result = $this->PaypalController->showInvoiceDetail($getReceipt['payment_invoice_id']);
+
+            if ( !($result['code'] >= 200 && $result['code'] <= 201) ) {
+              return redirect()->back()->with('error', '유효하지 않은 invoice');
+            } else {
+              // if ( $result['data']['status'] != 'PAID') return redirect()->back()->with('error', '결제가 완료되지 않았습니다.');
+              if ( $result['data']['status'] == 'MARKED_AS_PAID' || $result['data']['status'] == 'PAID') {
+                // $invoice_number = $result['data']['detail']['invoice_number'];
+                $invoice_data = $result['data'];
+              } else return redirect()->back()->with('error', '결제가 완료되지 않았습니다.');              
+            }
+          }
+          // var_dump($data);
+          // var_dump($invoice_data['primary_recipients'][0]['billing_info']);
+          $paypal_data = Array();
+          if ( $isPaypal === true && !empty($invoice_data) ) {
+            $paypal_data['currency_code'] = $invoice_data['detail']['currency_code'];
+            $paypal_data['invoice_number'] = $invoice_data['detail']['invoice_number']."_".$data['receipt_type'];
+            $paypal_data['buyerName'] = $invoice_data['primary_recipients'][0]['billing_info']['name']['given_name'];
+            $paypal_data['email'] = $invoice_data['primary_recipients'][0]['billing_info']['email_address'];
+            $paypal_data['phone_code'] = $invoice_data['primary_recipients'][0]['billing_info']['phones'][0]['country_code'];
+            $paypal_data['phone'] = $invoice_data['primary_recipients'][0]['billing_info']['phones'][0]['national_number'];
+            $paypal_data['consignee'] = $invoice_data['primary_recipients'][0]['shipping_info']['name']['given_name'];
+            $paypal_data['streetAddr1'] = $invoice_data['primary_recipients'][0]['shipping_info']['address']['address_line_1'];
+            $paypal_data['streetAddr2'] = $invoice_data['primary_recipients'][0]['shipping_info']['address']['address_line_2'];
+            $paypal_data['zipcode'] = $invoice_data['primary_recipients'][0]['shipping_info']['address']['postal_code'];
+            $paypal_data['country_code'] = $invoice_data['primary_recipients'][0]['shipping_info']['address']['country_code'];
+            $paypal_data['subtotal']  = floatval(sprintf('%0.2f', $data['request_amount']));
+          }
+
+          $getNextReceipt = $this->receipt->where(['order_id' => $getReceipt['order_id'], 'receipt_type' => ($getReceipt['receipt_type'] + 1)])->first();
+          if ( !empty($getNextReceipt) ) {
+            $receipt['receipt_id'] = $getNextReceipt['receipt_id'];
+            $receipt['payment_status'] = $isPaypal ? 0 : -1;
+          } else {          
+            $receipt['order_id'] = $data['order_id'];
+            $receipt['receipt_type'] = $data['receipt_type'];
+            // $receipt['due_amount'] = floatval(sprintf('%0.2f', ($data['order_amount'] - ($data['amount_paid'] + $data['request_amount']))));
+            $receipt['due_amount'] = 0;
+            $receipt['rq_amount'] = floatval(sprintf('%0.2f', $data['request_amount']));
+            $receipt['rq_percent'] = 1;
+            $receipt['payment_status'] = $isPaypal ? 0 : -1;
+            
+            if ( $this->receipt->save($receipt) ) {
+              $receipt['receipt_id'] = $this->receipt->getInsertID();
+              // if ( $isPaypal && !empty($paypal_data) ) {
+              //   $sentInvoiceResult = $this->PaypalController->paypal($paypal_data);
+
+              //   if ( $sentInvoiceResult['code'] >= 200 && $sentInvoiceResult['code'] <= 202 ) {
+              //     $receipt['payment_status'] = 0;
+              //     $receipt['payment_invoice_id'] = $sentInvoiceResult['payment_invoice_id'];
+              //     $receipt['payment_invoice_number'] = $sentInvoiceResul['payment_invoice_number'];
+              //     $receipt['payment_url'] = $sentInvoiceResul['payment_url'];
+
+              //     if ( $this->receipt->save($receipt) ) {
+              //     }
+              //   } 
+              // }
+            }
+          }
+
+          if ( $isPaypal && !empty($paypal_data) ) {
+            $sentInvoiceResult = $this->PaypalController->paypal($paypal_data);
+            var_dump($sentInvoiceResult);
+            if ( $sentInvoiceResult['code'] >= 200 && $sentInvoiceResult['code'] <= 202 ) {
+              $receipt['payment_status'] = 0;
+              $receipt['payment_invoice_id'] = $sentInvoiceResult['payment_invoice_id'];
+              $receipt['payment_invoice_number'] = $sentInvoiceResult['payment_invoice_number'];
+              $receipt['payment_url'] = $sentInvoiceResult['payment_url'];
+
+              if ( $this->receipt->save($receipt) ) {
+              }
+            } 
+          }
+        }
+      }
     }
 
     if ( $data['type'] == 'refund' ) {
-      $receiptInfo = $this->receipt->where(['receipt_id' => $data["receipt_id"]])->first();
+      $receiptInfo = $this->receipt->where(['receipt_id' => $data['receipt']["receipt_id"]])->first();
       
       if ( !empty($receiptInfo) ) :
         if ( $receiptInfo['payment_status'] != 100 ) :
@@ -354,8 +400,8 @@ class Orders extends BaseController {
         $data['payment_status'] = -200;
         $data['refund_date'] = date('Y-m-d');
 
-        if ( isset($data['payment_invoce_id']) && !empty($data['payment_invoce_id']) ) :
-          $paypalDetail = $this->PaypalController->showInvoiceDetail($data['payment_invoce_id']);
+        if ( isset($data['receipt']['payment_invoce_id']) && !empty($data['receipt']['payment_invoce_id']) ) :
+          $paypalDetail = $this->PaypalController->showInvoiceDetail($data['receipt']['payment_invoce_id']);
 
           if ( !empty($paypalDetail) && $paypalDetail['code'] == 200) {
             $refundData['method'] = $paypalDetail['data']['payments']['transactions'][0]['method'];
@@ -367,7 +413,7 @@ class Orders extends BaseController {
             print_r($refundData);
             echo "<br/><Br/>";
             
-            $this->PaypalController->recordRefundForInvoice($data['payment_invoce_id'], $refundData);
+            $this->PaypalController->recordRefundForInvoice($data['receipt']['payment_invoce_id'], $refundData);
             // print_r($this->PaypalController->result);
             if ( $this->PaypalController->result['code'] == 200 ) :
               $receipt['payment_refund_id'] = $this->PaypalController->result['msg'];
@@ -385,51 +431,49 @@ class Orders extends BaseController {
       endif;  
     }
 
-    if ( $data['type'] == 'delivery') {
-      foreach( $data['delivery'] as $delivery ) : 
-        if ( isset($delivery['delivery_code'])) {
-          if ($delivery['delivery_code'] == 'on') $delivery['delivery_code'] = 100;
-        } else {
-          if ( !empty($delivery['receipt_id']) ) {
-            $delivery['delivery_code'] = 100;
-          } else $delivery['delivery_code'] = 0;
-        }
+    // if ( $data['type'] == 'delivery') {
+    //   foreach( $data['delivery'] as $delivery ) : 
+    //     if ( isset($delivery['delivery_code'])) {
+    //       if ($delivery['delivery_code'] == 'on') $delivery['delivery_code'] = 100;
+    //     } else {
+    //       if ( !empty($delivery['receipt_id']) ) {
+    //         $delivery['delivery_code'] = 100;
+    //       } else $delivery['delivery_code'] = 0;
+    //     }
 
-        // if ( isset($delivery['forward'])) {
-        //   if ( $delivery['forward'] == 'on' ) $delivery['forward'] = 1;
-        // } else $delivery['forward'] = 0;
+    //     // if ( isset($delivery['forward'])) {
+    //     //   if ( $delivery['forward'] == 'on' ) $delivery['forward'] = 1;
+    //     // } else $delivery['forward'] = 0;
 
-      if ( $this->delivery->save($delivery)) {
-        $receiptSave = ["receipt_id" => $delivery['receipt_id']
-                      , "delivery_id" => $delivery['id']];
+    //   if ( $this->delivery->save($delivery)) {
+    //     $receiptSave = ["receipt_id" => $delivery['receipt_id']
+    //                   , "delivery_id" => $delivery['id']];
 
-        if ( $this->receipt->save($receiptSave) ) {
-          $receipt = $this->receipt->where('receipt_id', $delivery['receipt_id'])->first();
+    //     if ( $this->receipt->save($receiptSave) ) {
+    //       $receipt = $this->receipt->where('receipt_id', $delivery['receipt_id'])->first();
           
-          if ( strtolower($delivery['payment']) == 'paypal' ) {
-            if ( !empty($receipt['payment_invoice_id']) ) {
-              $paypalData = [ 'amount' => ($receipt['rq_amount'] + $delivery['delivery_price'])
-                            , 'unit_amount' => $receipt['rq_amount']
-                            , 'currency_code' => $delivery['currency_code']];
+    //       if ( strtolower($delivery['payment']) == 'paypal' ) {
+    //         if ( !empty($receipt['payment_invoice_id']) ) {
+    //           $paypalData = [ 'amount' => ($receipt['rq_amount'] + $delivery['delivery_price'])
+    //                         , 'unit_amount' => $receipt['rq_amount']
+    //                         , 'currency_code' => $delivery['currency_code']];
 
-              if ( !empty($data['delivery']) ) {
-                $paypalData['shippingFee'] = $delivery['delivery_price'];
-              }
+    //           if ( !empty($data['delivery']) ) {
+    //             $paypalData['shippingFee'] = $delivery['delivery_price'];
+    //           }
 
-              $paypalResult = $this->PaypalController->fullyUpdateInvoice(
-                                      $receipt['payment_invoice_id'],
-                                      $paypalData);
-              if ( $paypalResult['code'] != 200 ) {
-                session()->setFlashdata('error', 'paypal update error');
-              }
-            }
-          }
-        }
-      }
-      endforeach;
-    }
-    // echo "<br><br>";
-    // print_r($data);
+    //           $paypalResult = $this->PaypalController->fullyUpdateInvoice(
+    //                                   $receipt['payment_invoice_id'],
+    //                                   $paypalData);
+    //           if ( $paypalResult['code'] != 200 ) {
+    //             session()->setFlashdata('error', 'paypal update error');
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    //   endforeach;
+    // }
     return redirect()->back();
   }
 
@@ -459,6 +503,20 @@ class Orders extends BaseController {
     if ( empty($orderId) || empty($this->data['order']) ) return redirect()->to(site_url('order'));
   
     $this->data['details'] = $this->getOrderDetail($orderId)->findAll();
+    
+    // $this->data['receipts'] = $this->receipt->select('orders_receipt.*, delivery.delivery_price')->join('delivery', 'delivery.id = orders_receipt.delivery_id', 'left outer')->where('orders_receipt.order_id', $orderId)->findAll();
+    $this->data['receipts'] = $this->receipt
+                                  ->select('orders_receipt.*')
+                                  ->select('delivery.id AS delivery_id, delivery.forward
+                                          , delivery.shipment_id, delivery.payment_id
+                                          , delivery.packaging_id, delivery.ci_number
+                                          , delivery.delivery_currency_idx, delivery.delivery_price
+                                          , delivery.delivery_status, delivery.delivery_code')
+                                  ->join('delivery', 'delivery.id = orders_receipt.delivery_id', 'left outer')
+                                  ->where('orders_receipt.order_id', $orderId)->findAll();
+    // $this->data['deliveries'] = $this->delivery->where('delivery.order_id', $orderId)->findAll();
+    $this->data['shipments'] = $this->shipment->findAll();
+    $this->data['currency'] = $this->currency->where('available', 1)->find();
 
     if ( !empty($this->data['details']) ) :
       $this->data['requirement'] = [];
@@ -471,6 +529,31 @@ class Orders extends BaseController {
 
       $this->data['requirementOption'] = $this->requirementOption->where('available', 1)->findAll();
     endif;
+
+    if ( !empty($this->data['receipts']) ) {
+      foreach($this->data['receipts'] as $i => $receipt) { 
+        if ( $receipt['payment_status'] == 0 ) {
+          if ( !is_null($receipt['payment_invoice_id']) ) {
+            $updateData = [];
+            $paypalDetail = $this->PaypalController->showInvoiceDetail($receipt['payment_invoice_id']);
+            
+            // var_dump($this->PaypalController->result);
+            if ( $this->PaypalController->result['code'] != 404 ) {
+              if ( $paypalDetail['data']['due_amount']['value'] == 0 && ($paypalDetail['data']['status'] == 'PAID' || $paypalDetail['data']['status'] == 'MARKED_AS_PAID') ) {
+                if ( is_null($receipt['payment_invoice_number']) ) {
+                  $updateData['payment_invoice_number'] = $paypalDetail['data']['detail']['invoice_number'];
+                }
+                $updateData['payment_date'] = $paypalDetail['data']['payments']['transactions'][0]['payment_date'];
+                $updateData['payment_status'] = 100;
+                $this->receipt->where('receipt_id', $receipt['receipt_id'])->set($updateData)->update();
+
+                $this->data['receipts'][$i]['payment_status'] = 100;
+              }
+            }
+          }
+        }
+      }
+    }
     // if ( !empty($this->data['packagingStatus']) && $this->data['packagingStatus'][1]['department_ids'] == false ) {
     //   return redirect()->to(site_url("orders/detail/{$orderId}"));
     // } else return $this->menuLayout('orders/inventoryCheckDetail', $this->data);
@@ -703,7 +786,7 @@ class Orders extends BaseController {
   public function getOrder($orderId = null) {
     if ( !empty($orderId) ) {
       $this->order
-            ->select('IFNULL(amount_paid.amount_paid, 0) AS amount_paid')
+            ->select('ROUND(IFNULL(amount_paid.amount_paid, 0), 2) AS amount_paid')
             ->join("( SELECT order_id, SUM(rq_amount) AS amount_paid 
                       FROM orders_receipt 
                       WHERE order_id = {$orderId} AND payment_status = 100
