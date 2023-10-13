@@ -1,5 +1,4 @@
 main { min-height: 94vh; font-size: 0.89rem; }
-main [type='text'] { border-color: #acacac; padding: 0.3rem; }
 /* main form  { display: grid; grid-template-columns: 1fr 1fr; grid-gap: 1rem; } */
 main form > div { width: 48%; display: flex; flex-direction: column; border: 1px solid #e6e6e6; }
 main form > div > div { display: flex; flex-direction: row; border-bottom: 1px solid #e6e6e6; }

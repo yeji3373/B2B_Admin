@@ -101,8 +101,8 @@ $(document).ready(function() {
 //     }
 //     inventoryAmount();
 //   }
-}).on('keyup, change', '.request-amount-change', function(e) {
-  $find = null, subtotal = 0, time = 1000;
+}).on('keyup change', '.request-amount-change', function(e) {
+  $find = null, subtotal = 0, time = 1000, beforaValue = 0;
 
   if ( $(this).hasClass('prd-price') ) $find = $(this).closest('tr').find('.prd-qty');
   if ( $(this).hasClass('prd-qty') ) $find = $(this).closest('tr').find('.prd-price');
@@ -110,7 +110,14 @@ $(document).ready(function() {
   if ( $(this).val().length >= 1 && $(this).closest('tr').find('.order_excepted').val() == 0) {
     if ( e.keyCode == 13 ) time = 0;
     setTimeout(() => {
-      if ( $(this).val() == '' ) $(this).val(0);
+      if ( $(this).val() == '' || $(this).val() == 0 ) {
+        if ( $(this).parent('p').length ) {
+          beforaValue = $.trim($(this).parent('p').prev('p').text().replace(/\, | \$/gi, ''));
+        }
+        console.log("beforaValue ", beforaValue);
+        $(this).val(beforaValue);
+      } 
+
       subtotal = parseFloat($(this).val()) * parseFloat($find.val());
       $(this).closest('tr').find('.request-subtotal').val(subtotal.toFixed(2));
       inventoryAmount();
@@ -173,33 +180,6 @@ $(document).ready(function() {
   } else {
     optionIds.val($(this).val());
   }
-}).on('keyup change', '.fixed-qty', function(e) {
-  $find = null, subtotal = 0, time = 1000;
-
-  if ( $(this).hasClass('prd-price') ) $find = $(this).closest('tr').find('.fixed-qty');
-  if ( $(this).hasClass('fixed-qty') ) $find = $(this).closest('tr').find('.prd-price');
-
-  if ( $(this).val().length >= 1 && $(this).closest('tr').find('.order_excepted').val() == 0) {
-    if ( e.keyCode == 13 ) time = 0;
-    setTimeout(() => {
-      if ( $(this).val() == '' ) $(this).val(0);
-      subtotal = parseFloat($(this).val()) * parseFloat($find.val());
-      $(this).closest('tr').find('.request-subtotal').val(subtotal.toFixed(2));
-      inventoryAmount();
-    }, time);
-  }
-}).on('keyup change', '.final_qty', function(e) {
-  let timeout = 1000, subtotal = 0;
-
-  if ( $(this).val().length >= 1 && $(this).closest('tr').find('.order_excepted').val() == 0 ) {
-    if ( e.keyCode == 13 ) timeout = 0;
-    setTimeout(() => {
-      if ( $(this).val() == '' ) $(this).val($(this).closest('tr').find('.fixed_qty').val());
-      subtotal = parseFloat($(this).val() * $(this).closest('tr').find('.prd-price').val());
-      $(this).closest('tr').find('.request-subtotal').val(subtotal.toFixed(2)); 
-    }, timeout); 
-  }
-  // focusout 됐을때, 입력값이 없거나 0이면 이전 input의 값으로 대체하게 처리 
 });
 
 function inventoryAmount() {

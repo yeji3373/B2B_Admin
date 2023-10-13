@@ -25,6 +25,7 @@ header nav ul li a { display: block; width: 100%; padding: 0 1rem 0 0; color: #d
 /* notification */
 
 .d-grid.grid-half { grid-template-columns: repeat(2, 1fr); }
+.d-grid.grid-three { grid-template-columns: repeat(3, 1fr); }
 .d-grid.grid-quad { grid-template-columns: repeat(4, 1fr); }
 
 /* pager css */
@@ -44,6 +45,10 @@ header nav ul li a { display: block; width: 100%; padding: 0 1rem 0 0; color: #d
 .min-height-auto { min-height: auto;}
 /* height */
 
+/* input */
+input, select { border-color: #acacac; padding: 0.3rem; }
+input:disabled, select:disabled { background-color: #e8e9e9; }
+/* input */
 
 /* width */
 .w-3p { width: 3%; }

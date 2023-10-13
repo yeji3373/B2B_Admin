@@ -494,8 +494,8 @@ class Orders extends BaseController {
 
     if ( !empty($packagingDetail) ) {
       $this->data['packaging_id'] = $packagingDetail['packaging_id'];
-      $this->data['price_disabled'] = $packagingDetail['requirement_option_check'];
-      $this->data['option_disabled'] = $packagingDetail['requirement_option_disabled'];
+      $this->data['price_disabled'] = $packagingDetail['requirement_option_check']; // check 필요
+      $this->data['option_disabled'] = $packagingDetail['requirement_option_disabled']; // check 필요
       $this->data['packagingStatus'] = $this->getCurrentStepPackageStatus($packagingDetail);
     }
     
@@ -520,14 +520,13 @@ class Orders extends BaseController {
 
     if ( !empty($this->data['details']) ) :
       $this->data['requirement'] = [];
-      foreach($this->data['details'] AS $detail ) :
-        array_push($this->data['requirement']
-                  , $this->requirementRequest->requirement(['where' => ['requirement_request.order_id'=> $orderId
-                                                                        , 'requirement_request.order_detail_id' => $detail['id']]])
-                                              ->findAll());
+      foreach($this->data['details'] AS $dIdx => $detail ) :
+        $requireRequest = $this->requirementRequest->requirement(['where' => ['requirement_request.order_id'=> $orderId, 'requirement_request.order_detail_id' => $detail['id']]])->findAll();
+        if ( !empty($requireRequest) ) {
+          $this->data['details'][$dIdx]['requirement'] = $requireRequest;
+        }
       endforeach;
-
-      $this->data['requirementOption'] = $this->requirementOption->where('available', 1)->findAll();
+      $this->data['requirementOption'] = $this->requirementOption->where('available', 1)->orderBy('sort ASC')->findAll();
     endif;
 
     if ( !empty($this->data['receipts']) ) {
@@ -566,6 +565,12 @@ class Orders extends BaseController {
     $order = $this->request->getPost('order');
     $packaging = $this->request->getPost('packaging');
 
+    var_dump($details);
+    var_dump($requirement);
+    var_dump($order);
+    var_dump($packaging);
+    
+    return;
     // var_dump($requirement);
     // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
     if ( !empty($details) ) {
@@ -638,11 +643,15 @@ class Orders extends BaseController {
             $this->order->save($order);
         }
         if($order['order_fix'] == 1) {
-          $order_total = 0;
+          // $order_total = 0;
+          $fixed_amount = 0;
+          var_dump($order['product_total_amount']);
           foreach ($order['product_total_amount'] AS $key => $value) {
-            $order_total+=$value['total'];
+            // $order_total+=$value['total'];
+            $fixed_amount += filter_var($value['total'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION); //1989.34
           }
-          $order['order_amount'] = $order_total;
+          // $order['order_amount'] = $order_total;
+          $order['fixed_amount'] = $fixed_amount;
           $order['order_fixed'] = $order['order_fix'];
           $this->order->save($order);
         }
@@ -735,22 +744,22 @@ class Orders extends BaseController {
           if ( $pStatus['order_by'] == $packagingDetail['order_by']) {
             $index = $p;
 
-            if ( !empty($pStatus['next_step']) && !is_null($pStatus['next_step_index'])) {
-              $complete = [];
-              for ( $i = 0; $i < $pStatus['next_step']; $i++ ) {
-                if ( $i < $pStatus['next_step'] ) $complete = ['complete' => 1];
-                if ( $this->packagingDetail->save(array_merge(['packaging_id'=> $packagingDetail['packaging_id']
-                                                  , 'status_id' => $packagingStatus[$pStatus['next_step_index']]['idx']]
-                                                  , $complete)) ) {
-                  $packagingDetailId = $this->packaging->getInsertID();
-                  if ( !$this->packagingDetail->save(['idx' => $packagingDetail['detail_idx'], 'complete' => 1]) ) {
-                    $this->packagingDetail->where('idx', $packagingDetailId)->delete();
-                  } else {
-                    $index = $p + 1;
-                  }
-                }
-              }
-            }
+            // if ( !empty($pStatus['next_step']) && !is_null($pStatus['next_step_index'])) {
+            //   $complete = [];
+            //   for ( $i = 0; $i < $pStatus['next_step']; $i++ ) {
+            //     if ( $i < $pStatus['next_step'] ) $complete = ['complete' => 1];
+            //     if ( $this->packagingDetail->save(array_merge(['packaging_id'=> $packagingDetail['packaging_id']
+            //                                       , 'status_id' => $packagingStatus[$pStatus['next_step_index']]['idx']]
+            //                                       , $complete)) ) {
+            //       $packagingDetailId = $this->packaging->getInsertID();
+            //       if ( !$this->packagingDetail->save(['idx' => $packagingDetail['detail_idx'], 'complete' => 1]) ) {
+            //         $this->packagingDetail->where('idx', $packagingDetailId)->delete();
+            //       } else {
+            //         $index = $p + 1;
+            //       }
+            //     }
+            //   }
+            // }
             // $packagingStatus[$index]['selected'] = true;
             array_push($status, $packagingStatus[$index]); // 현재단계
             array_push($status, $packagingStatus[$index + 1]); // 다음단계

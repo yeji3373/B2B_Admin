@@ -1,9 +1,9 @@
 <main class='position-rel0ative'>
-  <title>재고 확인 요청 상세</title>
+  <title>재고 확인 / 주문 요청 상세</title>
   <div class='order-detail-container inventory-detail-container border-0'>
     <?php if ( !empty($order)) : ?> 
     <!-- <?php var_dump($order) ?> -->
-    <div class='d-grid grid-quad border'>
+    <div class='d-grid grid-three border'>
       <div class='d-flex flex-column border border-0 border-end'>
         <label class='border border-0 border-bottom'>업체(buyer)명</label>
         <div class='con'>
@@ -26,28 +26,38 @@
         <label class='border border-0 border-bottom'>주문번호 / 재고요청일자</label>
         <div class='con'><?=$order['order_number']?> / <?=$order['created_at']?></div>
       </div>
-      <div class='d-flex flex-column'>
-        <label class='border border-0 border-bottom'>재고요청 / 재고확정 / 주문확정금액 / 최종확정금액</label>
+    </div>
+    <div class='d-grid grid-quad border mt-2'>
+      <div class='d-flex flex-column border-end'>
+        <label class='border border-0 border-bottom'>재고요청</label>
         <div class='con'>
           <span><?=$order['currency_sign']. number_format($order['request_amount'], $order['currency_float'])?></span>
-          / <?=$order['currency_sign']?><span class='inventory_fixed_amount'><?=number_format($order['inventory_fixed_amount'], $order['currency_float'])?></span>
-          / <?=$order['currency_sign']?><span class='order_amount'><?=number_format($order['order_amount'], $order['currency_float'])?></span>
-          / <?=$order['currency_sign']?><span class='decide_amout'><?=number_format($order['decide_amount'], $order['currency_float'])?></span>
+        </div>
+      </div>
+      <div class='d-flex flex-column border-end'>
+        <label class='border border-0 border-bottom'>재고확정</label>
+        <div class='con'>
+          <span class='inventory_fixed_amount'><?=$order['currency_sign']. number_format($order['inventory_fixed_amount'], $order['currency_float'])?></span>
+        </div>
+      </div>
+      <div class='d-flex flex-column border-end'>
+        <label class='border border-0 border-bottom'>주문확정금액</label>
+        <div class='con'>
+          <span class='order_amount'><?=$order['currency_sign']. number_format($order['order_amount'], $order['currency_float'])?></span>
+        </div>
+      </div>
+      <div class='d-flex flex-column'>
+        <label class='border border-0 border-bottom'>최종확정금액</label>
+        <div class='con'>
+          <span class='decide_amout'><?=$order['currency_sign']. number_format($order['decide_amount'], $order['currency_float'])?></span>
         </div>
       </div>
     </div>
     <?php if ( !empty($order['receipt_type'])) { ?>
     <div class='w-100 mt-2 d-flex flex-column'>
       <p class='fw-bold'>Invoice List</p>
-      <!-- <?//=view('orders/includes/invoice')?> -->
       <?=view('orders/includes/invoiceDelivery')?>
     </div>
-    <!-- <?php if ( !empty($deliveries) ) { ?>
-    <div class='w-70p mt-2 d-flex flex-column'>
-      <p class='fw-bold'>배송관리</p>
-      <?//=view('orders/includes/delivery')?>
-    </div>
-    <?php } ?> -->
     <?php } ?>
     <?php endif; ?>
     <form method='post' action='<?=site_url('orders/inventoryEdit')?>'>
@@ -107,10 +117,28 @@
         </thead>
         <tbody>
         <?php if ( !empty($details) ) : 
-          foreach ($details AS $i => $detail ) :?>
-          <?php $seletedOptions = []; 
-                $canceled = 0; ?>
-          <tr class='detail_items <?=$detail['order_excepted'] ? 'bg-danger bg-opacity-10' : ''?>'>
+          foreach ($details AS $i => $detail ) :
+            $seletedOptions = []; 
+            $canceled = 0;
+            $pay_step = 0;
+            $disabled = NULL;
+            
+            if ( !empty($packagingStatus) ) :
+              if ( isset($packagingStatus[0]['pay_step']) ) : 
+                if ( $packagingStatus[0]['pay_step'] > 0 ) : 
+                  $pay_step = $packagingStatus[0]['pay_step'];
+                endif;
+              endif;
+            endif;
+            // if ( $pay_step > 1 ) :
+            // endif; 
+            if ( !empty($detail['order_excepted']) ) :
+              $canceled = 1;
+            else :
+            endif;
+          
+          ?>
+          <tr class='detail_items <?=$canceled ? 'bg-danger bg-opacity-10' : ''?>'>
             <td>
               <?=$i + 1?>
               <input type='hidden' name='detail[<?=$i?>][id]' value='<?=$detail['id']?>'>
@@ -134,117 +162,97 @@
             </td>
             <td>
               <div class='d-flex flex-column text-end'>
-                <p class='<?=!empty($detail['prd_change_price']) ? 'text-decoration-line-through' : ''?>'>
+                <p class='<?=$pay_step > 0 && !empty($detail['prd_change_price']) ? 'text-decoration-line-through' : ''?>'>
                   <?=$detail['currency_sign'].number_format($detail['prd_price'], 2)?>
                 </p>
+                <?php if ( $pay_step > 0 ) : ?>
                 <p>
                   <?=$detail['currency_sign']?>
                   <input type='number' step='any'
                         data-compare-value='<?=!empty($detail['prd_change_price']) ? $detail['prd_change_price'] : $detail['prd_price']?>'
                         data-compare-target='detail[<?=$i?>][prd_price_changed]'
-                        class='request-amount-change prd-price <?=!empty($price_disabled) ? 'bg-dark bg-opacity-10': ''?>'
+                        class='request-amount-change prd-price'
                         name='detail[<?=$i?>][prd_change_price]' 
-                        value='<?=$detail['prd_price_changed'] ? $detail['prd_change_price'] : $detail['prd_price']?>' 
-                        style='width: 5rem;'
-                        <?=!empty($price_disabled) ? 'disabled' : ''?>
-                        >
+                        value='<?=!empty($detail['prd_change_price']) ? $detail['prd_change_price'] : $detail['prd_price']?>'>
                 </p>
+                <?php endif; ?>
             </td>
             <td>
               <div class='d-flex flex-column text-end'>
-                <p class='<?=!empty($detail['prd_qty_changed']) ? 'text-decoration-line-through' : ''?>'><?=$detail['prd_order_qty']?></p>
+                <p class='<?=$pay_step > 0 && !empty($detail['prd_change_qty']) ? 'text-decoration-line-through' : ''?>'>
+                  <?=$detail['prd_order_qty']?>
+                </p>
+                <!-- step 1 -->
+                <?php if ( $pay_step >= 1 ) : ?>
                 <p>
+                  <?php if ( $pay_step > 1 ) : ?>
+                    <?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>
+                  <?php else : ?>
                   <input type='number'
                         step='any'
                         data-compare-value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
                         data-compare-target='detail[<?=$i?>][prd_qty_changed]'
-                        class='request-amount-change prd-qty <?=!empty($price_disabled) ? 'bg-dark bg-opacity-10' : ''?>'
+                        class='request-amount-change prd-qty'
                         name='detail[<?=$i?>][prd_change_qty]' 
                         value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
-                        style='width: 3rem;'
-                        <?=!empty($price_disabled) ? 'disabled' : ''?>
-                  >
+                        <?=$disabled?>>
+                  <?php endif; ?>
                 </p>
-                <?php if ( !empty($price_disabled) ) : ?>
-                <p class='mt-1'>
-                  <?php 
-                  $value = 0;
-                  if(empty($detail['prd_fixed_qty'])) {
-                    if(!empty($requirement[$i])) : 
-                      foreach($requirement[$i] AS $j => $require) : 
-                        if(!empty($require['requirement_selected_option_id'])) : 
-                          array_push($seletedOptions, $require['requirement_selected_option_id']);
-                        endif; 
-                      endforeach;
-                      if(!empty($seletedOptions)) :
-                        // requirement_option_check
-                        if(in_array('3', $seletedOptions) || in_array('4', $seletedOptions)) :
-                          $value = 0;
-                          $canceled = 1;
-                        else :
-                          if(in_array('1', $seletedOptions)) :
-                            $value = $detail['prd_change_qty'];
-                          else :
-                            $value = $detail['prd_order_qty'];
-                          endif;
-                        endif;
-                      else :
-                        if(empty($detail['prd_qty_changed'])) {
-                          $value = $detail['prd_order_qty'];
-                        } else {
-                          $value = $detail['prd_change_qty'];
-                        }
-                      endif;
-                    else :
-                      if(empty($detail['prd_qty_changed'])) {
-                        $value = $detail['prd_order_qty'];
-                      } else {
-                        $value = $detail['prd_change_qty'];
-                      }
-                    endif; 
-                  } else {
-                    $value = $detail['prd_fixed_qty'];
-                  }
-                  $disabled = NULL;
-                  $class = NULL;
-                  if(isset($order['order_fixed']) && $order['order_fixed'] ) {
-                    $disabled = "disabled";
-                    $class = "bg-dark bg-opacity-10";
-                  }
-                    
-                  echo "<input type='number' class='fixed-qty {$class}' name='detail[{$i}][prd_fixed_qty]' value='{$value}' style='width: 3rem;' {$disabled}>";
-                  ?>
-                </p>
-                <?php endif; ?>
+                <?php endif ; ?>
+                <!-- step 1 -->
                 
-                <?php if ( isset($order['order_fixed']) && $order['order_fixed']) : 
-                  $disabled = NULL;
-                  $class = NULL;
-                  $value = 0;
-
-                  if ( !empty($detail['prd_final_qty']) ) :
-                    $value = $detail['prd_final_qty'];
-                  else : 
-                    if ( !empty($detail['prd_fixed_qty']) ) :
-                      $value = $detail['prd_fixed_qty'];  
-                    else:
-                      if ( !empty($detail['prd_change_qty']) ) :
-                        $value = $detail['prd_change_qty'];
-                      else :
-                        $value = $detail['prd_order_qty'];
-                      endif;
-                    endif;
-                  endif;
-                  
-                  if ( !empty($detail['order_excepted']) ) :
-                    $disabled = 'disabled';
-                    $class = 'bg-dark bg-opacity-10';
-                  endif;?>
-                <p class='mt-1'>
-                  <input type='numnber' class='final_qty <?=!empty($class) ? $class : ''?>' name='detail[<?=$i?>][prd_final_qty]' value='<?=$value?>' style='width: 3rem;' <?=!empty($disabled) ? ' disabled' : ''?>
-                  >
+                <!-- step 2 -->
+                <?php if ( $pay_step >= 2 ) :
+                  $third_qty = 0;
+                  if ( empty($detail['prd_fixed_qty']) ) {
+                    if ( empty($detail['prd_change_qty']) ) {
+                      $third_qty = $detail['prd_order_qty'];
+                    } else $third_qty = $detail['prd_change_qty'];
+                  } else {
+                    $third_qty = $detail['prd_fixed_qty'];
+                  } ?>
+                <p>
+                  <?php if ( $pay_step > 2 ) : ?>
+                    <span><?=number_fomat($third_qty);?></span>
+                  <?php else : ?>
+                    <input type='number'
+                          step='any'
+                          data-compare-value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
+                          data-compare-target='detail[<?=$i?>][prd_qty_changed]'
+                          class='request-amount-change prd-qty fixed-qty'
+                          name='detail[<?=$i?>][prd_fixed_qty]'
+                          value='<?=$third_qty?>'
+                          <?=$disabled?>>
+                  <?php endif;?>
                 </p>
                 <?php endif; ?>
+                <!-- step 2 -->
+
+                <!-- step 3 -->
+                <?php if ( $pay_step >= 3 ) : 
+                  $fourth_qty = 0;
+                  if ( empty($detail['prd_final_qty']) ) {
+                    $fourth_qty = $third_qty;
+                  } else {
+                    $fourth_qty = $detail['prd_final_qty'];
+                  } ?>
+                <p>
+                  <?php if ( $pay_step > 3
+                   ) : ?>
+                    <span><?=number_format($fourth_qty)?></span>
+                  <?php else : ?>
+                    <input type='number'
+                          step='any'
+                          data-compare-value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
+                          data-compare-target='detail[<?=$i?>][prd_qty_changed]'
+                          class='request-amount-change prd-qty final_qty'
+                          name='detail[<?=$i?>][prd_final_qty]'
+                          value='<?=$fourth_qty?>'
+                          <?=$disabled?>>
+                  <?php endif; ?>
+                </p>
+                <?php endif; ?>
+                <!-- step 3 -->
               </div>
             </td>
             <td>
@@ -268,9 +276,9 @@
                       else :
                         $excepted = 1;
                       endif;
-                      if(!empty($order['order_fixed']) && $order['order_fixed'] == 1) {
-                        echo " disabled = 'true'";
-                      }
+                      // if(!empty($order['order_fixed']) && $order['order_fixed'] == 1) {
+                      //   echo " disabled";
+                      // }
                       ?>
                       value='<?=$excepted?>'
                       <?=($detail['order_excepted'] == true || $canceled == 1) ? 'checked': ''?>>
@@ -315,13 +323,12 @@
                 value='<?=number_format( ($qty * $price), $detail['currency_float'] )?>'
                 <?php endif; ?>
                 data-temp='<?=number_format( ($qty * $price), $detail['currency_float'] )?>'
-                style='width: 5rem;'
                 readonly>
             </td>
             <td class='w-20p'>
               <div class='d-flex flex-column flex-wrap w-100 requirement-group'>
-                <?php if( !empty($requirement[$i]) ) :
-                  foreach ($requirement[$i] AS $j => $require ) : ?>
+                <?php if( !empty($detail['requirement']) ) :
+                  foreach ($detail['requirement'] AS $j => $require ) : ?>
                   <div class='d-flex flex-column requirement-item w-100'>
                     <div class='d-flex flex-row w-100'>
                       <div class='text-start w-30p d-flex flex-row flex-nowrap justify-content-between'>
