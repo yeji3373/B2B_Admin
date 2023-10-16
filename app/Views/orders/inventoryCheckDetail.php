@@ -1,6 +1,17 @@
 <main class='position-rel0ative'>
   <title>재고 확인 / 주문 요청 상세</title>
   <div class='order-detail-container inventory-detail-container border-0'>
+    <?php 
+    $pay_step = 0;
+    if ( !empty($packagingStatus) ) :
+      if ( isset($packagingStatus[0]['pay_step']) ) : 
+        if ( $packagingStatus[0]['pay_step'] > 0 ) : 
+          $pay_step = $packagingStatus[0]['pay_step'];
+        endif;
+      endif;
+    endif;
+    ?>
+    <input type='hidden' id='pay-step' value='<?=$pay_step?>'>
     <?php if ( !empty($order)) : ?> 
     <!-- <?php var_dump($order) ?> -->
     <div class='d-grid grid-three border'>
@@ -37,19 +48,19 @@
       <div class='d-flex flex-column border-end'>
         <label class='border border-0 border-bottom'>재고확정</label>
         <div class='con'>
-          <span class='inventory_fixed_amount'><?=$order['currency_sign']. number_format($order['inventory_fixed_amount'], $order['currency_float'])?></span>
+        <?=$order['currency_sign']?><span class='inventory_fixed_amount'><?=number_format($order['inventory_fixed_amount'], $order['currency_float'])?></span>
         </div>
       </div>
       <div class='d-flex flex-column border-end'>
         <label class='border border-0 border-bottom'>주문확정금액</label>
         <div class='con'>
-          <span class='order_amount'><?=$order['currency_sign']. number_format($order['order_amount'], $order['currency_float'])?></span>
+          <?=$order['currency_sign']?><span class='fixed_amount'><?=number_format($order['order_amount'], $order['currency_float'])?></span>
         </div>
       </div>
       <div class='d-flex flex-column'>
         <label class='border border-0 border-bottom'>최종확정금액</label>
         <div class='con'>
-          <span class='decide_amout'><?=$order['currency_sign']. number_format($order['decide_amount'], $order['currency_float'])?></span>
+          <?=$order['currency_sign']?><span class='decide_amout'><?=number_format($order['decide_amount'], $order['currency_float'])?></span>
         </div>
       </div>
     </div>
@@ -63,10 +74,11 @@
     <form method='post' action='<?=site_url('orders/inventoryEdit')?>'>
     <?php if ( !empty($order)) : ?>
     <input type='hidden' name='order[id]' value='<?=$order['id']?>'>
-    <input type='hidden' name='order[request_amount]' value='<?=$order['request_amount']?>'>
-    <input type='hidden' name='order[order_fix]' value='0'>
+    <!-- <input type='hidden' name='order[request_amount]' value='<?=$order['request_amount']?>'> -->
+    <!-- <input type='hidden' name='order[order_fix]' value='0'> -->
     <input type='hidden' name='order[inventory_fixed_amount]' value='<?=$order['inventory_fixed_amount']?>'>
-    <input type='hidden' name='order[order_amount]' value='<?=$order['order_amount']?>'>
+    <input type='hidden' name='order[fixed_amount]' value='<?=$order['fixed_amount']?>'>
+    <input type='hidden' name='order[decide_amount]' value='<?=$order['decide_amount']?>'>
     <?php endif; ?>
     <div class='mt-3 d-flex flex-column'>
       <div class='text-end mb-2 px-0 d-flex flex-row'>
@@ -120,21 +132,14 @@
           foreach ($details AS $i => $detail ) :
             $seletedOptions = []; 
             $canceled = 0;
-            $pay_step = 0;
             $disabled = NULL;
             
-            if ( !empty($packagingStatus) ) :
-              if ( isset($packagingStatus[0]['pay_step']) ) : 
-                if ( $packagingStatus[0]['pay_step'] > 0 ) : 
-                  $pay_step = $packagingStatus[0]['pay_step'];
-                endif;
-              endif;
-            endif;
-            // if ( $pay_step > 1 ) :
-            // endif; 
             if ( !empty($detail['order_excepted']) ) :
               $canceled = 1;
             else :
+              if ( isset($detail['cancele_request']) ) {
+                $canceled = 1;
+              }
             endif;
           
           ?>
@@ -162,7 +167,7 @@
             </td>
             <td>
               <div class='d-flex flex-column text-end'>
-                <p class='<?=$pay_step > 0 && !empty($detail['prd_change_price']) ? 'text-decoration-line-through' : ''?>'>
+                <p class='<?=$pay_step > 0 && (!empty($detail['prd_change_price']) && $detail['prd_change_price'] != $detail['prd_price'])? 'text-decoration-line-through' : ''?>'>
                   <?=$detail['currency_sign'].number_format($detail['prd_price'], 2)?>
                 </p>
                 <?php if ( $pay_step > 0 ) : ?>
@@ -179,7 +184,7 @@
             </td>
             <td>
               <div class='d-flex flex-column text-end'>
-                <p class='<?=$pay_step > 0 && !empty($detail['prd_change_qty']) ? 'text-decoration-line-through' : ''?>'>
+                <p class='<?=$pay_step > 0 && (!empty($detail['prd_change_qty']) && $detail['prd_change_qty'] != $detail['prd_order_qty']) ? 'text-decoration-line-through' : ''?>'>
                   <?=$detail['prd_order_qty']?>
                 </p>
                 <!-- step 1 -->
@@ -190,8 +195,6 @@
                   <?php else : ?>
                   <input type='number'
                         step='any'
-                        data-compare-value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
-                        data-compare-target='detail[<?=$i?>][prd_qty_changed]'
                         class='request-amount-change prd-qty'
                         name='detail[<?=$i?>][prd_change_qty]' 
                         value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
@@ -213,12 +216,10 @@
                   } ?>
                 <p>
                   <?php if ( $pay_step > 2 ) : ?>
-                    <span><?=number_fomat($third_qty);?></span>
+                    <span><?=number_format($third_qty);?></span>
                   <?php else : ?>
                     <input type='number'
                           step='any'
-                          data-compare-value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
-                          data-compare-target='detail[<?=$i?>][prd_qty_changed]'
                           class='request-amount-change prd-qty fixed-qty'
                           name='detail[<?=$i?>][prd_fixed_qty]'
                           value='<?=$third_qty?>'
@@ -243,8 +244,6 @@
                   <?php else : ?>
                     <input type='number'
                           step='any'
-                          data-compare-value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>'
-                          data-compare-target='detail[<?=$i?>][prd_qty_changed]'
                           class='request-amount-change prd-qty final_qty'
                           name='detail[<?=$i?>][prd_final_qty]'
                           value='<?=$fourth_qty?>'
@@ -265,23 +264,8 @@
                       data-cancel-target='.request-subtotal' 
                       data-cancel-value='0'
                       name='detail[<?=$i?>][order_excepted]'
-                      <?php 
-                      $excepted = NULL;
-                      if($detail['order_excepted'] == 0) :
-                        if($canceled == 1) :
-                          $excepted = 1;
-                        else :
-                          $excepted = 0;
-                        endif;
-                      else :
-                        $excepted = 1;
-                      endif;
-                      // if(!empty($order['order_fixed']) && $order['order_fixed'] == 1) {
-                      //   echo " disabled";
-                      // }
-                      ?>
-                      value='<?=$excepted?>'
-                      <?=($detail['order_excepted'] == true || $canceled == 1) ? 'checked': ''?>>
+                      value='<?=$canceled?>'
+                      <?= $canceled == 1 ? 'checked': ''?>>
                 <span>취소</span>
               </label>
             </td>
@@ -350,7 +334,7 @@
                               row='2'
                               style='height: 2rem;'
                               <?php if((!empty($option_disabled)) && ($option_disabled == 1)) {
-                                      echo " disabled='true'";
+                                      echo " disabled";
                                     }?>
                               ><?=$require['requirement_reply']?></textarea>
                       </div>
@@ -374,7 +358,7 @@
                                         value='{$rOption['idx']}' 
                                         data-add-target='.requirement_option_ids'";
                               if ( !empty($checkedOption) && in_array($rOption['idx'], $checkedOption) ) {
-                                echo " checked='true'";
+                                echo " checked";
                               }
                               if ( !empty($option_disabled) || !empty($price_disabled) ) echo " disabled='true'";
                               echo  ">{$rOption['option_name']}

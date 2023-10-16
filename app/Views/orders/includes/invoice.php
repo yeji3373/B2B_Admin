@@ -1,4 +1,12 @@
 <?php if ( !empty($receipts) ) : ?>
+<div class='w-100'>
+  <div class=''>
+
+  </div>
+  <div>
+    
+  </div>
+</div>
 <table class='w-100'>
   <thead>
     <tr>

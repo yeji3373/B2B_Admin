@@ -137,10 +137,7 @@ class Orders extends BaseController {
             $updateData = [];
             $paypalDetail = $this->PaypalController->showInvoiceDetail($receipt['payment_invoice_id']);
             
-            // var_dump($this->PaypalController->result);
             if ( $this->PaypalController->result['code'] != 404 ) {
-              // print_r($paypalDetail);
-
               if ( $paypalDetail['data']['due_amount']['value'] == 0 && ($paypalCancelResult['data']['status'] == 'PAID' || $paypalCancelResult['data']['status'] == 'MARKED_AS_PAID') ) {
                 if ( is_null($receipt['payment_invoice_number']) ) {
                   $updateData['payment_invoice_number'] = $paypalDetail['data']['detail']['invoice_number'];
@@ -517,16 +514,35 @@ class Orders extends BaseController {
     // $this->data['deliveries'] = $this->delivery->where('delivery.order_id', $orderId)->findAll();
     $this->data['shipments'] = $this->shipment->findAll();
     $this->data['currency'] = $this->currency->where('available', 1)->find();
-
+    $this->data['requirementOption'] = $this->requirementOption->where('available', 1)->orderBy('sort ASC')->findAll();
+    
     if ( !empty($this->data['details']) ) :
-      $this->data['requirement'] = [];
       foreach($this->data['details'] AS $dIdx => $detail ) :
         $requireRequest = $this->requirementRequest->requirement(['where' => ['requirement_request.order_id'=> $orderId, 'requirement_request.order_detail_id' => $detail['id']]])->findAll();
         if ( !empty($requireRequest) ) {
           $this->data['details'][$dIdx]['requirement'] = $requireRequest;
+          foreach ( $requireRequest AS $req ) {
+            if ( !empty($req['requirement_option_ids']) ) {
+              $checkOpts = explode(',', $req['requirement_option_ids']);
+
+              if ( !empty($checkOpts) ) {
+                if ( !empty($this->data['requirementOption']) ) {
+                  foreach($this->data['requirementOption'] AS $opts ) {
+                    foreach( $checkOpts AS $cOpts ) {
+                      if ( $cOpts == $opts['idx'] ) {
+                        if ( $opts['order_condition'] == -1 ) {
+                          $this->data['details'][$dIdx]['cancele_request'] = TRUE;
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       endforeach;
-      $this->data['requirementOption'] = $this->requirementOption->where('available', 1)->orderBy('sort ASC')->findAll();
     endif;
 
     if ( !empty($this->data['receipts']) ) {
@@ -565,13 +581,12 @@ class Orders extends BaseController {
     $order = $this->request->getPost('order');
     $packaging = $this->request->getPost('packaging');
 
-    var_dump($details);
-    var_dump($requirement);
-    var_dump($order);
-    var_dump($packaging);
-    
-    return;
+    // var_dump($details);
     // var_dump($requirement);
+    // var_dump($order);
+    // var_dump($packaging);    
+    // return;
+
     // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
     if ( !empty($details) ) {
       foreach( $details AS $detail ) :
@@ -579,45 +594,18 @@ class Orders extends BaseController {
           unset($detail['request_amount']);
           if ( !empty($detail['id']) && isset($detail['id']) )  {
             $detailID = $detail['id'];
-            unset($detail['id']);
-          }
-
-          if ( empty($detail['order_excepted_check']) ) {
-            unset($detail['order_excepted_check']);
-            unset($detail['order_excepted']);
-          } else {
-            if ( empty($detail['order_excepted']) ) {
-              $detail['order_excepted'] = 0;
-            } else {
-              unset($detail['prd_price_changed']);
-              unset($detail['prd_qty_changed']);
-            }
-          }
-
-          if ( empty($detail['prd_price_changed']) ) {
-            unset($detail['prd_price_changed']);
-            unset($detail['prd_change_price']);
-          }
-
-          if ( empty($detail['prd_qty_changed']) ) {
-            unset($detail['prd_qty_changed']);
-            unset($detail['prd_change_qty']);
+          } else { 
+            return redirect()->back()->with('error', '해당하는 주문 정보를 제대로 못 읽어왔음. 다시 시도');
           }
           
-          if ( !empty($order) ) {
-            if ( array_key_exists('order_fix', $order) ) {
-              if($order['order_fix']) {
-                $detail['changed_manager'] = session()->userData['idx'];
-                $detail['id'] = $detailID;
-                $this->orderDetail->save($detail);
-              }
-            }
-          }
+          if ( !isset($detail['order_excepted']) ) $detail['order_excepted'] = 0;
 
           if ( !empty($detail) ) {
             $detail['changed_manager'] = session()->userData['idx'];
             if ( !array_key_exists('id', $detail) ) $detail['id'] = $detailID;
-            $this->orderDetail->save($detail);
+            if ( $this->orderDetail->save($detail) ) {
+              unset($detail['id']);
+            }
           }
         }
         endforeach;
@@ -629,32 +617,22 @@ class Orders extends BaseController {
       foreach($requirement AS $require) :
         if ( !empty($require) ) {
           foreach($require AS $requireDetail ) {
-            $this->requirementRequest->save($requireDetail);
-          } 
+            if ( !empty($requireDetail['requirement_option_ids']) && !empty($requireDetail['requirement_reply']) ) {
+              $this->requirementRequest->save($requireDetail);
+            }
+          }
         }
       endforeach;
-    }
-
-    
+    }    
 
     if ( !empty($order) ) {
       if ( array_key_exists('id', $order) ) {
-        if ( $order['request_amount'] != $order['inventory_fixed_amount'] ) {
-            $this->order->save($order);
-        }
-        if($order['order_fix'] == 1) {
-          // $order_total = 0;
-          $fixed_amount = 0;
-          var_dump($order['product_total_amount']);
-          foreach ($order['product_total_amount'] AS $key => $value) {
-            // $order_total+=$value['total'];
-            $fixed_amount += filter_var($value['total'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION); //1989.34
-          }
-          // $order['order_amount'] = $order_total;
-          $order['fixed_amount'] = $fixed_amount;
-          $order['order_fixed'] = $order['order_fix'];
-          $this->order->save($order);
-        }
+        if ( empty($order['inventory_fixed_amount']) ) unset($order['inventory_fixed_amount']);
+        if ( empty($order['fixed_amount'])) unset($order['fixed_amount']);
+        if ( empty($order['decide_amount'])) unset($order['decide_amount']);
+        $this->order->save($order);
+      } else {
+        return redirect()->back()->with('error', '주문 정보를 불러오는 데 오류 발생. 다시 시도');
       }
     }
 
@@ -720,7 +698,7 @@ class Orders extends BaseController {
     } else {
       // 주문에 해당하는 packaging detail 자체가 없음.
     }
-    return redirect()->back();    
+    return redirect()->back();
   }
 
   public function getCurrentStepPackageStatus($packagingDetail = []) {

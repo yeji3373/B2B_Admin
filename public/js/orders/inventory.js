@@ -45,28 +45,28 @@ $(document).ready(function() {
     }
   }
 
-  Array.from($(".detail_items")).forEach((v, i) => {
-    Array.from($(v).find('input')).forEach((value) => {
-      if ( typeof $(value).data('compareTarget') != 'undefined' ) {
-        if ( !$(value).prev($(value).data('compareTarget')).length ) {
-          $(value).parent().prepend($("<input type='hidden'/>").attr('name', $(value).data('compareTarget')));
-        }
+  // Array.from($(".detail_items")).forEach((v, i) => {
+  //   Array.from($(v).find('input')).forEach((value) => {
+  //     if ( typeof $(value).data('compareTarget') != 'undefined' ) {
+  //       if ( !$(value).prev($(value).data('compareTarget')).length ) {
+  //         $(value).parent().prepend($("<input type='hidden'/>").attr('name', $(value).data('compareTarget')));
+  //       }
 
-        if ( $(value).data('compareValue') != $(value).val() ) {
-          $(value).prev($('input[name="' + $(value).data('compareTarget') + '"]')).val(1);
-        } else {
-          $(value).prev($('input[name="' + $(value).data('compareTarget') + '"]')).val(0);
-        }
-      }
+  //       if ( $(value).data('compareValue') != $(value).val() ) {
+  //         $(value).prev($('input[name="' + $(value).data('compareTarget') + '"]')).val(1);
+  //       } else {
+  //         $(value).prev($('input[name="' + $(value).data('compareTarget') + '"]')).val(0);
+  //       }
+  //     }
 
-      // if ( typeof $(value).data('cancelTarget') != 'undefined' 
-      //   && typeof $(value).data('cancelValue') != 'undefined') {
-      //   if ( $(value).parent().find($(value).data('cancelTarget')).length ) {
-      //     $(value).parent().find($(value).data('cancelTarget')).val($(value).data('cancelValue'));
-      //   }
-      // }
-    });
-  });
+  //     // if ( typeof $(value).data('cancelTarget') != 'undefined' 
+  //     //   && typeof $(value).data('cancelValue') != 'undefined') {
+  //     //   if ( $(value).parent().find($(value).data('cancelTarget')).length ) {
+  //     //     $(value).parent().find($(value).data('cancelTarget')).val($(value).data('cancelValue'));
+  //     //   }
+  //     // }
+  //   });
+  // });
   
   // $('.inventory-detail-container form').submit();
 }).on('change', '.inventory-detail-container input[type=checkbox].order_excepted', function(){
@@ -183,31 +183,39 @@ $(document).ready(function() {
 });
 
 function inventoryAmount() {
-  if ( $(".request-subtotal").length ) {
-    let inventory_amount = 0;
-    Array.from($(".request-subtotal")).forEach((v) => {
-      if ($(v).attr('type') == 'text') {
-        inventory_amount += parseFloat($(v).val());
-      }
-    });
-    
-    inventory_amount = inventory_amount.toFixed(2);
-    if ( $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected")) - 1).data("orderFix") == 1
-        && $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected"))).data("orderFix") == 0
-        ) { 
-      $('input[name="order[order_amount]"]').val(inventory_amount);
-      if ( $(".order_amount").length ) {
-        $(".order_amount").text(inventory_amount);
-      }
-    } else {
-      if ( $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected")) - 1).data("orderFix") == 0
-        && $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected"))).data("orderFix") == 0
-        ) {
-        $('input[name="order[inventory_fixed_amount]"]').val(inventory_amount);
-        if ( $(".inventory_fixed_amount").length ) {
-          $(".inventory_fixed_amount").text(inventory_amount);
+  let target = 'inventory_fixed_amount';
+  if ( $("#pay-step").length ) {    
+    if ( $("#pay-step").val() == 2 ) {
+      target = 'fixed_amount'
+    } else if ( $("#pay-step").val() == 3 ) {
+      target = 'decide_amount';
+    }
+
+    if ( $(".request-subtotal").length ) {
+      let inventory_amount = 0;
+      Array.from($(".request-subtotal")).forEach((v) => {
+        if ($(v).attr('type') == 'text') {
+          inventory_amount += parseFloat($(v).val());
         }
-      }
+      });
+      
+      inventory_amount = inventory_amount.toFixed(2);
+      // if ( $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected")) - 1).data("orderFix") == 1
+      //     && $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected"))).data("orderFix") == 0 ) { 
+      //   $('input[name="order[order_amount]"]').val(inventory_amount);
+      //   if ( $(".order_amount").length ) {
+      //     $(".order_amount").text(inventory_amount);
+      //   }
+      // } else {
+      //   if ( $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected")) - 1).data("orderFix") == 0
+      //     && $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected"))).data("orderFix") == 0
+      //     ) {
+          $('input[name="order[' + target + ']"]').val(inventory_amount);
+          if ( $("." + target ).length ) {
+            $("." + target).text(inventory_amount);
+          }
+      //   }
+      // }
     }
   }
 }

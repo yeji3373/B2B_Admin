@@ -16,7 +16,8 @@ p { padding: 0; margin: 0; }
 
 main .order-detail-container .prd-price, main .order-detail-container .prd-qty { width: 4rem; }
 main .order-detail-container .request-subtotal { width: 5rem; }
-main .order-detail-container .detail_items.bg-danger input { background-color: #e4d6d8; }
+main .order-detail-container .detail_items.bg-danger input, 
+main .order-detail-container .detail_items.bg-danger textarea { background-color: #e4d6d8; }
 
 
 main .order-detail-container .pi-group:not(:last-child) { margin-right: 0.25rem; }
