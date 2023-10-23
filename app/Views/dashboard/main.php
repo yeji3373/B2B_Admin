@@ -63,11 +63,7 @@
             <td><?=$order['currency_sign'] . number_format($order['order_amount'], $order['currency_float'])?></td>
             <td><?=$order['status_name']?>
             <td><a class='btn btn-sm btn-secondary' 
-                  <?php if ( !empty($order['payment_id']) ) : ?>
-                    href='/orders/detail/<?=$order['id']?>'>상세보기
-                  <?php else : ?>
                     href='/orders/inventoryDetail/<?=$order['id']?>'>상세보기
-                  <?php endif; ?>
                 </a>
             </td>
           </tr>

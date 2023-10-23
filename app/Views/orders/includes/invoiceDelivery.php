@@ -1,4 +1,6 @@
-<?php if ( !empty($receipts) ) : ?>
+<?php if ( !empty($receipts) && !empty($order)) : 
+  $isPaypal = false;
+  if ($order['payment'] == 'Paypal') $isPaypal = true; ?>
 <div class='invoice-delivery-edit-container pi-edit-container p-0'>
   <div class='header-container'>
     <div class='table-thead table-row text-center fw-bold'>
@@ -6,7 +8,7 @@
       <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-6p'>결제비율</div>
       <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-17p p-0' colspan='2'>
         <div class='border-bottom border-dark w-100 p-1'>
-          결제금액<?=isset($order) && !empty($order['currency_code']) ? "({$order['currency_code']})" : ""?>
+          결제금액<?=!empty($order['currency_code']) ? "({$order['currency_code']})" : ""?>
         </div>
         <div class='d-flex flex-row w-100 fs-7'>
           <div class='table-cell border-end border-dark w-50 p-1'>상품가격</div>
@@ -39,6 +41,7 @@
     <input type='hidden' name='payment_id' value='<?=$order['payment_id']?>'>
     <input type='hidden' name='piControllType' value>
     <input type='hidden' name='currency_code' value='<?=$order['currency_code']?>'>
+    <input type='hidden' name='receipt_type' value='<?=$receipt['receipt_type']?>'>
     <!-- <div class='table-row'> -->
       <div class='table-cell p-1 text-center border-top border-end border-dark'>
         <input type='hidden' name='receipt[receipt_id]' value='<?=$receipt['receipt_id']?>'>
@@ -80,11 +83,15 @@
         </div>
       </div>
       <div class='table-cell text-center border-top border-end border-dark p-1'>
-        <?=esc($status->paymentStatus[$receipt['payment_status']] ) ?>
+        <?php if ( $receipt['payment_status'] == -1 ) : 
+          echo "오류";
+        else :
+          echo esc($status->paymentStatus[$receipt['payment_status']] );
+        endif; ?>
       </div>
       <div class='table-cell border-top border-end border-dark p-1'>
         <?=esc($order['payment'])?>
-        <?php if ( $order['payment'] == 'Paypal') : ?>
+        <?php if ( $isPaypal ) : ?>
         <a class='btn-link' href='<?=$receipt['payment_url']?>' target='_blank'><?=esc($receipt['payment_invoice_id'])?></a>
         <?php endif; ?>
       </div>
@@ -178,22 +185,29 @@
         </div>
       </div>
       <div class='table-cell text-center border-top border-dark p-1'>
-        <?php if ( $order['payment'] == 'Paypal' && $receipt['payment_status'] == 0 ) : ?>
+        <?php if ( $isPaypal && $receipt['payment_status'] == 0 ) : ?>
         <button class='btn btn-sm btn-secondary btn-pi payment_status_check' data-type=''>결제현황 확인</button>
         <?php endif ?>
         <?php if ( $receipt['payment_status'] == 0 ) : ?>
-        <button class='btn btn-sm btn-secondary btn-pi' data-type='cancel'>취소</button>
-        <?php endif; ?>
         <button class='btn btn-sm btn-secondary btn-pi' data-type='edit'>수정</button>
+        <button class='btn btn-sm btn-secondary btn-pi' data-type='cancel'>취소</button>        
+        <?php endif; ?>
+        <?php if ( $receipt['payment_status'] == -1 ) : ?>
+          <input type='hidden' name='receipt[receipt_id]' value='<?=$receipt['receipt_id']?>'>
+          <button class='btn btn-sm btn-secondary btn-pi' data-type='receipt'>
+            <?=$receipt['receipt_type']?>차 재발행
+          </button>
+        <?php endif; ?>
         <?php if ( $receipt['payment_status'] == 100 && $receipt['due_amount'] > 0 ) : 
-          if (count($receipts) <= ($receipt_idx + 1)) : ?>
+          // if (count($receipts) <= ($receipt_idx + 1)) : ?>
           <input type='hidden' name='request_amount' value='<?=$receipt['due_amount']?>'>
-          <input type='hidden' name='buyer_name' value='<?=$order['buyer_name']?>'>
+          <!-- <input type='hidden' name='buyer_name' value='<?=$order['buyer_name']?>'>
           <input type='hidden' name='user_idx' value='<?=$order['user_idx']?>'>
-          <input type='hidden' name='buyer_idx' value='<?=$order['buyer_id']?>'>
-          <input type='hidden' name='receipt_type' value='<?=($receipt['receipt_type'] + 1)?>'>
-          <button class='btn btn-sm btn-secondary btn-pi' data-type='receipt'><?=($receipt['receipt_type'] + 1)?>차 발행</button>
-        <?php endif;
+          <input type='hidden' name='buyer_idx' value='<?=$order['buyer_id']?>'> -->
+          <button class='btn btn-sm btn-secondary btn-pi' data-type='receipt'>
+            <?=($receipt['receipt_type'] + 1)?>차 발행
+          </button>
+        <?php // endif;
         endif; ?>
         <?php if ( $receipt['payment_status'] == 100 ) : ?>
           <button class='btn btn-sm btn-secondary btn-pi' data-type='refund'>환불</button>

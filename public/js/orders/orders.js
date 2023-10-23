@@ -64,13 +64,13 @@ $(document).ready(function() {
   }
 
   if ( $type == 'receipt' ) {
-    if ( $form.children('[name=payment_status]').val() == 100 ) {
+    if ( $form.children('[name=payment_status]').val() == 100 
+        || $form.children('[name=payment_status]').val() == -1 ) {
       $form.submit();
-    } else {
-      if ( $form.children('[name=payment_status]').val() == 0 ) {
-        alert('결제 전인 경우에는 2차 PI 발행이 되지 않음');
-        return;
-      }
+    } 
+    if ( $form.children('[name=payment_status]').val() == 0 ) {
+      alert('결제 전인 경우에는 ' + $('input[name=receipt_type]').val() + 1 + '차 PI 발행이 되지 않음');
+      return;
     }
   }
 
@@ -106,7 +106,7 @@ $(document).ready(function() {
   }
 }).on('change', '.pi-edit-container [name="receipt[rq_percent]"]', function() {
   // let amount = parseFloat($('[name=order_amount]').val());
-  let amount = parseFloat($('[name="order[order_amount]"]').val());
+  let amount = parseFloat($('[name=order_amount]').val());
   let paid = parseFloat($(this).closest('form').find('[name=amount_paid]').val());
   let rqAmount = 0, dueAmount = 0;
   let per = $(this).val();
@@ -147,7 +147,7 @@ $(document).ready(function() {
   let classes = 'color-transparent btn-outline-secondary btn-close';
   let pClasses = 'd-flex flex-row align-items-center justify-content-center';
   let tempP1 = parseFloat($(this).text().trim());
-  let tempP2 = parseFloat($('[name="order[order_amount]"]').val() - $('[name=amount_paid]').val() - parseFloat(tempP1)).toFixed(2);
+  let tempP2 = parseFloat($('[name=order_amount]').val() - $('[name=amount_paid]').val() - parseFloat(tempP1)).toFixed(2);
   
   console.log("temp 1 ", tempP1, ' temp 2 ', tempP2);
   if ( $(this).hasClass(classes) ) {
@@ -165,7 +165,7 @@ $(document).ready(function() {
     $("[name='receipt[rq_amount]']").attr('type', 'text').addClass('mx-1').focus();
   }
 }).on('keyup', '.pi-edit-container [name="receipt[rq_amount]"]', function(e) {
-  let remainPrice = ($('[name="order[order_amount]"]').val() - $('[name=amount_paid]').val());
+  let remainPrice = ($('[name=order_amount]').val() - $('[name=amount_paid]').val());
   if ( e.keyCode == 27 ) {
     $('.pi-edit-container .receipt-rq-amount').click();
     return;
@@ -174,7 +174,7 @@ $(document).ready(function() {
   if ( $(this).val().length > 2 ) {
     $this = $(this);
     setTimeout(function() {
-      remainPrice = ($('[name="order[order_amount]"]').val() - $('[name=amount_paid]').val());
+      remainPrice = ($('[name=order_amount]').val() - $('[name=amount_paid]').val());
 
       if ( parseFloat($this.val()) <= 0 ) {
         alert('입력값은 0보다 커야합니다');

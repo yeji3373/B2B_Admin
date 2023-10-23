@@ -228,6 +228,23 @@ class Orders extends BaseController {
         if ( floatval(sprintf('%0.2f', $data['receipt']['rq_amount'] + $data['receipt']['due_amount'] + $data['amount_paid'])) != $data['order_amount'] ) {
           return redirect()->back()->with('error', 'PI 가격 계산 중 오류 발생')->withInput();
         }
+        
+        // delivery
+        if ( !empty($data['delivery']) && !empty($data['order_id']) ) {
+          $data['delivery']['order_id'] = $data['order_id'];
+  
+          if ( isset($data['delivery']['forward'])) {
+            if ( $data['delivery']['forward'] == 'on' ) $data['delivery']['forward'] = 1;
+          } else $data['delivery']['forward'] = 0;
+  
+  
+          if ( !$this->delivery->save($data['delivery']) ) {
+            return redirect()->back()->with('error', $this->delivery->errors());
+          } else {
+            $data['receipt']['delivery_id'] = $this->delivery->getInsertID();
+          }
+        }
+        // delivery
 
         if ( !$this->receipt->save($data['receipt']) ) {
           return redirect()->back()->with('error', '영수중 수정중 오류 발생');
@@ -260,43 +277,53 @@ class Orders extends BaseController {
           }
         }
       }
-
-      if ( !empty($data['delivery']) && !empty($data['order_id']) ) {
-        $data['delivery']['order_id'] = $data['order_id'];
-
-        if ( isset($data['delivery']['forward'])) {
-          if ( $data['delivery']['forward'] == 'on' ) $data['delivery']['forward'] = 1;
-        } else $data['delivery']['forward'] = 0;
-
-
-        if ( !$this->delivery->save($data['delivery']) ) {
-          return redirect()->back()->with('error', $this->delivery->errors());
-        } else {
-          $data['receipt']['delivery_id'] = $this->delivery->getInsertID();
-        }
-      }
     }
 
     if ( $data['type'] == 'receipt' ) {
       // $invoice_number = NULL;
       $isPaypal = false;
       $invoice_data = NULL;
+      $getOrder = Array();
+      
+      var_dump($data);
+            
       if ( !empty($data['order_id']) ) {
         $getOrder = $this->order->where(['id' => $data['order_id'], 'available' => 1])->first();
         if ( !empty($getOrder) ) {
           if ( !empty($getOrder['order_amount']) ) {
             $tempTotal = floatval(sprintf('%0.2f', ($data['amount_paid'] + $data['request_amount'])));
-
-            if ( $tempTotal != $getOrder['order_amount'] ) {
+            
+            if ( $tempTotal > $getOrder['order_amount'] && $tempTotal < $getOrder['order_amount'] ) {
               return redirect()->back()->with('error', '주문금액 재확인 요청');
             }
-
             if ( $getOrder['payment_id'] == 1 ) $isPaypal = true;
           } else return redirect()->back()->with('error', '주문처리가 완료되기 전 주문인거 같습니다.');
         } else {
           return redirect()->back()->with('error', '해당하는 주문 정보가 없습니다.');
         }
       }
+
+      $receiptCheck = $this->receipt->where(['order_id' => $data['order_id'], 'receipt_type' => $data['receipt_type']])->first();
+      if ( !empty($receiptCheck) ) {
+        if ( $receiptCheck['payment_status'] == 100 ) { 
+          if ( $receiptCheck['due_amount'] > 0 ) { // next receipt
+            
+          } else {
+            return redirect()->back()->with('error', '이미 완료된 결제입니다');
+          }
+        }
+        if ( $receiptCheck['payment_status'] == -1 ) { // 재발급
+          if ( $isPaypal ) {
+            if ( !empty($receiptCheck['payment_invoice_id']) ) {
+
+            }
+          } else { // 그냥 영수증 생성
+            // if ( )
+          }
+        }
+      } else { // 다음 회차 발급
+      }
+      return;
 
       $receipt = Array();
       if ( $data['payment_status'] != 100 ) return redirect()->back()->with('error', '이전 결제 처리가 완료되지 않았습니다.');
@@ -518,12 +545,15 @@ class Orders extends BaseController {
     
     if ( !empty($this->data['details']) ) :
       foreach($this->data['details'] AS $dIdx => $detail ) :
-        $requireRequest = $this->requirementRequest->requirement(['where' => ['requirement_request.order_id'=> $orderId, 'requirement_request.order_detail_id' => $detail['id']]])->findAll();
+        $requireRequest = $this->requirementRequest
+                                ->requirement(['where' => ['requirement_request.order_id'=> $orderId
+                                              , 'requirement_request.order_detail_id' => $detail['id']]])
+                                ->findAll();
         if ( !empty($requireRequest) ) {
           $this->data['details'][$dIdx]['requirement'] = $requireRequest;
           foreach ( $requireRequest AS $req ) {
-            if ( !empty($req['requirement_option_ids']) ) {
-              $checkOpts = explode(',', $req['requirement_option_ids']);
+            if ( !empty($req['requirement_selected_option_id']) ) {
+              $checkOpts = explode(',', $req['requirement_selected_option_id']);
 
               if ( !empty($checkOpts) ) {
                 if ( !empty($this->data['requirementOption']) ) {
@@ -540,7 +570,7 @@ class Orders extends BaseController {
                 }
               }
             }
-          }
+         }
         }
       endforeach;
     endif;
@@ -584,7 +614,7 @@ class Orders extends BaseController {
     // var_dump($details);
     // var_dump($requirement);
     // var_dump($order);
-    // var_dump($packaging);    
+    // var_dump($packaging);
     // return;
 
     // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
@@ -598,14 +628,14 @@ class Orders extends BaseController {
             return redirect()->back()->with('error', '해당하는 주문 정보를 제대로 못 읽어왔음. 다시 시도');
           }
           
-          if ( !isset($detail['order_excepted']) ) $detail['order_excepted'] = 0;
+          if ( !isset($detail['order_excepted']) ) {
+            $detail['order_excepted'] = 0;
+          }
 
-          if ( !empty($detail) ) {
-            $detail['changed_manager'] = session()->userData['idx'];
-            if ( !array_key_exists('id', $detail) ) $detail['id'] = $detailID;
-            if ( $this->orderDetail->save($detail) ) {
-              unset($detail['id']);
-            }
+          if ( !array_key_exists('id', $detail) ) $detail['id'] = $detailID;
+          $detail['changed_manager'] = session()->userData['idx'];          
+          if ( !$this->orderDetail->save($detail) ) {
+            return redirect()->to(site_url(previous_url()))->with('error', "{$detail['id']}에 해당하는 주문정보 수정 중 오류 발생.");
           }
         }
         endforeach;
@@ -617,13 +647,13 @@ class Orders extends BaseController {
       foreach($requirement AS $require) :
         if ( !empty($require) ) {
           foreach($require AS $requireDetail ) {
-            if ( !empty($requireDetail['requirement_option_ids']) && !empty($requireDetail['requirement_reply']) ) {
+            if ( !empty($requireDetail['requirement_option_ids']) || !empty($requireDetail['requirement_reply']) ) {
               $this->requirementRequest->save($requireDetail);
             }
           }
         }
       endforeach;
-    }    
+    }
 
     if ( !empty($order) ) {
       if ( array_key_exists('id', $order) ) {
@@ -722,25 +752,10 @@ class Orders extends BaseController {
           if ( $pStatus['order_by'] == $packagingDetail['order_by']) {
             $index = $p;
 
-            // if ( !empty($pStatus['next_step']) && !is_null($pStatus['next_step_index'])) {
-            //   $complete = [];
-            //   for ( $i = 0; $i < $pStatus['next_step']; $i++ ) {
-            //     if ( $i < $pStatus['next_step'] ) $complete = ['complete' => 1];
-            //     if ( $this->packagingDetail->save(array_merge(['packaging_id'=> $packagingDetail['packaging_id']
-            //                                       , 'status_id' => $packagingStatus[$pStatus['next_step_index']]['idx']]
-            //                                       , $complete)) ) {
-            //       $packagingDetailId = $this->packaging->getInsertID();
-            //       if ( !$this->packagingDetail->save(['idx' => $packagingDetail['detail_idx'], 'complete' => 1]) ) {
-            //         $this->packagingDetail->where('idx', $packagingDetailId)->delete();
-            //       } else {
-            //         $index = $p + 1;
-            //       }
-            //     }
-            //   }
-            // }
-            // $packagingStatus[$index]['selected'] = true;
             array_push($status, $packagingStatus[$index]); // 현재단계
-            array_push($status, $packagingStatus[$index + 1]); // 다음단계
+            if ( count($packagingStatus) > $index ) { // 다음단계
+              array_push($status, $packagingStatus[$index + 1]);
+            }
           break;
         }
       } else $status = $packagingStatus;
@@ -788,6 +803,7 @@ class Orders extends BaseController {
                 ->buyerJoin()
                 ->deliveryJoin()
                 ->paymentJoin()
+                ->receiptJoin()
                 ->select('buyers.name AS buyer_name')
                 ->select('users.idx AS user_idx, users.name AS user_name, users.email AS user_email')
                 ->select('manager.name AS manager_name, manager.email AS manager_email')
@@ -841,6 +857,14 @@ class Orders extends BaseController {
     // session()->setFlashdata('params', $this->request->getPost());
    
     return $this->menuLayout('paypal/main', $this->data);
+  }
+
+  public function paypalCarftInvoice() {
+
+  }
+
+  public function paypalSendInvoice() {
+
   }
 
   public function paypal() {  // 임시로 페이팔 invoice. b2b 오픈전까지 사용

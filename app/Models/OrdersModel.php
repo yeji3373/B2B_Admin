@@ -23,14 +23,12 @@ class OrdersModel extends Model {
   protected $dateFormat = 'datetime';
 
   public function orderJoin() {
-    $this->select("{$this->table}.*")
-        ->select('currency_rate.exchange_rate')
-        ->select('currency.currency_sign AS currency_sign')
-        ->select('currency.currency_float AS currency_float')
-        ->join("currency_rate", "currency_rate.cRate_idx = {$this->table}.currency_rate_idx", "left outer")
-        ->join("currency", "currency.idx = currency_rate.currency_idx", "left outer");
-
-    return $this;
+    return $this->select("{$this->table}.*")
+                ->select('currency_rate.exchange_rate')
+                ->select('currency.currency_sign AS currency_sign')
+                ->select('currency.currency_float AS currency_float')
+                ->join("currency_rate", "currency_rate.cRate_idx = {$this->table}.currency_rate_idx", "left outer")
+                ->join("currency", "currency.idx = currency_rate.currency_idx", "LEFT OUTER");
   }
 
   public function orderDetailJoin() {
@@ -54,30 +52,31 @@ class OrdersModel extends Model {
 
   public function paymentStatusJoin() {
     return $this->join('( SELECT order_id, GROUP_CONCAT(receipt_type, ":", payment_status order by receipt_id) AS payment_status_group 
-                  FROM orders_receipt GROUP BY order_id ORDER BY receipt_id) AS receipt_group', 'receipt_group.order_id = orders.id', 'LEFT OUTER');
-}
+                          FROM orders_receipt GROUP BY order_id ORDER BY receipt_id) AS receipt_group', 'receipt_group.order_id = orders.id', 'LEFT OUTER');
+  }
 
   public function deliveryJoin() {
     return $this->select('IFNULL(delivery.delivery_price, 0) AS delivery_price')
-                // ->select('SUM(CAST(IFNULL(delivery.delivery_price, 0) AS DOUBLE)) AS delivery_price')
                 ->join("( SELECT order_id, SUM(delivery_price) AS delivery_price
                           FROM delivery 
                           GROUP BY delivery.order_id ) AS delivery"
                       , 'delivery.order_id = orders.id'
-                      , 'RIGHT');
+                      , 'LEFT OUTER');
   }
 
   public function paymentJoin() {
     return $this->join('payment_method', 'payment_method.id = orders.payment_id', 'LEFT OUTER');
+  }
+
+  public function receiptJoin() {
+    return $this->join("orders_receipt", "orders_receipt.order_id = orders.id", "LEFT OUTER");
   }
   
   public function buyerJoin() {
     return $this->join('buyers', 'buyers.id = orders.buyer_id')
                 ->join('users', 'users.buyer_id = buyers.id')
                 ->join('manager', 'manager.idx = buyers.manager_id')
-                // ->join('delivery', 'delivery.order_id = orders.id AND delivery.delivery_code = 100', 'left outer')
-                ->join('buyers_address', 'buyers_address.idx = orders.address_id')
-                ->join("orders_receipt", "orders_receipt.order_id = orders.id", "left outer");
+                ->join('buyers_address', 'buyers_address.idx = orders.address_id', 'LEFT OUTER');
   }
 
   public function requestRequirement($order_id) {

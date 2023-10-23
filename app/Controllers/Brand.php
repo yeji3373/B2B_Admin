@@ -154,10 +154,6 @@ class Brand extends BaseController {
         $data['brand_name'] = addslashes($data['brand_name']);
 
         $this->brands->insert($data);
-
-        // if ( !empty($data['margin_rate']) )
-        // $margin = $this->margin->where('available', 1)->findAll();
-        // if ( !empty($margin) ) {}
         return redirect()->back();
       } else {
         return redirect()->to(base_url('brand'))->withInput()->with('error', '이미 등록되어진 브랜드명');
