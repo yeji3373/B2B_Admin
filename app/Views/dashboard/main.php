@@ -2,7 +2,7 @@
   <section>
     <h6>거래처</h6>
     <div class='text-end'>
-      <a class='btn-link' href='/buyer/list'>전체보기</a>
+      <a class='btn-link' href='/buyer/list?confirmation=0&dateYn=1'>전체보기</a>
     </div>
     <div>
       <p>등록대기 업체 <span class='parenthesis'><?=count($buyers)?></span></p>

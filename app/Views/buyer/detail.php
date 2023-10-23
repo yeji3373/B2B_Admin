@@ -213,7 +213,7 @@
       <div><?=$buyer['created_at']?></div>
     </div>
   </div>
-  <button class='btn mt-3 text-bg-danger px-5 py-2'>적용</button>
+  <button class='btn mt-3 text-bg-danger px-5 py-2 edit-btn'>적용</button>
 </form>
 <?php endif ?>
 </main>

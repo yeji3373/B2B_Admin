@@ -31,7 +31,63 @@ class Buyer extends BaseController
   }
 
   public function list() {
-    $this->data['buyers'] = $this->getBuyers()->findAll();
+
+    $params = $this->request->getVar();
+
+    $dateYn = 0;
+
+    if( !empty($params) ){
+      if( !empty($params['buyer_name']) ){
+        $this->buyers->like('buyers.name', $params['buyer_name']);
+      }
+      if( isset($params['dateYn']) ){
+        if( $params['dateYn'] ){
+          $dateYn = 1;
+        }else{
+          $dateYn = 0;
+        }
+      }else{
+        $dateYn = 0;
+      }
+      if( empty($dateYn) ){
+        if(!empty($params['start_date']) && !empty($params['end_date'])){
+          $this->buyers->where('DATE(buyers.created_at) >=', $params['start_date']);
+          $this->buyers->where('DATE(buyers.created_at) <=', $params['end_date']);
+        }
+      }
+      if( !empty($params['managers']) ){
+        $this->buyers->where('buyers.manager_id', $params['managers']);
+        if($params['managers'] == -1){
+          $this->buyers->where('buyers.manager_id IS NULL', NULL, true);
+        }
+      }
+      if( !empty($params['regions']) ){
+        $this->buyers->where("buyers.region_ids IN ({$params['regions']})");
+      }
+      if( !empty($params['margin']) ){
+        $this->buyers->where('buyers.margin_level', $params['margin']);
+      }
+      if( isset($params['confirmation']) ){
+        if( $params['confirmation'] == 0 ){
+          $this->buyers->where('buyers.confirmation', $params['confirmation']);
+        }else if($params['confirmation'] == 1){
+          $this->buyers->where('buyers.confirmation', $params['confirmation']);
+        }
+      }
+      // print_r($params);
+    }
+
+    
+    $first = $this->getManagers()->where(['role_id' => 2])->findAll();
+    $add[] = array('idx' => -1, 'name' => '미지정');
+    $managers = array_merge($first, $add);
+    
+    $this->data['dateYn'] = $dateYn;
+    $this->data['managers'] = $managers;
+    $this->data['regions'] = $this->getRegion()->findAll();
+    $this->data['margin'] = $this->margin->where('available', 1)->findAll();
+    $this->data['buyers'] = $this->getBuyersByPages();
+    
     return $this->menuLayout('buyer/list', $this->data);
   }
   
@@ -156,7 +212,18 @@ class Buyer extends BaseController
     $buyers = $this->buyers
                   ->select('buyers.*, manager.name AS manager_name')
                   ->join('manager', 'manager.idx = buyers.manager_id', 'left outer')
-                  ->where(['buyers.available > ' => -1]);
+                  ->where(['buyers.available' => 1]);
+    return $buyers;
+  }
+
+  public function getBuyersByPages() {
+    $page = null;
+    $buyers = $this->buyers
+                  ->select('buyers.*, manager.name AS manager_name')
+                  ->join('manager', 'manager.idx = buyers.manager_id', 'left outer')
+                  ->where(['buyers.available' => 1])
+                  ->paginate(10);
+    $this->data['pager'] = $this->buyers->pager;
     return $buyers;
   }
 

@@ -1,3 +1,41 @@
+$(document).ready(function(){
+  optional_config = { 
+    dateFormat: 'Y-m-d',
+    enableTime: false,
+    defaultDate: new Date(),
+    onReady: function() {
+      console.log("달력이 준비상태가 되었을 때");
+      // let flatpickrInstance = this;
+      // console.log(flatpickrInstance);
+    },
+    onClose: function() {
+      // console.log("달력이 닫힐 때");
+    },
+    onOpen: function() {
+      // console.log("달력이 열릴 때");
+    }
+  }
+  let thisYear = new Date().getFullYear();
+  let date = new Date(thisYear +'-01-01');
+  let str = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
+
+  if ( $('input[name=start_date]').val() == '' ) {
+    flatpickr('input[name=start_date]', $.merge({'defaultDate': str}, optional_config));
+    flatpickr('input[name=end_date]', optional_config);
+  } else {
+    flatpickr('input[name=start_date]', $.merge({'defaultDate': $('input[name=start_date]').val()}, optional_config));
+    flatpickr('input[name=end_date]', optional_config);
+  }
+
+  if ( $("input[name='dateYn']").is(':checked') ){
+    $('input[name=start_date]').attr('disabled', true);
+    $('input[name=end_date]').attr('disabled', true);
+  } else {
+    $('input[name=start_date]').attr('disabled', false);
+    $('input[name=end_date]').attr('disabled', false);
+  }
+});
+
 $(document).on('change', '[name=currency_id]', function() {
   console.log($(this).find('option:selected').data('exchange'));
   // $("input[name=exchange_rate]").val($(this).find('option:selected').data('exchange'));
@@ -70,7 +108,7 @@ $(document).on('change', '[name=currency_id]', function() {
   }
 
   $(".certificate_viewer").addClass('d-none');
-}).on('submit', 'form', function(e) {
+}).on('click', '.edit-btn', function(e) {
   // e.preventDefault();
 
   if ( $('[name="buyer[manager_id]"]').val() == '' ) {
@@ -116,5 +154,13 @@ $(document).on('change', '[name=currency_id]', function() {
 
   if ($('[name="currencyRate[exchange_rate]"]').val() == '') {
     $('[name="currencyRate[currency_idx]"] option').eq(0).prop("selected", true);
+  }
+}).on('click', 'input[name=dateYn]', function(){
+  if($(this).is(':checked')){
+    $('input[name=start_date]').attr('disabled', true);
+    $('input[name=end_date]').attr('disabled', true);
+  }else{
+    $('input[name=start_date]').attr('disabled', false);
+    $('input[name=end_date]').attr('disabled', false);
   }
 });
