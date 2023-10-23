@@ -78,11 +78,12 @@ $(document).ready(function() {
       $target = $(this).closest($(this).data('cancelParent')).find($(this).data('cancelTarget'));
       temp = $target.data('temp');
 
-      if ( $(this).val() == 1 ) { 
+      if ( $(this).val() >= 1 ) { 
         $target.closest('tr').addClass('bg-danger bg-opacity-10');
         $target.val($(this).data('cancelValue'));
       } else {
         $target.closest('tr').removeClass('bg-danger bg-opacity-10');
+        $target.closest('tr').find('input[type=number]').removeAttr('disabled');
         $target.val(temp);
       }
     }
@@ -162,9 +163,8 @@ $(document).ready(function() {
     }
   }
 }).on('change', '.require-option-use', function() {
-  if (typeof $(this).data('addTarget') == 'undefined') {
-    return;
-  }
+  if (typeof $(this).data('addTarget') == 'undefined') return;
+  
   let target = $(this).data('addTarget');
   let optionIds = $(this).closest('.requirement-item').find(target);
   console.log(optionIds.attr('name'));
@@ -180,6 +180,8 @@ $(document).ready(function() {
   } else {
     optionIds.val($(this).val());
   }
+  // console.log(optionIds.val());
+  return;
 });
 
 function inventoryAmount() {
@@ -199,23 +201,13 @@ function inventoryAmount() {
         }
       });
       
-      inventory_amount = inventory_amount.toFixed(2);
-      // if ( $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected")) - 1).data("orderFix") == 1
-      //     && $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected"))).data("orderFix") == 0 ) { 
-      //   $('input[name="order[order_amount]"]').val(inventory_amount);
-      //   if ( $(".order_amount").length ) {
-      //     $(".order_amount").text(inventory_amount);
-      //   }
-      // } else {
-      //   if ( $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected")) - 1).data("orderFix") == 0
-      //     && $(".packaging-status option").eq($(".packaging-status option").index($(".packaging-status option:selected"))).data("orderFix") == 0
-      //     ) {
-          $('input[name="order[' + target + ']"]').val(inventory_amount);
-          if ( $("." + target ).length ) {
-            $("." + target).text(inventory_amount);
-          }
-      //   }
-      // }
+      if ( $('input[name="order[' + target + ']"]').length ) {
+        inventory_amount = inventory_amount.toFixed(2);
+        $('input[name="order[' + target + ']"]').val(inventory_amount);
+        if ( $("." + target ).length ) {
+          $("." + target).text(inventory_amount);
+        }
+      }
     }
   }
 }

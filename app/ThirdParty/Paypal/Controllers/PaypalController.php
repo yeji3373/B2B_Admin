@@ -68,9 +68,10 @@ class PaypalController extends Controller
     return $this->result;
   }
 
-  public function makeInvoice() {
+  public function makeInvoice($data) {
+    $result = Array();
     $header = array_merge($this->header, ['Prefer: return=representation']);
-    $invoiceData = invoice_detail($this->orderInfo);
+    $invoiceData = invoice_detail($data);
 
     $generate = $this->curlRequest(
       $this->config->baseUrl.$this->invoiceUrl,
@@ -79,27 +80,15 @@ class PaypalController extends Controller
       'POST'
     );
     
-    if ( $generate['code'] == 201 ) {   // successful request returns code 
-      $this->invoiceId = $generate['data']['id'];
-      $this->invoiceNumber = $this->orderInfo['invoice_number'];
-      $this->sendInvoice();
-    } else if ( $generate['code'] == 200 ) {
-      $this->invoiceId = $generate['data']['id'];
-      $this->invoiceNumber = $generate['data']['detail']['invoice_number'];
-      $this->sendInvoice();
+    if ( $generate['code'] == 201 || $generate['code'] == 200 ) {   // successful request returns code 
+      $result['invoiceId'] = $generate['data']['id'];
+      $result['invoiceNumber'] = $generate['data']['detail']['invoice_number'];
+      $result['code'] = $generate['code'];
     } else {
-      // // print_r($generate);
-      // if ( $generate['code'] == 422 && $generate['error']['issue'] == 'DUPLICATE_INVOICE_NUMBER' ) {
-      //   if ( array_key_exists("invoice_number", $this->orderInfo) ) {
-      //     $this->orderInfo['invoice_number'] = $this->orderInfo['invoice_number'];
-      //   }
-      //   $this->makeInvoice($this->orderInfo);
-      //   return;
-      // }
-      $this->result['error'] = 'invoice make error '.$generate['data']['name'].' : '.json_encode($generate['data']['details']);
-      $this->result['code'] = $generate['code'];
+      $result['error'] = 'invoice make error '.$generate['data']['name'].' : '.json_encode($generate['data']['details']);
+      $result['code'] = $generate['code'];
     }
-    return $this->result;
+    return $result;
   }
 
   protected function sendInvoice() {

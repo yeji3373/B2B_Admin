@@ -133,12 +133,16 @@
             $seletedOptions = []; 
             $canceled = 0;
             $disabled = NULL;
-            
+            $qty = 0;
+            $price = $detail['prd_price'];
+
             if ( !empty($detail['order_excepted']) ) :
               $canceled = 1;
+              $disabled = ' disabled';
             else :
-              if ( isset($detail['cancele_request']) ) {
+              if ( isset($detail['cancele_request']) && !empty($detail['cancele_request'])) {
                 $canceled = 1;
+                $disabled = ' disabled';
               }
             endif;
           
@@ -170,15 +174,18 @@
                 <p class='<?=$pay_step > 0 && (!empty($detail['prd_change_price']) && $detail['prd_change_price'] != $detail['prd_price'])? 'text-decoration-line-through' : ''?>'>
                   <?=$detail['currency_sign'].number_format($detail['prd_price'], 2)?>
                 </p>
-                <?php if ( $pay_step > 0 ) : ?>
+                <?php if ( $pay_step > 0 ) : 
+                  $price = !empty($detail['prd_change_price']) ? $detail['prd_change_price'] : $detail['prd_price'];
+                ?>
                 <p>
                   <?=$detail['currency_sign']?>
-                  <input type='number' step='any'
+                  <input type='number' step='any' min='1'
                         data-compare-value='<?=!empty($detail['prd_change_price']) ? $detail['prd_change_price'] : $detail['prd_price']?>'
                         data-compare-target='detail[<?=$i?>][prd_price_changed]'
                         class='request-amount-change prd-price'
                         name='detail[<?=$i?>][prd_change_price]' 
-                        value='<?=!empty($detail['prd_change_price']) ? $detail['prd_change_price'] : $detail['prd_price']?>'>
+                        value='<?=!empty($detail['prd_change_price']) ? $detail['prd_change_price'] : $detail['prd_price']?>'
+                        <?=$disabled?>>
                 </p>
                 <?php endif; ?>
             </td>
@@ -195,6 +202,7 @@
                   <?php else : ?>
                   <input type='number'
                         step='any'
+                        min='1'
                         class='request-amount-change prd-qty'
                         name='detail[<?=$i?>][prd_change_qty]' 
                         value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
@@ -213,7 +221,9 @@
                     } else $third_qty = $detail['prd_change_qty'];
                   } else {
                     $third_qty = $detail['prd_fixed_qty'];
-                  } ?>
+                  } 
+                  $qty = $third_qty;
+                ?>
                 <p>
                   <?php if ( $pay_step > 2 ) : ?>
                     <span><?=number_format($third_qty);?></span>
@@ -236,10 +246,11 @@
                     $fourth_qty = $third_qty;
                   } else {
                     $fourth_qty = $detail['prd_final_qty'];
-                  } ?>
+                  } 
+                  $qty = $fourth_qty;
+                ?>
                 <p>
-                  <?php if ( $pay_step > 3
-                   ) : ?>
+                  <?php if ( $pay_step > 3 ) : ?>
                     <span><?=number_format($fourth_qty)?></span>
                   <?php else : ?>
                     <input type='number'
@@ -265,35 +276,16 @@
                       data-cancel-value='0'
                       name='detail[<?=$i?>][order_excepted]'
                       value='<?=$canceled?>'
-                      <?= $canceled == 1 ? 'checked': ''?>>
+                      <?= $canceled ? 'checked': ''?>>
                 <span>취소</span>
               </label>
             </td>
             <td>
               <?=$detail['currency_sign']?>
-              <?php 
-                $qty = 0; $price = 0;
-                if(empty($detail['prd_fixed_qty'])) {
-                  if ( $detail['prd_qty_changed'] ) {
-                    if(!empty($seletedOptions)) :
-                      if(in_array('1', $seletedOptions)) :
-                        $qty = $detail['prd_change_qty'];
-                      else :
-                        $qty = $detail['prd_order_qty'];
-                      endif;
-                    else :
-                      $qty = $detail['prd_change_qty'];
-                    endif;
-                  } else $qty = $detail['prd_order_qty'];
-
-                  if ( $detail['prd_price_changed'] ) {
-                    $price = $detail['prd_change_price'];
-                  } else $price = $detail['prd_price'];
-                } else {
-                  $qty = $detail['prd_fixed_qty'];
-                  if ( $detail['prd_price_changed'] ) {
-                    $price = $detail['prd_change_price'];
-                  } else $price = $detail['prd_price'];
+              <?php
+                $tempQty = $qty;
+                if ( $canceled ) {
+                  $qty = 0;
                 }
               ?>
               <input type='hidden' name='order[product_total_amount][<?=$i?>][id]' value='<?=$detail['id']?>'>
@@ -301,12 +293,8 @@
                 class='text-end bg-dark bg-opacity-10 request-subtotal'
                 data-name='order[request_amount]'
                 name='order[product_total_amount][<?=$i?>][total]'
-                <?php if ( $detail['order_excepted'] || $canceled == 1) : ?>
-                value='0.00'
-                <?php else: ?>
                 value='<?=number_format( ($qty * $price), $detail['currency_float'] )?>'
-                <?php endif; ?>
-                data-temp='<?=number_format( ($qty * $price), $detail['currency_float'] )?>'
+                data-temp='<?=number_format( ($tempQty * $price), $detail['currency_float'] )?>'
                 readonly>
             </td>
             <td class='w-20p'>
