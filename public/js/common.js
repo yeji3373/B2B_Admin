@@ -73,7 +73,15 @@ $(function() {
   }
 });
 
-$(document).on('change', 'input[type="checkbox"].value-change, input[type="radio"].value-change', function() {
+$(document).ready(function() {
+  if ( $('input[type="checkbox"].value-change, input[type="radio"].value-change').length ) {
+    Array.from($('input[type="checkbox"].value-change, input[type="radio"].value-change')).forEach(element => {
+      if ( $(element).is(':checked') === false ) {
+        $(element).val(0);
+      }
+    });
+  }
+}).on('change', 'input[type="checkbox"].value-change, input[type="radio"].value-change', function() {
   let type = $(this).attr('type');  
   $(this).val(Number($(this).is(':checked')));
 

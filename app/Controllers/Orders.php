@@ -63,13 +63,13 @@ class Orders extends BaseController {
       if ( !empty($params['order_number']) ) {
         $this->order->like('orders.order_number', $this->request->getVar('order_number'), 'both');
       }
-
       if ( !empty($params['order_status']) ) {
         $this->order->where('packaging_status.idx', $params['order_status']);
       }
-
-      if ( !empty($params['start_date']) && !empty($params['end_date']) ) {
+      if ( !empty($params['start_date']) ) {
         $this->order->where('DATE(orders.created_at) >=', $params['start_date'] );
+      }
+      if ( !empty($params['end_date']) ) {
         $this->order->where('DATE(orders.created_at) <=', $params['end_date'] );
       }
     }

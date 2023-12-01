@@ -5,8 +5,8 @@
   <div class='header-container'>
     <div class='table-thead table-row text-center fw-bold'>
       <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-4p'>No</div>
-      <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-6p'>결제비율</div>
-      <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-17p p-0' colspan='2'>
+      <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-5p'>결제비율</div>
+      <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-15p p-0'>
         <div class='border-bottom border-dark w-100 p-1'>
           결제금액<?=!empty($order['currency_code']) ? "({$order['currency_code']})" : ""?>
         </div>
@@ -16,7 +16,13 @@
         </div>
       </div>
       <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-5p'>결제현황</div>
-      <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-14p'>결제수단</div>
+      <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-25 p-0'>
+        <div class='border-bottom border-dark w-100 p-1'>결제정보</div>
+        <div class='d-flex flex-ro w-100 fs-7'>
+          <div class='table-cell border-end border-dark w-25 p-1'>결제수단</div>
+          <div class='table-cell item-end w-75 p-1'>상세정보</div>
+        </div>
+      </div>
       <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-3p'>표시</div>
       <div class='table-thead-th table-cell border-bottom-0 border-end border-dark w-27 p-0'>
         <div class='border-bottom border-dark w-100 p-1'>배송관리</div>
@@ -51,17 +57,17 @@
       <div class='table-cell p-1 text-center border-top border-end border-dark'>
         <select name='receipt[rq_percent]' 
           <?php if ( isset($receipt['payment_status']) && $receipt['payment_status'] != 0 ) echo " disabled";?> >
-          <option>-</option>
+          <!-- <option>-</option> -->
           <?php for($i = 10; $i <= 100; $i += 5) { ?>
           <option value='<?=$i / 100?>' 
             <?=($receipt['rq_percent'] * 100) == $i ? 'selected' : '' ?>>
             <?=$i?>
           </option>
           <?php } ?>
-        </select> %
+        </select>%
       </div>
       <div class='table-cell text-end border-top border-end border-dark p-0 align-top'>
-        <div class='d-table w-100'>
+        <div class='d-table w-100 h-100'>
           <div class='table-cell border-end border-dark w-50 p-1'>
             <div class='w-100'>
               <?=$order['currency_sign']?>
@@ -89,11 +95,39 @@
           echo esc($status->paymentStatus[$receipt['payment_status']] );
         endif; ?>
       </div>
-      <div class='table-cell border-top border-end border-dark p-1'>
-        <?=esc($order['payment'])?>
-        <?php if ( $isPaypal ) : ?>
-        <a class='btn-link' href='<?=$receipt['payment_url']?>' target='_blank'><?=esc($receipt['payment_invoice_id'])?></a>
-        <?php endif; ?>
+      <div class='table-cell border-top border-end border-dark p-0'>
+        <div class='d-table w-100 h-100'>
+          <div class='table-cell text-center border-end border-dark w-25 p-1'>
+            <?=esc($order['payment'])?>
+          </div>
+          <div class='table-cell w-75'>
+            <?php if ( $isPaypal ) : ?>
+              <a class='btn-link' href='<?=$receipt['payment_url']?>' target='_blank'><?=esc($receipt['payment_invoice_id'])?></a>
+            <?php else : ?>
+              <?php 
+              $checked = NULL;
+              $disabled = NULL;
+              if ( $receipt['payment_status'] == 100 ) : 
+                $checked = ' checked';
+                $disabled = ' disabled';
+              endif; ?>
+              <div class='register-deposit-container d-table'>
+                <div class='table-cell w-50 p-1'>
+                  <div class='table-row'>
+                    <input type='text' name='receipt[payment_date]' placeholder='입금날짜 등록' value='<?=!empty($receipt['payment_date']) ? $receipt['payment_date'] : '' ?>' <?=$checked.$disabled?>>
+                  </div>
+                </div>
+                <div class='table-cell w-50 p-1'>
+                  <div class='table-row'>
+                    <label class='d-flex flex-row align-items-center'>
+                      <input type='checkbox' class='me-1' name='receipt[payment_status]' value='<?=$receipt['payment_status'] == 0 ? 100 : 0 ?>' <?=$checked.$disabled?>>입금완료
+                    </label>
+                  </div>
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
       </div>
       <div class='table-cell text-center border-top border-end border-dark p-1'>
         <input type='checkbox' name='receipt[display]' 
@@ -112,7 +146,7 @@
           >
       </div>
       <div class='table-cell border-top border-end border-dark p-0'>
-        <div class='d-table w-100'>
+        <div class='d-table w-100 h-100'>
           <div class='table-cell text-center border-end border-dark w-8p p-1'>
             <?php if ( !empty($receipt['delivery_id']) ) : ?>
             <input type='hidden' name='delivery[id]' value='<?=$receipt['delivery_id']?>'>
@@ -198,18 +232,13 @@
             <?=$receipt['receipt_type']?>차 재발행
           </button>
         <?php endif; ?>
-        <?php if ( $receipt['payment_status'] == 100 && $receipt['due_amount'] > 0 ) : 
-          // if (count($receipts) <= ($receipt_idx + 1)) : ?>
+        <?php if ( $receipt['payment_status'] == 100 ) : ?>
+          <?php if ( $receipt['due_amount'] > 0 && ($receipt_idx + 1) >= count($receipts) ) : ?>
           <input type='hidden' name='request_amount' value='<?=$receipt['due_amount']?>'>
-          <!-- <input type='hidden' name='buyer_name' value='<?=$order['buyer_name']?>'>
-          <input type='hidden' name='user_idx' value='<?=$order['user_idx']?>'>
-          <input type='hidden' name='buyer_idx' value='<?=$order['buyer_id']?>'> -->
           <button class='btn btn-sm btn-secondary btn-pi' data-type='receipt'>
             <?=($receipt['receipt_type'] + 1)?>차 발행
           </button>
-        <?php // endif;
-        endif; ?>
-        <?php if ( $receipt['payment_status'] == 100 ) : ?>
+          <?php endif; ?>
           <button class='btn btn-sm btn-secondary btn-pi' data-type='refund'>환불</button>
           <?php if ( $receipt['due_amount'] == 0 && $order['complete_payment'] == 1) : ?>
           <!-- <div class='btn btn-sm btn-secondary btn-pi' data-type='ci'>CI 발행</div> -->

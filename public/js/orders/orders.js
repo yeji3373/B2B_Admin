@@ -18,12 +18,12 @@ $(document).ready(function() {
   }
   
   if ( $('input[name=start_date]').length && $('input[name=end_date]') ) {
-    flatpickr('input[name=start_date]', $.merge({'defaultDate': new Date().setDate(new Date().getDate() - 7)}, optional_config));
+    flatpickr('input[name=start_date]', $.merge({'defaultDate': new Date().setDate(new Date().getDate() - 30)}, optional_config));
     flatpickr('input[name=end_date]', optional_config);
   }
 
   if ( $('.delivery_apply_check').length ) {
-    console.log("a");
+    // console.log("a");
     if ( typeof $('.delivery_apply_check').data('disabledTarget') != 'undefined' ) {
       disabled = $('.delivery_apply_check').data('disabledTarget');
       if ( $('.delivery_apply_check').is(':checked') ) {
@@ -32,6 +32,10 @@ $(document).ready(function() {
         $(disabled).attr('disabled', true);
       }
     }
+  }
+
+  if ( $('input[name="receipt[payment_date]"]').length ) {
+    flatpickr('input[name="receipt[payment_date]"]', $.merge({'defaultDate' : null, 'maxDate': 'today'}, optional_config));
   }
 }).on('click', '.btn-pi', function() {
   if ( $(this).data('type') == '' || $(this).data('type').length == 0) return;
@@ -111,7 +115,7 @@ $(document).ready(function() {
   let rqAmount = 0, dueAmount = 0;
   let per = $(this).val();
 
-  if ( typeof $('[name="order[order_amount]"]') == 'undefined' || amount <= 0 ) return;
+  if ( typeof $('[name=order_amount]') == 'undefined' || amount <= 0 ) return;
   if ( per != '-') {
     rqAmount = ((amount - paid) * per).toFixed(2);
     dueAmount = ((amount - paid) - rqAmount).toFixed(2);
@@ -197,6 +201,12 @@ $(document).ready(function() {
     $(this).val(parseFloat(remainPrice).toFixed(2));
     return;
   }
+
+  if ( parseFloat($(this).val()) == 0 ) {
+    alert('상품가격이 0보다 커야합니다.');
+    $(this).val(parseFloat(remainPrice * $('[name="receipt[rq_percent]"]').val()).toFixed(2));
+    return;
+  }
 }).on('change', '.pi-edit-container .detail-order-excepted', function() {
   if ($(this).is(":checked") == true ) {
     $(this).siblings('input[type=hidden]').val(1);
@@ -227,22 +237,22 @@ $(document).ready(function() {
     return;
   }
   $(this).val(Number($(this).is(':checked')));
-// }).on('change', '.pi-edit-container [name="receipt[display]"]', function() {
-//   $(this).val(Number($(this).is(':checked')));
-}).on('change', '.pi-edit-container [name="receipt[payment_status]"]', function() {
-  if ( $(this).val() == 100 ) {
-    $("#payment_date").prop("disabled", false).prop('readonly', false).prop("required", true);
-  // } else if ( $(this).val() == -200 ) {
-  //   $("#payment_date").attr("name", "receipt[refund_date]").prop("disabled", false);
-  } else {
-    $("#payment_date").removeAttr("name").prop("disabled", true).prop('required', false);
-  }
-}).on('focusin', '.pi-edit-container [name="receipt[payment_date]"]', function() {
-  $(this).prop('readonly', true);
-}).on('focusout', '.pi-edit-container [name="receipt[payment_date]"]', function() {
-  if ( $(this).val() == '' ) {
-    $(this).prop('readonly', false);
-  }
+// // }).on('change', '.pi-edit-container [name="receipt[display]"]', function() {
+// //   $(this).val(Number($(this).is(':checked')));
+// }).on('change', '.pi-edit-container [name="receipt[payment_status]"]', function() {
+//   if ( $(this).val() == 100 ) {
+//     $("#payment_date").prop("disabled", false).prop('readonly', false).prop("required", true);
+//   // } else if ( $(this).val() == -200 ) {
+//   //   $("#payment_date").attr("name", "receipt[refund_date]").prop("disabled", false);
+//   } else {
+//     $("#payment_date").removeAttr("name").prop("disabled", true).prop('required', false);
+//   }
+// }).on('focusin', '.pi-edit-container [name="receipt[payment_date]"]', function() {
+//   $(this).prop('readonly', true);
+// }).on('focusout', '.pi-edit-container [name="receipt[payment_date]"]', function() {
+//   if ( $(this).val() == '' ) {
+//     $(this).prop('readonly', false);
+//   }
 }).on('change', '.pi-edit-container [name="receipt[delivery_id]"]', function() {
   $parent = $(this).closest('tbody tr');
   if ( $(this).is(":checked") === true ) {

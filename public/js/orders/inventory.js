@@ -3,8 +3,8 @@ $(document).ready(function() {
   $('.inventory-detail-container input[type=checkbox].order_excepted').each(function(index, item) {
     if ( $(item).closest($(item).data('cancelParent')).find($(item).data('cancelTarget')).length ) {
       $target = $(item).closest($(item).data('cancelParent')).find($(item).data('cancelTarget'));
-
-      if ( $(item).val() == 1 ) { 
+      
+      if ( $(item).is(':checked') ) { 
         $target.closest('tr').addClass('bg-danger bg-opacity-10');
       } else {
         $target.closest('tr').removeClass('bg-danger bg-opacity-10');
@@ -30,7 +30,7 @@ $(document).ready(function() {
     if ( typeof $('.packaging-status option:selected').data('disabled') != 'undefined'
         && $('.packaging-status option:selected').data('disabled') == true ) {
       $(".status-save-btn").attr('disabled', true);
-    }else{
+    } else {
       $(".status-save-btn").attr('disabled', false);
     }
   }

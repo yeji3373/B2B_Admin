@@ -84,7 +84,7 @@
               <input type='hidden' name='receipt[order_id]' value='<?=$receipt['order_id']?>'>
               <input type='hidden' name='receipt[receipt_type]' value='<?=$receipt['receipt_type']?>'>
               <select name='receipt[rq_percent]' >
-                <option>-</option>
+                <!-- <option>-</option> -->
                 <?php for($i = 10; $i <= 100; $i += 5) { ?>
                 <option value='<?=$i / 100?>' 
                   <?=($receipt['rq_percent'] * 100) == $i ? 'selected' : '' ?>>
