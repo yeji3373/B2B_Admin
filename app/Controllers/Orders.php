@@ -131,7 +131,7 @@ class Orders extends BaseController {
                                           ->findAll();
 
     if ( !empty($this->data['receipts']) ) {
-      foreach($this->data['receipts'] as $i => $receipt) { 
+      foreach($this->data['receipts'] as $i => $receipt) {
         if ( $receipt['payment_status'] == 0 ) {
           if ( !is_null($receipt['payment_invoice_id']) ) {
             $updateData = [];
@@ -148,6 +148,10 @@ class Orders extends BaseController {
 
                 $this->data['receipts'][$i]['payment_status'] = 100;
               }
+            }
+          } else {
+            if ( !empty($this->data['order']) ) {
+              
             }
           }
         }
@@ -173,6 +177,8 @@ class Orders extends BaseController {
 
   public function pInvoice() {
     $data = $this->request->getPost();
+    // var_dump($data);
+    // return;
     if ( empty($data['piControllType']) ) return redirect()->back();
     else {
       $data['type'] = $data['piControllType'];
@@ -194,6 +200,16 @@ class Orders extends BaseController {
 
     if ( $data['type'] == 'edit' ) {
       if ( !empty($data['receipt']) ) {
+        if ( isset($data['receipt']['payment_status']) ) {
+          $data['receipt']['payment_status'] = 100;
+          if ( empty($data['receipt']['payment_date']) ) {
+            $data['receipt']['payment_date'] = date('Y-m-d');
+          }
+        } else {
+          $data['receipt']['payment_date'] = NULL;
+          $data['receipt']['payment_status'] = 0;
+        }
+
         if ( !empty($data['order_id']) ) {
           $getOrder = $this->order->where(['id'=> $data['order_id'], 'available' => 1])->first();
           if ( !empty($getOrder) ) {
@@ -215,15 +231,19 @@ class Orders extends BaseController {
             if ( !empty($data['receipt']['rq_percent']) ) {
               if ( $getReceipt['rq_percent'] != $data['receipt']['rq_percent'] ) {
                 $receiptModification = true;
+                $tempRequestPecent = $data['receipt']['rq_percent'];
                 $data['receipt']['rq_amount'] = floatval(sprintf('%0.2f', (($data['order_amount'] - $data['amount_paid']) * $data['receipt']['rq_percent'])));
                 $data['receipt']['due_amount'] = floatval(sprintf('%0.2f', (($data['order_amount'] - $data['amount_paid']) - $data['receipt']['rq_amount'])));
               }            
             } else {
               $receiptModification = true;
-              $data['receipt']['rq_percent'] = -1;            
+              // $data['receipt']['rq_percent'] = -1;
+              $tempRequestPecent = -1;
             }
           }
         }
+        var_dump($data);
+        return;
 
         if ( floatval(sprintf('%0.2f', $data['receipt']['rq_amount'] + $data['receipt']['due_amount'] + $data['amount_paid'])) != $data['order_amount'] ) {
           return redirect()->back()->with('error', 'PI 가격 계산 중 오류 발생')->withInput();
@@ -280,13 +300,10 @@ class Orders extends BaseController {
     }
 
     if ( $data['type'] == 'receipt' ) {
-      // $invoice_number = NULL;
       $isPaypal = false;
       $invoice_data = NULL;
       $getOrder = Array();
       
-      var_dump($data);
-            
       if ( !empty($data['order_id']) ) {
         $getOrder = $this->order->where(['id' => $data['order_id'], 'available' => 1])->first();
         if ( !empty($getOrder) ) {
@@ -303,112 +320,92 @@ class Orders extends BaseController {
         }
       }
 
-      $receiptCheck = $this->receipt->where(['order_id' => $data['order_id'], 'receipt_type' => $data['receipt_type']])->first();
+      $receiptCheck = $this->receipt->where(['order_id' => $data['order_id'], 'receipt_id' => $data['receipt']['receipt_id']])->first();
       if ( !empty($receiptCheck) ) {
+        if ( $data['receipt_type'] != $receiptCheck['receipt_type'] ) return redirect()->back()->with('error', '영수증 정보가 일치하지 않습니다.');
+        if ( $data['amount_paid'] >= $data['order_amount'] ) return redirect()->back()->with('error', '영수증 발부하고자 하는 결제금액이 잘못되었습니다.');
         if ( $receiptCheck['payment_status'] == 100 ) { 
-          if ( $receiptCheck['due_amount'] > 0 ) { // next receipt
-            
-          } else {
-            return redirect()->back()->with('error', '이미 완료된 결제입니다');
-          }
-        }
-        if ( $receiptCheck['payment_status'] == -1 ) { // 재발급
-          if ( $isPaypal ) {
-            if ( !empty($receiptCheck['payment_invoice_id']) ) {
+          if ( $receiptCheck['due_amount'] > 0 ) {
+            $reqeust_amount = floatval(sprintf('%0.2f', $data['request_amount']));
 
-            }
-          } else { // 그냥 영수증 생성
-            // if ( )
-          }
-        }
-      } else { // 다음 회차 발급
-      }
-      return;
-
-      $receipt = Array();
-      if ( $data['payment_status'] != 100 ) return redirect()->back()->with('error', '이전 결제 처리가 완료되지 않았습니다.');
-      if ( $data['amount_paid'] >= $data['order_amount'] ) return redirect()->back()->with('error', '결제 금액처리가 잘못되었습니다.');
-      if ( !empty($data['receipt']) && !empty($data['order_id']) ) {
-        $getReceipt = $this->receipt->where(['receipt_id' => $data['receipt']['receipt_id'], 'payment_status >=' => 0])->first();
-
-        if ( !empty($getReceipt) ) {
-          // if ( $getReceipt['payement_status'] != 100 ) return redirect()->back()->with('error', '이전 결제 처리가 완료되지 않았습니다.');
-          if ( !empty($getReceipt['payment_invoice_id']) ) {
-            $isPaypal = true;
-            $result = $this->PaypalController->showInvoiceDetail($getReceipt['payment_invoice_id']);
-
-            if ( !($result['code'] >= 200 && $result['code'] <= 201) ) {
-              return redirect()->back()->with('error', '유효하지 않은 invoice');
-            } else {
-              // if ( $result['data']['status'] != 'PAID') return redirect()->back()->with('error', '결제가 완료되지 않았습니다.');
-              if ( $result['data']['status'] == 'MARKED_AS_PAID' || $result['data']['status'] == 'PAID') {
-                // $invoice_number = $result['data']['detail']['invoice_number'];
-                $invoice_data = $result['data'];
-              } else return redirect()->back()->with('error', '결제가 완료되지 않았습니다.');              
-            }
-          }
-          // var_dump($data);
-          // var_dump($invoice_data['primary_recipients'][0]['billing_info']);
-          $paypal_data = Array();
-          if ( $isPaypal === true && !empty($invoice_data) ) {
-            $paypal_data['currency_code'] = $invoice_data['detail']['currency_code'];
-            $paypal_data['invoice_number'] = $invoice_data['detail']['invoice_number']."_".$data['receipt_type'];
-            $paypal_data['buyerName'] = $invoice_data['primary_recipients'][0]['billing_info']['name']['given_name'];
-            $paypal_data['email'] = $invoice_data['primary_recipients'][0]['billing_info']['email_address'];
-            $paypal_data['phone_code'] = $invoice_data['primary_recipients'][0]['billing_info']['phones'][0]['country_code'];
-            $paypal_data['phone'] = $invoice_data['primary_recipients'][0]['billing_info']['phones'][0]['national_number'];
-            $paypal_data['consignee'] = $invoice_data['primary_recipients'][0]['shipping_info']['name']['given_name'];
-            $paypal_data['streetAddr1'] = $invoice_data['primary_recipients'][0]['shipping_info']['address']['address_line_1'];
-            $paypal_data['streetAddr2'] = $invoice_data['primary_recipients'][0]['shipping_info']['address']['address_line_2'];
-            $paypal_data['zipcode'] = $invoice_data['primary_recipients'][0]['shipping_info']['address']['postal_code'];
-            $paypal_data['country_code'] = $invoice_data['primary_recipients'][0]['shipping_info']['address']['country_code'];
-            $paypal_data['subtotal']  = floatval(sprintf('%0.2f', $data['request_amount']));
-          }
-
-          $getNextReceipt = $this->receipt->where(['order_id' => $getReceipt['order_id'], 'receipt_type' => ($getReceipt['receipt_type'] + 1)])->first();
-          if ( !empty($getNextReceipt) ) {
-            $receipt['receipt_id'] = $getNextReceipt['receipt_id'];
-            $receipt['payment_status'] = $isPaypal ? 0 : -1;
-          } else {          
-            $receipt['order_id'] = $data['order_id'];
-            $receipt['receipt_type'] = $data['receipt_type'];
-            // $receipt['due_amount'] = floatval(sprintf('%0.2f', ($data['order_amount'] - ($data['amount_paid'] + $data['request_amount']))));
-            $receipt['due_amount'] = 0;
-            $receipt['rq_amount'] = floatval(sprintf('%0.2f', $data['request_amount']));
-            $receipt['rq_percent'] = 1;
-            $receipt['payment_status'] = $isPaypal ? 0 : -1;
-            
-            if ( $this->receipt->save($receipt) ) {
-              $receipt['receipt_id'] = $this->receipt->getInsertID();
-              // if ( $isPaypal && !empty($paypal_data) ) {
-              //   $sentInvoiceResult = $this->PaypalController->paypal($paypal_data);
-
-              //   if ( $sentInvoiceResult['code'] >= 200 && $sentInvoiceResult['code'] <= 202 ) {
-              //     $receipt['payment_status'] = 0;
-              //     $receipt['payment_invoice_id'] = $sentInvoiceResult['payment_invoice_id'];
-              //     $receipt['payment_invoice_number'] = $sentInvoiceResul['payment_invoice_number'];
-              //     $receipt['payment_url'] = $sentInvoiceResul['payment_url'];
-
-              //     if ( $this->receipt->save($receipt) ) {
-              //     }
-              //   } 
-              // }
-            }
-          }
-
-          if ( $isPaypal && !empty($paypal_data) ) {
-            $sentInvoiceResult = $this->PaypalController->paypal($paypal_data);
-            var_dump($sentInvoiceResult);
-            if ( $sentInvoiceResult['code'] >= 200 && $sentInvoiceResult['code'] <= 202 ) {
-              $receipt['payment_status'] = 0;
-              $receipt['payment_invoice_id'] = $sentInvoiceResult['payment_invoice_id'];
-              $receipt['payment_invoice_number'] = $sentInvoiceResult['payment_invoice_number'];
-              $receipt['payment_url'] = $sentInvoiceResult['payment_url'];
-
-              if ( $this->receipt->save($receipt) ) {
+            $nextReceiptCheck = $this->receipt->where(['order_id' => $data['order_id'], 'receipt_type' => ($receiptCheck['receipt_type'] + 1)])->first();
+            if ( !empty($nextReceiptCheck) ) {
+              if ( $nextReceiptCheck['payment_status'] != -1 ) return redirect()->back()->with('error', '이미 있다');
+              else {
+                if ( !$isPaypal ) {
+                  return redirect()->back()->with('error', 'paypal 아니다');
+                }
               }
-            } 
+            } else {
+              $nextReceiptData = [
+                'order_id'      => $data['order_id'],
+                'receipt_type'  => ($data['receipt_type'] + 1),
+                // 'due_amount'    => $receipt['due_amount'] = floatval(sprintf('%0.2f', ($data['order_amount'] - ($data['amount_paid'] + $data['request_amount'])))),
+                'due_amount'    => 0,
+                'rq_amount'     => $reqeust_amount,
+                'rq_percent'    => 1,
+              ];
+
+              if ( $this->receipt->save($nextReceiptData) ) {
+                $receiptId = $this->receipt->getInsertID();
+              }
+            }
+
+            if ( isset($receiptId) && !empty($receiptId) ) {
+              if ( $isPaypal ) {
+                if ( !empty($receiptCheck['payment_invoice_id']) ) {
+                  $getInvoice = $this->PaypalController->showInvoiceDetail($receiptCheck['payment_invoice_id']);
+                  if ( !empty($getInvoice) ) {
+                    if ( $getInvoice['code'] >= 200 && $getInvoice['code'] <= 201 ) {
+                      if ( $getInvoice['data']['status'] == 'MARKED_AS_PAID' || $getInvoice['data']['status'] == 'PAID') {
+                        $getInvoiceData = [
+                          'currency_code' => $getInvoice['data']['detail']['currency_code'],
+                          'invoice_number' => $getInvoice['data']['detail']['invoice_number']."_".$data['receipt_type'],
+                          'buyerName' => $getInvoice['data']['primary_recipients'][0]['billing_info']['name']['given_name'],
+                          'email' => $getInvoice['data']['primary_recipients'][0]['billing_info']['email_address'],
+                          'phone_code' => $getInvoice['data']['primary_recipients'][0]['billing_info']['phones'][0]['country_code'],
+                          'phone' => $getInvoice['data']['primary_recipients'][0]['billing_info']['phones'][0]['national_number'],
+                          'consignee' => $getInvoice['data']['primary_recipients'][0]['shipping_info']['name']['given_name'],
+                          'streetAddr1' => $getInvoice['data']['primary_recipients'][0]['shipping_info']['address']['address_line_1'],
+                          'streetAddr2' => $getInvoice['data']['primary_recipients'][0]['shipping_info']['address']['address_line_2'],
+                          'zipcode' => $getInvoice['data']['primary_recipients'][0]['shipping_info']['address']['postal_code'],
+                          'country_code' => $getInvoice['data']['primary_recipients'][0]['shipping_info']['address']['country_code'],
+                          'subtotal' => $reqeust_amount,
+                        ];
+
+                        // $this->PaypalController->paypal()
+                      } else {
+                        if ( !$this->receipt->save(['receipt_id' => $receiptCheck['receipt_id'], 'payment_status' => 0]) ) {
+                          return redirect()->back()->with('error', '결제완료가 되지 않은 영수증입니다.');
+                        }
+                      }
+                    } elseif ( $getInvoice['code'] == 404 ) {
+                      // session()->setFlashdata('error', '없는 invoice');
+                      return redirect()->back()->with('error', '없는 invoice');
+                    } else {
+                      return redirect()->back()->with('error', '유효하지 않는 paypal invoice 입니다.');
+                    }
+                  } else {
+                    return redirect()->back()->with('error', '페이팔 오류');
+                  }
+                } else {
+                  return redirect()->back()->with('error', '유효하지 않는 정보입니다.');
+                }
+              } else {
+                if ( !$this->receipt->save(['receipt_id' => $receiptId, 'payment_status' => 0]) ) {
+                  return redirect()->back()->with('error', '결제상태 처리중 오류 발생');
+                }
+              }
+            }            
+          } else {
+            return redirect()->back()->with('error', '결제 잔액이 0원입니다. 더이상의 영수증 발급이 불가능합니다.');
           }
+        }
+        if ( $receiptCheck['payment_status'] == -1 ) { 
+          return redirect()->back()->with('error', '오류가 있는 영수증입니다. '.($data['receipt_type'] + 1).'차 영수증 발급을 위해서는 '.$data['receipt_type'].'차 영수증을 다시 확인해주세요.');
+        }
+        if ( $receiptCheck['payment_status'] == 0 ) {
+          return redirect()->back()->with('error', '이전 결제 처리가 완료되지 않았습니다.');
         }
       }
     }
@@ -610,12 +607,13 @@ class Orders extends BaseController {
     $requirement = $this->request->getPost('requirement');
     $order = $this->request->getPost('order');
     $packaging = $this->request->getPost('packaging');
-
-    // var_dump($details);
-    // var_dump($requirement);
-    // var_dump($order);
-    // var_dump($packaging);
-    // return;
+  
+    // var_dump($this->request->getPost());
+    var_dump($details);
+    var_dump($requirement);
+    var_dump($order);
+    var_dump($packaging);
+    return;
 
     // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
     if ( !empty($details) ) {
