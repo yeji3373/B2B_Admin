@@ -60,7 +60,7 @@
       <div class='d-flex flex-column'>
         <label class='border border-0 border-bottom'>최종확정금액</label>
         <div class='con'>
-          <?=$order['currency_sign']?><span class='decide_amout'><?=number_format($order['decide_amount'], $order['currency_float'])?></span>
+          <?=$order['currency_sign']?><span class='decide_amount'><?=number_format($order['decide_amount'], $order['currency_float'])?></span>
         </div>
       </div>
     </div>
@@ -74,8 +74,6 @@
     <form method='post' action='<?=site_url('orders/inventoryEdit')?>'>
     <?php if ( !empty($order)) : ?>
     <input type='hidden' name='order[id]' value='<?=$order['id']?>'>
-    <!-- <input type='hidden' name='order[request_amount]' value='<?=$order['request_amount']?>'> -->
-    <!-- <input type='hidden' name='order[order_fix]' value='0'> -->
     <input type='hidden' name='order[inventory_fixed_amount]' value='<?=$order['inventory_fixed_amount']?>'>
     <input type='hidden' name='order[fixed_amount]' value='<?=$order['fixed_amount']?>'>
     <input type='hidden' name='order[decide_amount]' value='<?=$order['decide_amount']?>'>
