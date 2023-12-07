@@ -17,7 +17,7 @@ class ProductModel extends Model {
     'package', 'package_detail', 'etc',
     'edition', 'edition_en',
     'renewal', 'renewal_date',
-    'discontinued', 'display',
+    'discontinued', 'display', 'group_id'
   ];
 
   protected $useTimestamps = true;

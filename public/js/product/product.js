@@ -1,3 +1,10 @@
+$(document).ready(function() {
+  if($('.group_choose').val() == "new_group") {
+    $('.group_name').removeAttr('disabled');
+  }else{
+    $('.group_name').attr('disabled', 'disabled');
+  }
+});
 $(document).on('focusin', '[name="product_price[supply_price]"]', function() {
   let retail_price = $('[name="product_price[retail_price]"]');
   let product_price = $('[name="product_price[supply_price]"]');
@@ -187,4 +194,13 @@ $(document).on('focusin', '[name="product_price[supply_price]"]', function() {
   }
 }).on('keyup', '.supply-price-input', function() {
 
+}).on('change', '.group_choose', function() {
+  if($(this).val() != ''){
+    if($(this).val() == "new_group") {
+      $('.group_name').removeAttr('disabled');
+    }else{
+      $('.group_name').val($('.group_choose option:checked').text().trim());
+      $('.group_name').attr('disabled', 'disabled');
+    }
+  }
 });

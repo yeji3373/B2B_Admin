@@ -77,5 +77,8 @@ input:disabled, select:disabled { background-color: #e8e9e9; }
 .w-70p { width: 70%; }
 .w-80p { width: 80%; }
 .w-85p { width: 85%; }
+.w-90p { width: 90%; }
+.w-95p { width: 95%; }
+.w-100p { width: 100%; }
 .w-fit-content { width: fit-content; }
 /* width */

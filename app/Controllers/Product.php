@@ -11,6 +11,7 @@ use App\Models\ProductPriceModel;
 use App\Models\SupplyPriceModel;
 use App\Models\MarginModel;
 use App\Models\MarginRateModel;
+use App\Models\ProductGroupModel;
 use Status\Config\Status;
 use DataFile\Controllers\DataFileController;
 use DataFile\Config\DataFile;
@@ -27,6 +28,7 @@ class Product extends BaseController {
     $this->productPrice = new ProductPriceModel();
     $this->supplyPrice = new SupplyPriceModel();
     $this->margin = new MarginModel();
+    $this->pgroup = new ProductGroupModel();
 
     $this->dataFile = new DataFileController();
 
@@ -117,6 +119,7 @@ class Product extends BaseController {
       //                             ->where('margin_rate.available', 1)
       //                             ->findAll();
       // }
+      $this->data['pgroups'] = $this->pgroup->where(['brand_id' => $brandId])->findAll();
 
     } else {
       $this->data['brands']  = $this->brands->brands()->findAll();
@@ -139,6 +142,39 @@ class Product extends BaseController {
     $brand = $this->brands->where('brand_id', $data['product']['brand_id'])->first();
     if ( empty($brand) ) {
       return redirect()->back()->withInput()->with('error', '해당 브랜드가 없음');
+    }
+
+    //그룹핑
+    if ( !empty($data['grouping']) && !empty($data['group']['id']) ) {
+      if ($data['group']['id'] == 'new_group') {
+        //그룹 신규등록 후 추가
+        $groupValidCheck = $this->pgroup
+                                ->like('UPPER(REPLACE(group_name, \' \', \'\'))', preg_replace('/\s+/', '', strtoupper($data['group']['name_new'])), 'both')
+                                ->first();
+        if( !empty($groupValidCheck) ) {
+          print_r($groupValidCheck);
+          echo "이미 같은 이름의 그룹이 있음";
+          return redirect()->back()->withInput()->with('error', '같은 이름의 그룹이 있습니다.');
+        } else {
+          if ( !empty($data['product']['id']) ){
+            if($this->pgroup->save(['brand_id' => $data['product']['brand_id'],
+                                    'group_name' => $data['group']['name_new']])){
+              $group_idx = $this->pgroup->getInsertID();
+              $this->products->save(['group_id' => $group_idx,
+                                    'id' => $data['product']['id'],
+                                    'brand_id' => $data['product']['brand_id']]);
+            }
+          }
+        }
+
+      } else {
+        //기존그룹에 추가
+        if ( !empty($data['product']['id']) ){
+          $this->products->save(['group_id' => $data['group']['id'],
+                                 'id' => $data['product']['id'],
+                                 'brand_id' => $data['product']['brand_id']]);
+        }
+      } 
     }
 
     if ( !empty($data['product']) ) {
@@ -193,7 +229,7 @@ class Product extends BaseController {
       } else {
         if ( !$this->products->save($data['product']) ) {
           return redirect()->back()->withInput()->with('error', '제품 등록중에 오류가 발생했습니다.');
-        }
+        } 
 
         if ( !empty($data['product_price']) ) {
           $this->supplyRateEdit($data['product_price']);

@@ -124,6 +124,48 @@
           </div>
         </td>
       </tr>
+      <?php if (isset($product)) : ?>
+      <tr>
+        <th class='border border-0 border-dark border-bottom border-end w-25'>
+          <?=lang('Product.grouping')?>
+        </th>
+        <td class='text-start'>
+          <div class='d-grid grid-half'>
+            <div class='d-flex flex-row w-100p'>
+              <div class='d-flex w-10p flex-column align-items-center'>
+                <label class='mb-1'>그룹핑</label>
+                  <input type='checkbox' name='grouping'
+                    class='form-check value-change d-flex'
+                    <?php if ( isset($product['group_id']) ) { echo 'checked'; } ?>>
+              </div>
+              <div class='d-flex flex-column w-90p'>
+                <label class='mb-1'>그룹 선택</label>
+                <select name="group[id]" class='form-select form-select-sm group_choose'>
+                  <option value><?=lang('Product.groupChoose')?></option>
+                  <option value='new_group'>그룹 등록</option>
+                  <?php if(isset($pgroups)) :?>
+                    <?php foreach ( $pgroups as $group ) : ?>
+                      <option value="<?=$group['id']?>"
+                      <?php if ( isset($product) && $product['group_id'] == $group['id'] ) { echo 'selected'; } ?>>
+                        <?=$group['group_name']?>
+                      </option>
+                    <?php endforeach ?>
+                  <?php else :?>
+                  <?php endif;?>
+                </select>
+              </div>
+            </div>
+            <div class='d-flex flex-column ms-4'>
+              <label class='mb-1'><?=lang('Product.groupNameEng')?></label>
+              <input type="text" name="group[name_new]" placeholder="Group Name" 
+                class='form-control form-control-sm w-100 group_name'
+                value='<?=(isset($product) && !empty($product['name_en']) ? trim($product['name_en']) : '')?>'
+                required>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <?php endif; ?>
       <tr>
         <th class='border border-0 border-dark border-bottom border-end w-25'>
           소비자가

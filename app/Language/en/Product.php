@@ -28,6 +28,10 @@ return [
   'specContiner'    => '용기상품',
   'specDetail'      => '상품 상세 스팩',
   'saleChannel'     => '판매 상태',
+  'grouping'        => '상품 그룹핑',
+  'groupChoose'     => '그룹 선택',
+  'groupName'       => '그룹명',
+  'groupNameEng'       => '그룹 영문명',
   
   'b2b'             => 'B2B 판매',
 
