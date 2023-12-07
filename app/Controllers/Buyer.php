@@ -49,25 +49,25 @@ class Buyer extends BaseController
       }else{
         $dateYn = 0;
       }
-      if( empty($dateYn) ){
+      if( empty($dateYn) ) {
         if(!empty($params['start_date']) && !empty($params['end_date'])){
           $this->buyers->where('DATE(buyers.created_at) >=', $params['start_date']);
           $this->buyers->where('DATE(buyers.created_at) <=', $params['end_date']);
         }
       }
-      if( !empty($params['managers']) ){
+      if( !empty($params['managers']) ) {
         $this->buyers->where('buyers.manager_id', $params['managers']);
         if($params['managers'] == -1){
           $this->buyers->where('buyers.manager_id IS NULL', NULL, true);
         }
       }
-      if( !empty($params['regions']) ){
+      if( !empty($params['regions']) ) {
         $this->buyers->where("buyers.region_ids IN ({$params['regions']})");
       }
-      if( !empty($params['margin']) ){
+      if( !empty($params['margin']) ) {
         $this->buyers->where('buyers.margin_level', $params['margin']);
       }
-      if( isset($params['confirmation']) ){
+      if( isset($params['confirmation']) ) {
         if( $params['confirmation'] == 0 ){
           $this->buyers->where('buyers.confirmation', $params['confirmation']);
         }else if($params['confirmation'] == 1){
@@ -212,7 +212,7 @@ class Buyer extends BaseController
     $buyers = $this->buyers
                   ->select('buyers.*, manager.name AS manager_name')
                   ->join('manager', 'manager.idx = buyers.manager_id', 'left outer')
-                  ->where(['buyers.available' => 1]);
+                  ->where(['buyers.available !=' => -1]);
     return $buyers;
   }
 
@@ -220,9 +220,10 @@ class Buyer extends BaseController
     $page = null;
     $buyers = $this->buyers
                   ->select('buyers.*, manager.name AS manager_name')
+                  ->join('users', 'users.buyer_id = buyers.id')
                   ->join('manager', 'manager.idx = buyers.manager_id', 'left outer')
-                  ->where(['buyers.available' => 1])
-                  ->paginate(10);
+                  ->where(['buyers.available !=' => -1])
+                  ->paginate(30);
     $this->data['pager'] = $this->buyers->pager;
     return $buyers;
   }
