@@ -40,15 +40,11 @@ class Buyer extends BaseController
       if( !empty($params['buyer_name']) ){
         $this->buyers->like('buyers.name', $params['buyer_name']);
       }
-      if( isset($params['dateYn']) ){
-        if( $params['dateYn'] ){
-          $dateYn = 1;
-        }else{
-          $dateYn = 0;
-        }
-      }else{
-        $dateYn = 0;
+      
+      if( isset($params['dateYn']) || !empty($params['dateYn'])){
+        $dateYn = 1;
       }
+
       if( empty($dateYn) ) {
         if(!empty($params['start_date']) && !empty($params['end_date'])){
           $this->buyers->where('DATE(buyers.created_at) >=', $params['start_date']);
@@ -81,7 +77,7 @@ class Buyer extends BaseController
     $first = $this->getManagers()->where(['role_id' => 2])->findAll();
     $add[] = array('idx' => -1, 'name' => '미지정');
     $managers = array_merge($first, $add);
-    
+   
     $this->data['dateYn'] = $dateYn;
     $this->data['managers'] = $managers;
     $this->data['regions'] = $this->getRegion()->findAll();
