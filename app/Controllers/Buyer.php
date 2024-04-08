@@ -11,6 +11,7 @@ use App\Models\MarginModel;
 use App\Models\BuyersCurrencyModel;
 use App\Models\UsersModel;
 use Auth\Models\UserModel;
+use VerifyEmail\Controllers\VerifyemailController;
 
 class Buyer extends BaseController
 {
@@ -126,6 +127,19 @@ class Buyer extends BaseController
     $buyer = []; $currencyRate = []; $buyerCurrency = []; $user = [];
     $redirect = null;
 
+    $verifyEmail =  new VerifyemailController();
+    if ( !empty($req['user']) && !empty($req['user']['email']) ) {
+      if ( !$verifyEmail->check($req['user']['email']) ) {
+        $this->buyers->save(['id' => $req['buyer']['id'], 'available' => -1]);
+        return redirect()->back()->with('error', 'email 주소가 유효하지 않아서 계정 정보가 삭제됩니다.');
+      }
+    } else {
+      $this->buyers->save(['id' => $req['buyer']['id'], 'available' => -1]);
+      return redirect()->to(base_url('buyer/list'))->with('error', '정확한 정보가 없는 경우입니다. 삭제처리 됩니다');
+    }
+    var_dump($req);
+    return;
+
     if ( session()->has('redirect') ) $redirect = session()->getFlashdata('redirect');
     
     print_r($req);
@@ -134,7 +148,7 @@ class Buyer extends BaseController
     if ( !empty($req['buyer']) ) {
       $buyer = $req['buyer'];
       if ( $buyer['deposit_rate'] > 100 ) $buyer['deposit_rate'] = 100;
-      $buyer['deposit_rate'] = ( $buyer['deposit_rate'] / 100);
+      $buyer['deposit_rate'] = ( $buyer['deposit_rate'] / 100 );
       
 
       if ( $buyer['confirmation'] == 1 ) {

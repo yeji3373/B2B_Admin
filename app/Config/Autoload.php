@@ -48,6 +48,7 @@ class Autoload extends AutoloadConfig
         'Status'      => APPPATH . 'ThirdParty/Status',
         'DataFile'    => APPPATH . 'ThirdParty/DataFile',
         'PhpOffice'   => APPPATH . 'ThirdParty/PhpSpreadsheet',
+        'VerifyEmail' => APPPATH . 'ThirdParty/VerifyEmail',
     ];
 
     /**

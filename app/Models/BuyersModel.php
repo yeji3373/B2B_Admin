@@ -7,7 +7,7 @@ class BuyersModel extends Model {
   protected $table = 'buyers';
   protected $primaryKey = 'id';
   protected $useAutoIncrement = true;
-  protected $useSoftDeletes = false;
+  protected $useSoftDeletes = true;
 
   protected $allowedFields = [
     'name', 'manager_id', 'business_number', 
@@ -20,6 +20,7 @@ class BuyersModel extends Model {
   protected $useTimestamps = true;
   protected $createdField  = 'created_at';
 	protected $updatedField  = 'updated_at';
+  protected $deletedField  = 'deleted_at';
   protected $dateFormat  	 = 'datetime';
 
   protected $default = ['available' => 1];

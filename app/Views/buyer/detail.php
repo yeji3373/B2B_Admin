@@ -35,7 +35,7 @@
       <div class='d-flex flex-column'>
         <?=$buyer['business_number']?>
         <?php if ( empty($buyer['certificate_business']) ) : ?>
-          <span class='text-bg-danger'>사업자등록증 미등록</span>
+          <span class='text-bg-danger w-25 text-center'>사업자등록증 미등록</span>
         <?php else : ?>
           <img class='business_certificate' src='<?="http://beautynetkorea.daouimg.com/b2b/documents/register/certification/".$buyer['certificate_business']?>' alt='사업자등록증' style='width: 10rem;'>
         <?php endif ?>
@@ -126,10 +126,10 @@
             ?>
           </div>
         </div>
-        <div>
+        <div class='d-flex p-0'>
           <?php 
           if ( !empty($currency) ) :
-            echo "<select name='currencyRate[currency_idx]'>";
+            echo "<select name='currencyRate[currency_idx]' class='me-1'>";
             echo "<option value>선택</option>";
             foreach ($currency as $c) :
               echo "<option value='{$c['idx']}'";
@@ -167,39 +167,33 @@
       <label>로그인 정보</label>
       <div class='d-flex flex-column'>
         <?php foreach($users as $i =>  $user) : ?>
-        <div class='d-flex flex-row border border-dark p-0 buyer-memeber-list'>
-          <?=form_hidden("user[{$i}][idx]", $user['idx'])?>
-          <!-- <div class='buyer-member d-flex flex-column border-end border-dark'>            
-            <label class='w-100 border-bottom border-dark p-1'>ID</label>
-            <div class='p-1 text-center'>
-              <?//=$user['email']?>
-            </div>
-          </div> -->
-          <div class='buyer-member d-flex flex-column border-end border-dark'>
-            <label class='w-100 border-bottom border-dark p-1'>Name</label>
-            <div class='p-1 text-center'>
+        <div class='d-flex flex-column border border-dark p-0 buyer-memeber-list'>
+          <?=form_hidden("user[idx]", $user['idx'])?>
+          <div class='buyer-member d-flex flex-row border-bottom border-dark'>
+            <label class='w-25 p-1 border-end border-dark'>Name</label>
+            <div class='p-1 w-100 h-100'>
               <?=$user['name']?>
             </div>
           </div>
-          <div class='buyer-member d-flex flex-column border-end border-dark w-100'>
-            <label class='w-100 border-bottom border-dark p-1'>email</label>
-            <div class='p-1 text-center'>
-              <?=$user['email']?>
+          <div class='buyer-member d-flex flex-row border-bottom border-dark w-100'>
+            <label class='w-25 p-1 border-end border-dark'>email</label>
+            <div class='p-1 w-100 h-100'>
+              <input type='text' name='user[email]' value=<?=$user['email']?> readonly>
             </div>
           </div>
-          <div class='buyer-member d-flex flex-column border-end border-dark'>
-            <label class='w-100 border-bottom border-dark p-1'>active</label>
-            <div class='p-1'>
-              <select name='user[<?=$i?>][active]'>
+          <div class='buyer-member d-flex flex-row border-bottom border-dark'>
+            <label class='w-25 p-1 border-end border-dark'>active</label>
+            <div class='p-1 d-flex align-items-center justify-content-center w-100 h-100'>
+              <select name='user[active]'>
                 <option value>선택</option>
                 <option value='0' <?=$user['active'] == 0 ? 'selected' : ''?>>비활성화</option>
                 <option value='1' <?=$user['active'] == 1 ? 'selected' : ''?>>활성화</option>
               </select>
             </div>
           </div>
-          <div class='buyer-member d-flex flex-column'>
-            <label class='w-100 border-bottom border-dark p-1'>등록일</label>
-            <div class='p-1 text-center'>
+          <div class='buyer-member d-flex flex-row'>
+            <label class='w-25 border-end border-dark p-1'>등록일</label>
+            <div class='p-1 w-100 h-100'>
               <span><?=date('Y-m-d', strtotime($user['created_at']))?></span>
             </div>
           </div>

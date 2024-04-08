@@ -10,6 +10,9 @@ main form > div > div > div,
 main form > div > div > div > label, 
 main form > div > div > div > div{ padding: 0.35rem 0.5rem; }
 
+main form > div > div > label { width: 12rem; }
+main form > div > div > div { width: 100%; }
+
 main form > div > div > div .buyer-memeber-list:not(:first-child) { margin-top: 0.3rem; }
 main form > div > div > div .buyer-memeber-list .buyer-member { min-width: 7rem; }
 main form > div > div > div .buyer-memeber-list .buyer-member label {
@@ -26,6 +29,9 @@ main .buyer-list { width: 100%; }
 
 fieldset { min-width: 15rem; border: 1px solid; }
 
+input[type=text] { width: -webkit-fill-available; }
+input[type=text]:read-only { padding: 0; border-width: 0; }
+
 .sell-region-group .position-absolute, .currency-group .position-absolute { top: -0.8rem; left: 0.5rem; background-color: white; }
 .sell-region-group .position-relative > div { min-width: 15rem; }
 .sell-region-group .position-relative > div div:not(:last-child) { margin-right: 0.5rem; }
@@ -34,3 +40,7 @@ fieldset { min-width: 15rem; border: 1px solid; }
 .certificate_viewer > div { width: auto; height: 100%; margin: auto; display: flex; align-items: center; justify-content: center; }
 .certificate_viewer.object > div { width: 65%; }
 .certificate_viewer .btn-close { position: absolute; left: 1rem; top: 1rem; width: 1.5rem; height: 1.5rem;}
+
+@media print {
+  header, form, .print-hide { display: none !important; }
+}

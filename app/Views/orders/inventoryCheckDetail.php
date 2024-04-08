@@ -131,7 +131,7 @@
             $seletedOptions = []; 
             $canceled = 0;
             $disabled = NULL;
-            $qty = 0;
+            $qty = $detail['prd_order_qty'];
             $price = $detail['prd_price'];
 
             if ( !empty($detail['order_excepted']) ) :
@@ -193,17 +193,19 @@
                   <?=$detail['prd_order_qty']?>
                 </p>
                 <!-- step 1 -->
-                <?php if ( $pay_step >= 1 ) : ?>
+                <?php if ( $pay_step >= 1 ) : 
+                  $qty = !empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty'];
+                ?>
                 <p>
-                  <?php if ( $pay_step > 1 ) : ?>
-                    <?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>
-                  <?php else : ?>
+                  <?php if ( $pay_step > 1 ) : 
+                   echo $qty;
+                  else : ?>
                   <input type='number'
                         step='any'
                         min='1'
                         class='request-amount-change prd-qty'
                         name='detail[<?=$i?>][prd_change_qty]' 
-                        value='<?=!empty($detail['prd_change_qty']) ? $detail['prd_change_qty'] : $detail['prd_order_qty']?>' 
+                        value='<?=$qty?>' 
                         <?=$disabled?>>
                   <?php endif; ?>
                 </p>
