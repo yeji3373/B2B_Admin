@@ -78,12 +78,9 @@ class DataFileController extends Controller {
       // $activeWorksheet = $spreadsheet->setActiveSheetIndexByName('Sheet1') // spreadsheet 시트 이름으로 선택
     }
     $sheet = $spreadsheet->getActiveSheet();
-    // print_r($header);
-    // echo count($header, 1).' '.count($header, 0).'<br/>';
-    // $headColCnt = (count($header, 1) / count($header, 0));
-    $headColCnt = (count($header) / count($header)); // column 시작점
-    // $headColCnt = 2;
-    $this->config->setHeader($header, $headColCnt);
+
+    $this->config->setHeader($header);
+
     $this->config->setBody($data);
 
     if ( !empty($this->config->headers) ) {

@@ -112,6 +112,14 @@ $(document).on('focusin', '[name="product_price[supply_price]"]', function() {
   console.log($(this).closest('td'));
   $(this).closest('td').find('input[type=text]').prop('disabled', true);
   $(this).closest('p').siblings().find('input[type=text]').prop('disabled', false);
+}).on('change','.prd-include-chk', function() {
+  if ($(this).is(':checked') && $('.update').hasClass('d-none')) {
+    $('.update').removeClass('d-none').addClass('d-block');
+  } else {
+    $('.update').removeClass('d-block').addClass('d-none');
+    $('.prd-price-chk').val(0);
+    $('.prd-moq-chk').val(0);
+  }
 }).on('click', '.product-csv-btn', function(e) {
   let form, action = '/product/exportData';
   form = $("<form/>").attr('method', 'post');
@@ -121,12 +129,26 @@ $(document).on('focusin', '[name="product_price[supply_price]"]', function() {
   } else {
     form = $(this).children('form');
   }
-
+  // 제품정보 포함
   if ( $('.prd-include-chk') ) {
     let checkbox = $('.prd-include-chk');
     if ( form.children('[name=prd-include]').length > 0 ) {
       form.children('[name=prd-include]').val(checkbox.val());
     } else form.append(checkbox.clone().attr('type', 'hidden').attr('name', 'prd-include'));
+  }
+  // 제품 가격만 업데이트
+  if ( $('.prd-price-chk') ) {
+    let checkbox = $('.prd-price-chk');
+    if ( form.children('[name=prd-price]').length > 0 ) {
+      form.children('[name=prd-price]').val(checkbox.val());
+    } else form.append(checkbox.clone().attr('type', 'hidden').attr('name', 'prd-price'));
+  }
+  // 제품 수량만 업데이트
+  if ( $('.prd-moq-chk') ) {
+    let checkbox = $('.prd-moq-chk');
+    if ( form.children('[name=prd-moq]').length > 0 ) {
+      form.children('[name=prd-moq]').val(checkbox.val());
+    } else form.append(checkbox.clone().attr('type', 'hidden').attr('name', 'prd-moq'));
   }
 
   if ( $('[name="brand_id"] option:selected').val() != '' 

@@ -39,11 +39,25 @@
           <tr>
             <th class='border border-0 border-dark border-bottom border-end w-25'>정보 다운로드</th>
             <td class='text-start'>
-              <div class='form-check mt-2'>
-                <label class='form-check-label fs-inherit fw-light'>
-                  <input class='form-check-input prd-include-chk value-change' type='checkbox' value='0'>
-                  <span>제품정보 포함</span>
-                </label>
+              <div class='d-flex flex-row'>
+                <div class='form-check mt-2 me-2'>
+                  <label class='form-check-label fs-inherit fw-light'>
+                    <input class='form-check-input prd-include-chk value-change' type='checkbox' value='0'>
+                    <span>제품 정보 포함</span>
+                  </label>
+                </div>
+                <div class='form-check mt-2 me-2 d-none update'>
+                  <label class='form-check-label fs-inherit fw-light'>
+                    <input class='form-check-input prd-price-chk value-change' type='checkbox' value='0'>
+                    <span>제품 가격만 업데이트</span>
+                  </label>
+                </div>
+                <div class='form-check mt-2 d-none update'>
+                  <label class='form-check-label fs-inherit fw-light'>
+                    <input class='form-check-input prd-moq-chk value-change' type='checkbox' value='0'>
+                    <span>제품 수량만 업데이트</span>
+                  </label>
+                </div>
               </div>
               <div class='btn btn-sm btn-secondary mt-1 product-csv-btn'>제품등록 CSV 다운</div>
             </td>
