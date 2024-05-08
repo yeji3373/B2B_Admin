@@ -289,4 +289,30 @@ class Brand extends BaseController {
       // return redirect()->back()->with('error', '브랜드에 margin 값이 활성화 되지 않았습니다.');
     }
   }
+
+  public function addtionalMargin() {
+    $brandID = $this->request->uri->getSegment(3);
+    $margin = $this->margin->find();
+
+    $lastMargin = end($margin);
+
+    $nextMargin = ['margin_level' => ($lastMargin['margin_level'] + 1)
+            , 'margin_section' => chr(ord($lastMargin['margin_section']) + 1)
+            , 'available' => 1];
+
+    $brandIds = ( $this->brands->select('brand_id')->where('available', 1)->find() );
+
+    if ( !$this->margin->save($nextMargin) ) {
+      return redirect()->back()->with('error', '마진 구간 생성 중 오류 발생');
+    } else {
+      if ( !empty($brandIds) && !empty($this->margin->getInsertID())) {
+        foreach ($brandIds as $key => $value) {
+          if ( !$this->marginRate->save(array_merge($value, ['margin_idx' => $this->margin->getInsertID(), 'margin_rate' => 0])) ) {
+            return redirect()->back()->with('error', "브랜드 id {$value['brand_id']}의 마진율 생성 중 오류 발생");
+          }
+        } 
+      }
+      return redirect()->back()->width('success', "생성 완료");
+    }
+  }
 }

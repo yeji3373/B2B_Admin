@@ -103,22 +103,11 @@ class Product extends BaseController {
                                   ->select('supply_price.idx AS supply_price_idx')
                                   ->select('supply_price.price')
                                   ->select('supply_price.margin_level')
-                                  ->join('margin_rate', 'margin_rate.margin_idx = margin.idx AND margin_rate.brand_id = '.$brandId)
-                                  // ->join("(SELECT * FROM margin_rate WHERE brand_id = $brandId AND available = 1) AS margin_rate", 'margin_rate.margin_idx = margin.idx', 'left outer')
-                                  ->join('supply_price', 'supply_price.margin_idx = margin.idx', 'left outer')
-                                  ->where('margin_rate.available', 1)
-                                  ->where('supply_price.product_idx', $productId)
+                                  ->join('margin_rate', 'margin_rate.margin_idx = margin.idx AND margin_rate.available = 1 AND margin_rate.brand_id = '.$brandId, 'left outer')
+                                  ->join('supply_price', "supply_price.margin_idx = margin.idx AND supply_price.product_idx=${productId}", 'left outer')
                                   ->findAll();
-      // if ( empty($this->data['margin']) ) {
-      //   $this->data['margin'] = $this->margin
-      //                             ->select('margin.*')
-      //                             ->select('margin_rate.idx AS margin_rate_idx')
-      //                             ->select('margin_rate.brand_id, margin_rate.margin_rate')
-      //                             ->select('margin_rate.available AS margin_rate_available')
-      //                             ->join("(SELECT * FROM margin_rate WHERE brand_id = $brandId AND available = 1) AS margin_rate", 'margin_rate.margin_idx = margin.idx', 'left outer')
-      //                             ->where('margin_rate.available', 1)
-      //                             ->findAll();
-      // }
+
+      var_dump($this->data['margin']);
       $this->data['pgroups'] = $this->pgroup->where(['brand_id' => $brandId])->findAll();
 
     } else {

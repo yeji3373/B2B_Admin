@@ -177,8 +177,7 @@ class Orders extends BaseController {
 
   public function pInvoice() {
     $data = $this->request->getPost();
-    // var_dump($data);
-    // return;
+
     if ( empty($data['piControllType']) ) return redirect()->back();
     else {
       $data['type'] = $data['piControllType'];
@@ -613,7 +612,7 @@ class Orders extends BaseController {
     var_dump($requirement);
     var_dump($order);
     var_dump($packaging);
-    return;
+    // return;
 
     // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
     if ( !empty($details) ) {

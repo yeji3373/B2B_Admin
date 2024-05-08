@@ -1,4 +1,4 @@
-<?= view('Auth\Views\_notifications') ?>
+<?//= view('Auth\Views\_notifications') ?>
 <?php if ( !empty($brands) ) : ?>
 <div class='d-flex flex-column flew-wrap w-100 border border-dark border-bottom-0 brand-list'>
   <div class='d-flex flex-row w-100 brand-list-header border border-0 border-dark border-bottom'>
@@ -7,7 +7,18 @@
     <div class='list-items border border-dark border-0 border-end w-17p'>자사 브랜드</div>
     <div class='list-items border border-dark border-0 border-end w-18p'>공급률 적용 여부</div>
     <div class='list-items border border-dark border-0 border-end w-10p'>공급률</div>
-    <div class='list-items border border-dark border-0 border-end w-20p'>마진율</div>
+    <div class='list-items border border-dark border-0 border-end flex-column w-20p'>
+      <p>마진율</p>
+      <p class='mt-1'>
+        <button 
+          class='btn btn-sm btn-dark' 
+          type='button' 
+          name='margin_rate_add'
+          onClick='window.location.href="<?=base_url("/brand/addtionalMargin")?>"'>
+          <?=chr(ord(end($margin)['margin_section']) + 1);?> 추가
+        </button>
+      </p>
+    </div>
     <div class='list-items border border-dark border-0 border-end w-15p'>브랜드 사용 여부</div>
     <div class='list-items w-7p'></div>
   </div>
@@ -94,10 +105,10 @@
       </div>
     </div>
     <div class='border border-dark border-0 border-bottom border-end list-items w-20p'>
-      <div class='d-flex flex-row'>
+      <div class='d-flex flex-row flex-wrap'>
       <?php if ( !empty($margin) ) : 
         foreach ( $margin as $j => $m ) : ?>
-        <div class='form-check d-flex flex-row align-items-center'>
+        <div class='form-check d-flex flex-row align-items-center ps-0 w-50'>
           <input type='hidden'
                 class='margin_rate'
                 name='margin_rate[<?=$j?>][idx]' 
@@ -116,7 +127,7 @@
           <label class='form-check-label d-flex flex-row align-items-center justify-content-center'>
             <input type='checkbox' 
                   class='me-1 value-change margin_section'
-                  data-old='<?=!empty($brand['marginRate']) ? $brand['marginRate'][$j]['available'] : '' ?>'
+                  data-old='<?=!empty($brand['marginRate'][$j]) ? $brand['marginRate'][$j]['available'] : '' ?>'
                   data-find-parent='div.form-check'
                   data-find-target='[name="margin_rate[<?=$j?>][margin_rate]"]'
                   data-condition='[{"condition": "0", "action": "disabled", "value": true}, {"condition": "1", "action": "disabled", "value": false}, {"condition": "0", "action": "required", "value": false}, {"condition": "1", "action": "required", "value": true}]'
@@ -128,7 +139,7 @@
           <input type='text'
             class='form-control form-control-sm w-50 mx-1 margin_rate' 
             name='margin_rate[<?=$j?>][margin_rate]'
-            data-old='<?=!empty($brand['marginRate']) ? ($brand['marginRate'][$j]['margin_rate'] * 100) : '' ?>'
+            data-old='<?=!empty($brand['marginRate'][$j]) ? ($brand['marginRate'][$j]['margin_rate'] * 100) : '' ?>'
             value='<?=!empty($brand['marginRate']) && isset($brand['marginRate'][$j]['margin_rate']) ? $brand['marginRate'][$j]['margin_rate'] * 100 : ''?>'
             <?=!empty($brand['marginRate']) && (isset($brand['marginRate'][$j]['margin_rate']) && $brand['marginRate'][$j]['available'] == 1) ? '' : 'disabled'?>
           >%
