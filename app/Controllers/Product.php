@@ -315,7 +315,7 @@ class Product extends BaseController {
 
                     if ( isset($price['supply_price_idx']) ) {
                       $price['idx'] = $price['supply_price_idx'];
-                      if ( empty($data['not_calculating_margin']) && !empty($data['supply_price'])) {
+                      if ( empty($data['not_calculating_margin']) && !empty($data['supply_price']) && !empty($price['margin_rate'])) {
                         $price['price'] = round($data['supply_price'] * $price['margin_rate']);
                       } 
                       var_dump($price);
@@ -754,43 +754,64 @@ class Product extends BaseController {
                                       'set_wrap'  =>  true,
                                       'colCnt' => 2, 
                                       'colName' => ['header', 'field']]);
-                                      
+    $header = array_merge($this->status->getHeader('product')['export']
+                        , $this->status->getHeader('supplyPrice')['export']
+                        , $this->status->getHeader('productSpq')['export']);
+
+    array_unshift($header
+                        , ['header' => 'ID', 'field' => 'id', 'opts' => ['width' => 0]]
+                        , ['header' => 'Brand ID', 'field' => 'brand_id', 'opts' => ['width' => 8]]);
                         
     if ( $data['prd-include'] == true ) {
-      $header = $this->status->getHeader('product')['export'];
       $products = $this->products
-                    ->productDefault();
-      // price
-      if( $data['prd-price'] == true ) {
-        $header = array_merge($header
-                            , $this->status->getHeader('supplyPrice')['export']);
-        $products = $this->products
-                    ->productPriceJoin();
-      }
-      // moq
-      if( $data['prd-moq'] == true ) {
-        $header = array_merge($header
-                            , $this->status->getHeader('productSpq')['export']);
-        $products = $this->products
-                    ->productMoqJoin();
-      }
+                    ->select("product.id")
+                    ->select("brand.brand_id, UPPER(brand.brand_name) AS brand_name")
+                    ->select("product.barcode, product.productCode, product.img_url")
+                    ->select("product.name")
+                    ->select("product.name_en")
+                    ->select('product.box')
+                    ->select('product.contents_type_of_box')
+                    ->select('product.in_the_box, product.contents_of_box')
+                    ->select('product.package_detail')
+                    ->select("product.spec, product.spec2, product.container, product.spec_detail, product.spec_pcs")
+                    ->select("product.shipping_weight, product.sample")
+                    ->select("product.type, product.type_en, product.package, product.package_detail")
+                    ->select("product.renewal, product.etc")
+                    ->select("product.discontinued, product.display")
+                    ->select("product_price.retail_price")
+                    ->select('product_price.supply_price')
+                    ->select("IFNULL ( product_price.supply_rate_applied, 0 ) AS supply_rate_applied")
+                    ->select("IFNULL ( product_price.supply_rate, '0.00' ) AS supply_rate")
+                    ->select('product_price.not_calculating_margin')
+                    ->select(' IF (product_price.not_calculating_margin = 1, supply_price.price, "") AS price')
+                    ->select("product_price.taxation")
+                    ->select('product_spq.moq, product_spq.spq_inBox, product_spq.spq_outBox, product_spq.spq_criteria,
+                              product_spq.calc_code, product_spq.calc_unit')
+                    ->join("brand", "brand.brand_id = product.brand_id")
+                    ->join("brand_opts", "brand_opts.brand_id = brand.brand_id", 'left outer')
+                    ->join('product_price', "product_price.product_idx = product.id", 'left outer')
+                    ->join('( SELECT product_idx, GROUP_CONCAT(price SEPARATOR "/") AS price
+                              FROM supply_price
+                              WHERE available = 1
+                              GROUP BY product_idx ) AS supply_price'
+                            , 'supply_price.product_idx = product_price.product_idx'
+                            , 'left outer')
+                    ->join('product_spq', 'product_spq.product_idx = product.id AND product_spq.available = 1', 'left outer')
+                    ->where(['product.discontinued' => 0, 'product.display' => 1])
+                    ->where('product_price.available', 1)
+                    ->orderBy('brand.brand_id ASC, brand.own_brand DESC, product.id ASC')
+                    ->findAll();
+      // echo $this->products->getLastQuery();
+      // if ( !empty($products) ) {
+      //   $fileName = $products[0]['brand_name'].'_'.date('Ymd_his');
+      // }
 
       if ( empty($products) && !empty($brandId) ) {
         $products = $this->brands
                       ->select("'' AS id, brand_id, brand_name")
                       ->where('brand_id', $brandId)->findAll();
       }
-      $products = $this->products->findAll();
-    } else {
-      $header = array_merge($this->status->getHeader('product')['export']
-                          , $this->status->getHeader('supplyPrice')['export']
-                          , $this->status->getHeader('productSpq')['export']);
     }
-
-    array_unshift($header
-    , ['header' => 'ID', 'field' => 'id', 'opts' => ['width' => 0]]
-    , ['header' => 'Brand ID', 'field' => 'brand_id', 'opts' => ['width' => 8]]);
-
     $this->dataFile->exportData($header, $products, $fileName, 'xls');
   }
 
