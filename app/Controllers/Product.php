@@ -107,7 +107,7 @@ class Product extends BaseController {
                                   ->join('supply_price', "supply_price.margin_idx = margin.idx AND supply_price.product_idx=${productId}", 'left outer')
                                   ->findAll();
 
-      var_dump($this->data['margin']);
+      // var_dump($this->data['margin']);
       $this->data['pgroups'] = $this->pgroup->where(['brand_id' => $brandId])->findAll();
 
     } else {
@@ -120,6 +120,7 @@ class Product extends BaseController {
   }
 
   public function singleRegist() {
+    $data = array(); 
     if ( !empty($this->request->getPost()) ) {
       $data = $this->request->getPost();
     } 
@@ -174,7 +175,7 @@ class Product extends BaseController {
                               ->orWhere(['barcode'=> $data['product']['barcode']])
                               ->where(['productCode' => $data['product']['productCode']])
                               ->first();
-        
+
         if ( empty($prdValidCheck) ) {
           echo "empty<br/>";
           if ( $this->products->insert($data['product']) ) {
@@ -208,14 +209,15 @@ class Product extends BaseController {
               return redirect()->back()->with('error', '등록 성공');
             }
           }
-        // } else {
-        //   // if ( $data['product']['edit'] == true ) {
-        //   //   if ( !$this->products->save($data['product'])) {
-        //   //     return redirect()->back()->withInput()->with('error', '제품 등록중에 오류가 발생했습니다.');
-        //   //   }
-        //   // }
+        } else {
+          // if ( $data['product']['edit'] == true ) {
+          //   if ( !$this->products->save($data['product'])) {
+          //     return redirect()->back()->withInput()->with('error', '제품 등록중에 오류가 발생했습니다.');
+          //   }
+          // }
         }
       } else {
+        // 제품 등록이 되어서 이미 제품 가격이 있을 때.
         if ( !$this->products->save($data['product']) ) {
           return redirect()->back()->withInput()->with('error', '제품 등록중에 오류가 발생했습니다.');
         } 
@@ -252,6 +254,15 @@ class Product extends BaseController {
       if ( !isset($data['idx']) ) { // product check
         return redirect()->back()->withInput()->with('error', '수정할 상품이 선택되지 않았습니다.');
       } else {
+        $_temp['idx'] = $data['product_price_idx'];
+        $_temp['product_idx'] = $data['idx'];
+        
+        unset( $data['idx'] );
+        unset( $data['product_price_idx'] );
+        
+        $data['idx'] = $_temp['idx'];
+        $data['product_idx'] = $_temp['product_idx'];
+
         if ( !isset($data['supply_rate_applied']) || empty($data['supply_rate_applied'])) { // 상품별 공급률 변경일 경우
           $data['supply_rate_applied'] = 0;
           $data['supply_rate'] = NULL;
@@ -260,7 +271,7 @@ class Product extends BaseController {
         if ( empty($data['brand_id']) ) {
           return redirect()->back()->withInput()->with('error', '브랜드 정보가 없습니다');
         } else {
-          $getProductPrice = $this->productPrice->where(['product_idx'=> $data['idx'], 'available' => 1])->first();
+          $getProductPrice = $this->productPrice->where(['idx' => $data['idx'], 'product_idx'=> $data['product_idx'], 'available' => 1])->first();
           $brandOpt = $this->brandOpt->where(['brand_id' => $data['brand_id'], 'available' => 1])->first();
           if ( !empty($brandOpt) ) {
             // if ( !empty($getProductPrice) ) {
@@ -310,8 +321,8 @@ class Product extends BaseController {
                 unset($data['price']);
                 if ( strtolower(gettype($prices)) == 'array' ) {
                   foreach( $prices AS $price ) {
-                    $price['product_price_idx'] = $data['product_price_idx'];
-                    $price['product_idx'] = $data['idx'];
+                    $price['product_price_idx'] = $data['idx'];
+                    $price['product_idx'] = $data['product_idx'];
 
                     if ( isset($price['supply_price_idx']) ) {
                       $price['idx'] = $price['supply_price_idx'];
