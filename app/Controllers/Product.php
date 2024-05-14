@@ -175,7 +175,7 @@ class Product extends BaseController {
                               ->orWhere(['barcode'=> $data['product']['barcode']])
                               ->where(['productCode' => $data['product']['productCode']])
                               ->first();
-
+        
         if ( empty($prdValidCheck) ) {
           echo "empty<br/>";
           if ( $this->products->insert($data['product']) ) {
@@ -388,21 +388,67 @@ class Product extends BaseController {
         $productPriceArr = array();
         $successCnt = 0;
         $failCnt = 0;
-        
-        $contents = array_splice($data, 1, $numberOfFields);        
+
+        // echo $numberOfFields;
+        $excelFields = $data[0];
+        // var_dump($excelFields);
+        // echo count($excelFields);
+        // return;
+
+        if(count($excelFields) == 27){
+          $fields = array_merge( $this->status->getHeader('product')['export']);
+        }
+        if(count($excelFields) == 34){
+          $fields = array_merge( $this->status->getHeader('product')['export']
+                                , $this->status->getHeader('supplyPrice')['export']);
+        }
+        if(count($excelFields) == 33){
+          $fields = array_merge( $this->status->getHeader('product')['export']
+                                , $this->status->getHeader('productSpq')['export']);
+        }
+        if(count($excelFields) == 40){
+          $fields = array_merge( $this->status->getHeader('product')['export']
+                                , $this->status->getHeader('supplyPrice')['export']
+                                , $this->status->getHeader('productSpq')['export']);
+        }
+
+        array_unshift($fields, ['header'=> 'id', 'field' => 'id'], ['header' => 'Brand ID', 'field' => 'brand_id']);
+        // var_dump($fields);
+        // return;
+        $contents = array_splice($data, 1, $numberOfFields);       
         foreach($contents AS $i => $fileData) :
           for ( $j = 0; $j < $numberOfRecords; $j++) :
-            // if ( ($j >= 0 && $j < 27) && $j != 2 ) {
-            if ( ($j >= 0 && $j < 27) ) {
-              $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+            if(count($excelFields) == 27){
+              if ( ($j >= 0 && $j < 27) ) {
+                $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
             }
-
-            if ( ($j > 26 && $j < 34) ) {
-              $productPriceArr[$i][$fields[$j]['field']] = $fileData[$j];
+            if(count($excelFields) == 34){
+              if ( ($j >= 0 && $j < 27) ) {
+                $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+              if ( ($j > 26 && $j < 34) ) {
+                $productPriceArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
             }
-
-            if ( $j > 33 && $j <= $numberOfRecords ) {
-              $productSpqArr[$i][$fields[$j]['field']] = $fileData[$j];
+            if(count($excelFields) == 33){
+              if ( ($j >= 0 && $j < 27) ) {
+                $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+              if ( ($j > 26 && $j < 33) ) {
+                $productSpqArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+            }
+            if(count($excelFields) == 40){
+              if ( ($j >= 0 && $j < 27) ) {
+                $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+              if ( ($j > 26 && $j < 34) ) {
+                $productPriceArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+              if ( $j > 33 && $j <= $numberOfRecords ) {
+                $productSpqArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
             }
           endfor;
         endforeach;
@@ -534,8 +580,7 @@ class Product extends BaseController {
             endif;
           endforeach;
 
-          if ( !empty($productPriceArr) ) :
-            // var_dump($productPriceArr);
+          if ( !empty($productPriceArr) && (count($excelFields) == 34 || count($excelFields) == 40) ) :
             $marginRateModel = new MarginRateModel();
             $supplyPriceArr = [];
             // $brand_id = NULL;
@@ -552,7 +597,7 @@ class Product extends BaseController {
                   if ( is_null($price['supply_rate']) ) $price['supply_rate'] = NULL;
                   if ( is_null($price['not_calculating_margin']) ) $price['not_calculating_margin'] = 0;
                   if ( is_null($price['taxation']) ) $price['taxation'] = 0;
-
+                  
                   // if ( !empty($price['brand_id']) ) $brand_id = $price['brand_id'];
 
                   if ( !empty($price['not_calculating_margin']) ) {
@@ -646,12 +691,9 @@ class Product extends BaseController {
               // margin 정보가 없을 때 오류 처리하기.
               return;
             }
-          else :
-            // productpricearr empty
-            return;
           endif;
 
-          if ( !empty($supplyPriceArr)) :
+          if ( !empty($supplyPriceArr) && (count($excelFields) == 34 || count($excelFields) == 40) ) :
             // var_dump($supplyPriceArr);
             foreach($supplyPriceArr AS $supplyPrice) :
               if ( !empty($supplyPrice['product_idx']) && !empty($supplyPrice['product_price_idx']) && !empty($supplyPrice['price']) ) {
@@ -678,12 +720,9 @@ class Product extends BaseController {
                 }
               }
             endforeach;
-          else : 
-            // supply price arr is empty 
           endif;
 
-          if ( !empty($productSpqArr) ) :
-            // var_dump($productSpqArr);
+          if ( !empty($productSpqArr) && (count($excelFields) == 33 || count($excelFields) == 40) ) :
             foreach($productSpqArr AS $productSpq) :
               if ( !empty($productSpq['product_idx']) ) { // product id가 있는 것만 spq 등록하기
                 if ( is_null($productSpq['moq']) ) $productSpq['moq'] = !is_null($productSpq['spq_inBox']) ? $productSpq['spq_inBox'] : (!is_null($productSpq['spq_outBox']) ? $productSpq['spq_outBox'] : 10 );
@@ -765,65 +804,45 @@ class Product extends BaseController {
                                       'set_wrap'  =>  true,
                                       'colCnt' => 2, 
                                       'colName' => ['header', 'field']]);
-    $header = array_merge($this->status->getHeader('product')['export']
-                        , $this->status->getHeader('supplyPrice')['export']
-                        , $this->status->getHeader('productSpq')['export']);
-
-    array_unshift($header
-                        , ['header' => 'ID', 'field' => 'id', 'opts' => ['width' => 0]]
-                        , ['header' => 'Brand ID', 'field' => 'brand_id', 'opts' => ['width' => 8]]);
+                                      
                         
     if ( $data['prd-include'] == true ) {
+      $header = $this->status->getHeader('product')['export'];
       $products = $this->products
-                    ->select("product.id")
-                    ->select("brand.brand_id, UPPER(brand.brand_name) AS brand_name")
-                    ->select("product.barcode, product.productCode, product.img_url")
-                    ->select("product.name")
-                    ->select("product.name_en")
-                    ->select('product.box')
-                    ->select('product.contents_type_of_box')
-                    ->select('product.in_the_box, product.contents_of_box')
-                    ->select('product.package_detail')
-                    ->select("product.spec, product.spec2, product.container, product.spec_detail, product.spec_pcs")
-                    ->select("product.shipping_weight, product.sample")
-                    ->select("product.type, product.type_en, product.package, product.package_detail")
-                    ->select("product.renewal, product.etc")
-                    ->select("product.discontinued, product.display")
-                    ->select("product_price.retail_price")
-                    ->select('product_price.supply_price')
-                    ->select("IFNULL ( product_price.supply_rate_applied, 0 ) AS supply_rate_applied")
-                    ->select("IFNULL ( product_price.supply_rate, '0.00' ) AS supply_rate")
-                    ->select('product_price.not_calculating_margin')
-                    ->select(' IF (product_price.not_calculating_margin = 1, supply_price.price, "") AS price')
-                    ->select("product_price.taxation")
-                    ->select('product_spq.moq, product_spq.spq_inBox, product_spq.spq_outBox, product_spq.spq_criteria,
-                              product_spq.calc_code, product_spq.calc_unit')
-                    ->join("brand", "brand.brand_id = product.brand_id")
-                    ->join("brand_opts", "brand_opts.brand_id = brand.brand_id", 'left outer')
-                    ->join('product_price', "product_price.product_idx = product.id", 'left outer')
-                    ->join('( SELECT product_idx, GROUP_CONCAT(price SEPARATOR "/") AS price
-                              FROM supply_price
-                              WHERE available = 1
-                              GROUP BY product_idx ) AS supply_price'
-                            , 'supply_price.product_idx = product_price.product_idx'
-                            , 'left outer')
-                    ->join('product_spq', 'product_spq.product_idx = product.id AND product_spq.available = 1', 'left outer')
-                    ->where(['product.discontinued' => 0, 'product.display' => 1])
-                    ->where('product_price.available', 1)
-                    ->orderBy('brand.brand_id ASC, brand.own_brand DESC, product.id ASC')
-                    ->findAll();
-      // echo $this->products->getLastQuery();
-      // if ( !empty($products) ) {
-      //   $fileName = $products[0]['brand_name'].'_'.date('Ymd_his');
-      // }
+                    ->productDefault();
+      // price
+      if( $data['prd-price'] == true ) {
+        $header = array_merge($header
+                            , $this->status->getHeader('supplyPrice')['export']);
+        $products = $this->products
+                    ->productPriceJoin();
+      }
+      // moq
+      if( $data['prd-moq'] == true ) {
+        $header = array_merge($header
+                            , $this->status->getHeader('productSpq')['export']);
+        $products = $this->products
+                    ->productMoqJoin();
+      }
 
       if ( empty($products) && !empty($brandId) ) {
         $products = $this->brands
                       ->select("'' AS id, brand_id, brand_name")
                       ->where('brand_id', $brandId)->findAll();
       }
+      $products = $this->products->findAll();
+    } else {
+      $header = array_merge($this->status->getHeader('product')['export']
+                          , $this->status->getHeader('supplyPrice')['export']
+                          , $this->status->getHeader('productSpq')['export']);
     }
+
+    array_unshift($header
+    , ['header' => 'ID', 'field' => 'id', 'opts' => ['width' => 0]]
+    , ['header' => 'Brand ID', 'field' => 'brand_id', 'opts' => ['width' => 8]]);
+
     $this->dataFile->exportData($header, $products, $fileName, 'xls');
+
   }
 
   public function attachProductSupplyPrice() {
