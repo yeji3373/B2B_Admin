@@ -107,7 +107,7 @@ class Product extends BaseController {
                                   ->join('supply_price', "supply_price.margin_idx = margin.idx AND supply_price.product_idx=${productId}", 'left outer')
                                   ->findAll();
 
-      // var_dump($this->data['margin']);
+      var_dump($this->data['margin']);
       $this->data['pgroups'] = $this->pgroup->where(['brand_id' => $brandId])->findAll();
 
     } else {
@@ -120,7 +120,6 @@ class Product extends BaseController {
   }
 
   public function singleRegist() {
-    $data = array(); 
     if ( !empty($this->request->getPost()) ) {
       $data = $this->request->getPost();
     } 
@@ -209,15 +208,14 @@ class Product extends BaseController {
               return redirect()->back()->with('error', '등록 성공');
             }
           }
-        } else {
-          // if ( $data['product']['edit'] == true ) {
-          //   if ( !$this->products->save($data['product'])) {
-          //     return redirect()->back()->withInput()->with('error', '제품 등록중에 오류가 발생했습니다.');
-          //   }
-          // }
+        // } else {
+        //   // if ( $data['product']['edit'] == true ) {
+        //   //   if ( !$this->products->save($data['product'])) {
+        //   //     return redirect()->back()->withInput()->with('error', '제품 등록중에 오류가 발생했습니다.');
+        //   //   }
+        //   // }
         }
       } else {
-        // 제품 등록이 되어서 이미 제품 가격이 있을 때.
         if ( !$this->products->save($data['product']) ) {
           return redirect()->back()->withInput()->with('error', '제품 등록중에 오류가 발생했습니다.');
         } 
@@ -254,15 +252,6 @@ class Product extends BaseController {
       if ( !isset($data['idx']) ) { // product check
         return redirect()->back()->withInput()->with('error', '수정할 상품이 선택되지 않았습니다.');
       } else {
-        $_temp['idx'] = $data['product_price_idx'];
-        $_temp['product_idx'] = $data['idx'];
-        
-        unset( $data['idx'] );
-        unset( $data['product_price_idx'] );
-        
-        $data['idx'] = $_temp['idx'];
-        $data['product_idx'] = $_temp['product_idx'];
-
         if ( !isset($data['supply_rate_applied']) || empty($data['supply_rate_applied'])) { // 상품별 공급률 변경일 경우
           $data['supply_rate_applied'] = 0;
           $data['supply_rate'] = NULL;
@@ -271,7 +260,7 @@ class Product extends BaseController {
         if ( empty($data['brand_id']) ) {
           return redirect()->back()->withInput()->with('error', '브랜드 정보가 없습니다');
         } else {
-          $getProductPrice = $this->productPrice->where(['idx' => $data['idx'], 'product_idx'=> $data['product_idx'], 'available' => 1])->first();
+          $getProductPrice = $this->productPrice->where(['product_idx'=> $data['idx'], 'available' => 1])->first();
           $brandOpt = $this->brandOpt->where(['brand_id' => $data['brand_id'], 'available' => 1])->first();
           if ( !empty($brandOpt) ) {
             // if ( !empty($getProductPrice) ) {
@@ -321,12 +310,12 @@ class Product extends BaseController {
                 unset($data['price']);
                 if ( strtolower(gettype($prices)) == 'array' ) {
                   foreach( $prices AS $price ) {
-                    $price['product_price_idx'] = $data['idx'];
-                    $price['product_idx'] = $data['product_idx'];
+                    $price['product_price_idx'] = $data['product_price_idx'];
+                    $price['product_idx'] = $data['idx'];
 
                     if ( isset($price['supply_price_idx']) ) {
                       $price['idx'] = $price['supply_price_idx'];
-                      if ( empty($data['not_calculating_margin']) && !empty($data['supply_price']) && !empty($price['margin_rate'])) {
+                      if ( empty($data['not_calculating_margin']) && !empty($data['supply_price'])) {
                         $price['price'] = round($data['supply_price'] * $price['margin_rate']);
                       } 
                       var_dump($price);
@@ -370,11 +359,6 @@ class Product extends BaseController {
     if ( $this->request->getFile('file') ) {
       $file = $this->request->getFile('file');      
       $data = $this->dataFile->attachData($file);
-
-      $fields = array_merge( $this->status->getHeader('product')['export']
-                                  , $this->status->getHeader('supplyPrice')['export']
-                                  , $this->status->getHeader('productSpq')['export']);
-      array_unshift($fields, ['header'=> 'id', 'field' => 'id'], ['header' => 'Brand ID', 'field' => 'brand_id']);
 
       if ( !empty($data) ) {
         // $brandCheck = $this->brands->where('brand_id', $brand_id)->first();
@@ -453,9 +437,13 @@ class Product extends BaseController {
           endfor;
         endforeach;
 
+        // echo "prd<br>";
         // var_dump($productArr);
+        // echo "prdPrice<br>";
         // var_dump($productPriceArr);
+        // echo "prdSpq<br>";
         // var_dump($productSpqArr);
+        // return;
 
         if ( !empty($productArr) ) :
           foreach($productArr AS $prd_i => $product ) :
@@ -586,6 +574,7 @@ class Product extends BaseController {
             // $brand_id = NULL;
             
             $margins = $this->margin->where('available', 1)->orderBy('margin_level ASC')->findAll();
+
             if ( !empty($margins) ) {
               foreach($productPriceArr AS $price_i => $price ) :
                 $priceTemp = [];
@@ -627,7 +616,9 @@ class Product extends BaseController {
                                                   ->first();
                   if ( empty($prdPrice) ) {
                     $price['available'] = 1;
+                    echo "여기인가요";
                     if ( $this->productPrice->save($price) ) {
+                      echo "저장되나..";
                       $product_price_idx = $this->productPrice->getInsertID();
                     }
                   } else {
@@ -635,16 +626,12 @@ class Product extends BaseController {
                     // var_dump($price);
                     if ( $price['product_idx'] == $prdPrice['product_idx'] ) {
                       $price['idx'] = $prdPrice['idx'];
-                      if ( $price['retail_price'] != $prdPrice['retail_price']
-                          || $price['supply_price'] != $prdPrice['supply_price'] ) {
-                        if ( $this->productPrice->save($price) ) {
-                          $product_price_idx = $prdPrice['idx'];
-                        } else {
-                          array_push($failedData, $contents[$prd_i]);
-                        }
-                      } else {
+                      if ( $this->productPrice->save($price) ) {
                         $product_price_idx = $prdPrice['idx'];
+                      } else {
+                        array_push($failedData, $contents[$prd_i]);
                       }
+                      $product_price_idx = $prdPrice['idx'];
                     }
                   }
                   
