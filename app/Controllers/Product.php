@@ -360,11 +360,6 @@ class Product extends BaseController {
       $file = $this->request->getFile('file');      
       $data = $this->dataFile->attachData($file);
 
-      $fields = array_merge( $this->status->getHeader('product')['export']
-                                  , $this->status->getHeader('supplyPrice')['export']
-                                  , $this->status->getHeader('productSpq')['export']);
-      array_unshift($fields, ['header'=> 'id', 'field' => 'id'], ['header' => 'Brand ID', 'field' => 'brand_id']);
-
       if ( !empty($data) ) {
         // $brandCheck = $this->brands->where('brand_id', $brand_id)->first();
         // if ( empty($brandCheck) ) {
@@ -377,28 +372,78 @@ class Product extends BaseController {
         $productPriceArr = array();
         $successCnt = 0;
         $failCnt = 0;
-        
-        $contents = array_splice($data, 1, $numberOfFields);        
+
+        // echo $numberOfFields;
+        $excelFields = $data[0];
+        // var_dump($excelFields);
+        // echo count($excelFields);
+        // return;
+
+        if(count($excelFields) == 27){
+          $fields = array_merge( $this->status->getHeader('product')['export']);
+        }
+        if(count($excelFields) == 34){
+          $fields = array_merge( $this->status->getHeader('product')['export']
+                                , $this->status->getHeader('supplyPrice')['export']);
+        }
+        if(count($excelFields) == 33){
+          $fields = array_merge( $this->status->getHeader('product')['export']
+                                , $this->status->getHeader('productSpq')['export']);
+        }
+        if(count($excelFields) == 40){
+          $fields = array_merge( $this->status->getHeader('product')['export']
+                                , $this->status->getHeader('supplyPrice')['export']
+                                , $this->status->getHeader('productSpq')['export']);
+        }
+
+        array_unshift($fields, ['header'=> 'id', 'field' => 'id'], ['header' => 'Brand ID', 'field' => 'brand_id']);
+        // var_dump($fields);
+        // return;
+        $contents = array_splice($data, 1, $numberOfFields);       
         foreach($contents AS $i => $fileData) :
           for ( $j = 0; $j < $numberOfRecords; $j++) :
-            // if ( ($j >= 0 && $j < 27) && $j != 2 ) {
-            if ( ($j >= 0 && $j < 27) ) {
-              $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+            if(count($excelFields) == 27){
+              if ( ($j >= 0 && $j < 27) ) {
+                $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
             }
-
-            if ( ($j > 26 && $j < 34) ) {
-              $productPriceArr[$i][$fields[$j]['field']] = $fileData[$j];
+            if(count($excelFields) == 34){
+              if ( ($j >= 0 && $j < 27) ) {
+                $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+              if ( ($j > 26 && $j < 34) ) {
+                $productPriceArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
             }
-
-            if ( $j > 33 && $j <= $numberOfRecords ) {
-              $productSpqArr[$i][$fields[$j]['field']] = $fileData[$j];
+            if(count($excelFields) == 33){
+              if ( ($j >= 0 && $j < 27) ) {
+                $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+              if ( ($j > 26 && $j < 33) ) {
+                $productSpqArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+            }
+            if(count($excelFields) == 40){
+              if ( ($j >= 0 && $j < 27) ) {
+                $productArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+              if ( ($j > 26 && $j < 34) ) {
+                $productPriceArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
+              if ( $j > 33 && $j <= $numberOfRecords ) {
+                $productSpqArr[$i][$fields[$j]['field']] = $fileData[$j];
+              }
             }
           endfor;
         endforeach;
 
+        // echo "prd<br>";
         // var_dump($productArr);
+        // echo "prdPrice<br>";
         // var_dump($productPriceArr);
+        // echo "prdSpq<br>";
         // var_dump($productSpqArr);
+        // return;
 
         if ( !empty($productArr) ) :
           foreach($productArr AS $prd_i => $product ) :
@@ -523,13 +568,13 @@ class Product extends BaseController {
             endif;
           endforeach;
 
-          if ( !empty($productPriceArr) ) :
-            // var_dump($productPriceArr);
+          if ( !empty($productPriceArr) && (count($excelFields) == 34 || count($excelFields) == 40) ) :
             $marginRateModel = new MarginRateModel();
             $supplyPriceArr = [];
             // $brand_id = NULL;
             
             $margins = $this->margin->where('available', 1)->orderBy('margin_level ASC')->findAll();
+
             if ( !empty($margins) ) {
               foreach($productPriceArr AS $price_i => $price ) :
                 $priceTemp = [];
@@ -541,7 +586,7 @@ class Product extends BaseController {
                   if ( is_null($price['supply_rate']) ) $price['supply_rate'] = NULL;
                   if ( is_null($price['not_calculating_margin']) ) $price['not_calculating_margin'] = 0;
                   if ( is_null($price['taxation']) ) $price['taxation'] = 0;
-
+                  
                   // if ( !empty($price['brand_id']) ) $brand_id = $price['brand_id'];
 
                   if ( !empty($price['not_calculating_margin']) ) {
@@ -571,7 +616,9 @@ class Product extends BaseController {
                                                   ->first();
                   if ( empty($prdPrice) ) {
                     $price['available'] = 1;
+                    echo "여기인가요";
                     if ( $this->productPrice->save($price) ) {
+                      echo "저장되나..";
                       $product_price_idx = $this->productPrice->getInsertID();
                     }
                   } else {
@@ -579,16 +626,12 @@ class Product extends BaseController {
                     // var_dump($price);
                     if ( $price['product_idx'] == $prdPrice['product_idx'] ) {
                       $price['idx'] = $prdPrice['idx'];
-                      if ( $price['retail_price'] != $prdPrice['retail_price']
-                          || $price['supply_price'] != $prdPrice['supply_price'] ) {
-                        if ( $this->productPrice->save($price) ) {
-                          $product_price_idx = $prdPrice['idx'];
-                        } else {
-                          array_push($failedData, $contents[$prd_i]);
-                        }
-                      } else {
+                      if ( $this->productPrice->save($price) ) {
                         $product_price_idx = $prdPrice['idx'];
+                      } else {
+                        array_push($failedData, $contents[$prd_i]);
                       }
+                      $product_price_idx = $prdPrice['idx'];
                     }
                   }
                   
@@ -635,12 +678,9 @@ class Product extends BaseController {
               // margin 정보가 없을 때 오류 처리하기.
               return;
             }
-          else :
-            // productpricearr empty
-            return;
           endif;
 
-          if ( !empty($supplyPriceArr)) :
+          if ( !empty($supplyPriceArr) && (count($excelFields) == 34 || count($excelFields) == 40) ) :
             // var_dump($supplyPriceArr);
             foreach($supplyPriceArr AS $supplyPrice) :
               if ( !empty($supplyPrice['product_idx']) && !empty($supplyPrice['product_price_idx']) && !empty($supplyPrice['price']) ) {
@@ -667,12 +707,9 @@ class Product extends BaseController {
                 }
               }
             endforeach;
-          else : 
-            // supply price arr is empty 
           endif;
 
-          if ( !empty($productSpqArr) ) :
-            // var_dump($productSpqArr);
+          if ( !empty($productSpqArr) && (count($excelFields) == 33 || count($excelFields) == 40) ) :
             foreach($productSpqArr AS $productSpq) :
               if ( !empty($productSpq['product_idx']) ) { // product id가 있는 것만 spq 등록하기
                 if ( is_null($productSpq['moq']) ) $productSpq['moq'] = !is_null($productSpq['spq_inBox']) ? $productSpq['spq_inBox'] : (!is_null($productSpq['spq_outBox']) ? $productSpq['spq_outBox'] : 10 );

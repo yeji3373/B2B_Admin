@@ -59,7 +59,7 @@
                   </label>
                 </div>
               </div>
-              <div class='btn btn-sm btn-secondary mt-1 product-csv-btn'>제품등록 CSV 다운</div>
+              <div class='btn btn-sm btn-secondary mt-1 product-csv-btn'>제품등록 엑셀 다운</div>
             </td>
           </tr>
           <tr>
