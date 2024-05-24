@@ -3,12 +3,12 @@
     <a class='btn btn-sm btn-secondary' href='<?=base_url('product/regist')?>'>제품등록/관리</a>
     <!-- <a class='btn btn-sm btn-secondary ms-2' href='<?//=base_url('brand')?>'>브랜드 등록/관리</a> -->
   </div>
-  <h6>제품</h6>
+  <!-- <h6>제품</h6> -->
   <?= view('Auth\Views\_notifications') ?>
 
   <form method='get' action='<?=base_url('product')?>'>
     <fieldset class='my-2 px-2 pb-2 border border-secondary show-legend'>
-      <legend>검색</legend>
+      <legend>제품 검색</legend>
       <div class='d-flex flex-row flex-wrap align-items-end mb-2'>
         <div class='d-flex flex-column'>
           <label class='form-label'>브랜드</label>
@@ -17,7 +17,9 @@
             <?php if ( !empty($brands) ) :
             foreach($brands as $brand) : ?>
               <option class='text-uppercase' value='<?=$brand['brand_id']?>' 
-              <?=isset($_GET['brand_id']) && $_GET['brand_id'] == $brand['brand_id'] ? 'selected' : '' ?>><?=$brand['brand_name']?></option>
+              <?=isset($_GET['brand_id']) && $_GET['brand_id'] == $brand['brand_id'] ? 'selected' : '' ?>>
+                <?=stripslashes(htmlspecialchars($brand['brand_name']))?>
+              </option>
             <?php endforeach;
             endif; ?>
           </select>

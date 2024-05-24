@@ -7,7 +7,7 @@
 
   <div class='ms-5 <?=(isset($edit) && $edit === true) ? 'd-none' : ''?>'>
     <h6><?=lang('Product.bulkInput')?></h6>
-    <form action="<?=site_url('product/attachProduct') ?>" method="post" enctype="multipart/form-data">
+    <form action="<?=site_url('product/attachProduct')?>" method="post" enctype="multipart/form-data">
       <table class='w-100'>
         <tbody>
           <tr>
@@ -24,7 +24,9 @@
                   <?php foreach ( $brands as $brand) : ?>
                     <option value="<?=$brand['brand_id']?>" 
                       data-supply-applied='<?=$brand['supply_rate_based']?>' 
-                      data-supply-rate='<?=($brand['supply_rate_by_brand'] * 100)?>'><?=$brand['brand_name']?></option>
+                      data-supply-rate='<?=($brand['supply_rate_by_brand'] * 100)?>'>
+                      <?=stripslashes(htmlspecialchars(strtoupper($brand['brand_name'])))?>
+                    </option>
                   <?php endforeach ?>
                 </select>
                 <?php endif; ?>
@@ -37,41 +39,41 @@
             </td>
           </tr>
           <tr>
-            <th class='border border-0 border-dark border-bottom border-end w-25'>정보 다운로드</th>
+            <th class='border border-0 border-dark border-bottom border-end w-25'>옵션</th>
             <td class='text-start'>
               <div class='d-flex flex-row'>
                 <div class='form-check mt-2 me-2'>
                   <label class='form-check-label fs-inherit fw-light'>
-                    <input class='form-check-input prd-include-chk value-change' type='checkbox' value='0'>
-                    <span>제품 정보 포함</span>
+                    <input class='form-check-input prd-include-chk value-change' name='prd-include' type='checkbox' value='0'>
+                    <span>제품 정보</span>
                   </label>
                 </div>
-                <div class='form-check mt-2 me-2 d-none update'>
+                <div class='form-check mt-2 me-2 update'>
                   <label class='form-check-label fs-inherit fw-light'>
-                    <input class='form-check-input prd-price-chk value-change' type='checkbox' value='0'>
-                    <span>제품 가격만 업데이트</span>
+                    <input class='form-check-input prd-include-chk value-change' name='prd-price-include' type='checkbox' value='0'>
+                    <span>제품 가격</span>
                   </label>
                 </div>
-                <div class='form-check mt-2 d-none update'>
+                <div class='form-check mt-2 update'>
                   <label class='form-check-label fs-inherit fw-light'>
-                    <input class='form-check-input prd-moq-chk value-change' type='checkbox' value='0'>
-                    <span>제품 수량만 업데이트</span>
+                    <input class='form-check-input prd-include-chk value-change' name='prd-moq-include' type='checkbox' value='0'>
+                    <span>제품 MOQ/SPQ</span>
                   </label>
                 </div>
               </div>
-              <div class='btn btn-sm btn-secondary mt-1 product-csv-btn'>제품등록 엑셀 다운</div>
             </td>
           </tr>
           <tr>
-            <th class='border border-0 border-dark border-end w-25'><?=lang('Product.csvFile')?></th>
+            <th class='border border-0 border-dark border-end w-25'><?=lang('Product.fileUpload')?></th>
             <td>
               <input type="file" name="file" class="form-control form-control-sm w-50" id="file">
             </td>
           </tr>
         </tbody>
       </table>
-      <div class='mt-4'>
-        <input type="submit" name="submit" value="<?=lang('Product.registration')?>" class="btn btn-dark" />
+      <div class='mt-4 text-center'>
+        <button class="btn btn-dark attach-btn me-2"><?=lang('Product.registration')?></button>
+        <button class='btn btn-secondary product-csv-btn'>엑셀 다운</button>
       </div>
     </form>
   </div>

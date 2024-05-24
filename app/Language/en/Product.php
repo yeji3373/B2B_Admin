@@ -35,5 +35,5 @@ return [
   
   'b2b'             => 'B2B 판매',
 
-  'csvFile'         => 'csv file upload',
+  'fileUpload'      => 'File Upload',
 ];
