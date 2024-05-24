@@ -24,9 +24,6 @@
   </div>
   <?php foreach ($brands as $i => $brand) : ?>
   <form class='m-0' action='<?=base_url('brand/edit')?>' method='post'>
-  <input type='hidden' name='margin_rate_control' value='0'>
-  <input type='hidden' name='supply_rate_control' value='0'>
-  <input type='hidden' name='brand_control' value='0'>
   <div class='d-flex flex-row w-100 brand-list-body'>
     <div class='border border-dark border-0 border-bottom border-end list-items'>
       <input type='hidden' name='brand_id' value='<?=$brand['brand_id']?>'>
@@ -34,7 +31,7 @@
     </div>
     <div class='border border-dark border-0 border-bottom border-end text-start list-items w-30p'>
       <input type='text'
-        name='brand[<?=$brand['brand_id']?>][brand_name]'
+        name='brand[brand_name]'
         data-old='<?=$brand['brand_name']?>'
         class='form-control form-control-sm w-100'
         placeholder='브랜드 영문 이름 입력'
@@ -47,7 +44,7 @@
       <div class='form-check form-check-inline my-1 min-height-auto'>
         <label class='form-check-label'>
           <input class='form-check-input'
-            name='brand[<?=$brand['brand_id']?>][own-brand]'
+            name='brand[own-brand]'
             data-old='<?=$brand['own_brand']?>'
             type='radio'
             value='1'
@@ -58,7 +55,7 @@
       <div class='form-check form-check-inline my-1 me-0 min-height-auto'>
         <label class='form-check-label'>
           <input class='form-check-input'
-            name='brand[<?=$brand['brand_id']?>][own-brand]'
+            name='brand[own-brand]'
             type='radio'
             value='0'
             <?=$brand['own_brand'] == 0 ? 'checked' : ''?>>
@@ -68,10 +65,10 @@
     </div>
     <div class='border border-dark border-0 border-bottom border-end list-items w-18p'>
       <div class='form-check form-check-inline my-1 min-height-auto'>
-        <input type='hidden' name='brand_opt[<?=$brand['brand_id']?>][idx]' value='<?=$brand['brand_opt_idx']?>'>
+        <input type='hidden' name='brand_opt[idx]' value='<?=$brand['brand_opt_idx']?>'>
         <label class='form-check-label'>
           <input class='form-check-input supply_rate_based'
-            name='brand_opt[<?=$brand['brand_id']?>][supply_rate_based]'
+            name='brand_opt[supply_rate_based]'
             data-old='<?=$brand['supply_rate_based']?>'
             type='radio'
             value='1'
@@ -82,7 +79,7 @@
       <div class='form-check form-check-inline my-1 me-0 min-height-auto'>
         <label class='form-check-label'>
           <input class='form-check-input supply_rate_based'
-            name='brand_opt[<?=$brand['brand_id']?>][supply_rate_based]'
+            name='brand_opt[supply_rate_based]'
             data-old='<?=$brand['supply_rate_based']?>'
             type='radio'
             value='0'
@@ -94,7 +91,7 @@
     <div class='border border-dark border-0 border-bottom border-end list-items w-10p'>
       <div class='d-flex flex-row align-items-end'>
         <input type='text'
-          name='brand_opt[<?=$brand['brand_id']?>][supply_rate_by_brand]'
+          name='brand_opt[supply_rate_by_brand]'
           class='form-control form-control-sm me-1 w-75 supply_rate_by_brand'
           data-old='<?=!empty($brand['supply_rate_by_brand']) ? ($brand['supply_rate_by_brand'] * 100) : ''?>'
           placeholder='20'
@@ -112,25 +109,22 @@
           <input type='hidden'
                 class='margin_rate'
                 name='margin_rate[<?=$j?>][idx]' 
-                value='<?=!empty($brand['marginRate']) && isset($brand['marginRate'][$j]['idx']) ? $brand['marginRate'][$j]['idx'] : '' ?>'
-                <?=!empty($brand['marginRate']) && ( isset($brand['marginRate'][$j]['idx']) && $brand['marginRate'][$j]['available'] == 1 ) ? '' : 'disabled' ?> >
+                value='<?=!empty($brand['marginRate']) && isset($brand['marginRate'][$j]['idx']) ? $brand['marginRate'][$j]['idx'] : '' ?>'>
           <input type='hidden' 
                 class='margin_rate'
                 name='margin_rate[<?=$j?>][brand_id]'
-                value='<?=!empty($brand['marginRate']) && isset($brand['marginRate'][$j]['brand_id']) ? $brand['marginRate'][$j]['brand_id'] : $brand['brand_id']?>'
-                <?=!empty($brand['marginRate']) && ( isset($brand['marginRate'][$j]['idx']) && $brand['marginRate'][$j]['available'] == 1 ) ? '' : 'disabled' ?>>
+                value='<?=!empty($brand['marginRate']) && isset($brand['marginRate'][$j]['brand_id']) ? $brand['marginRate'][$j]['brand_id'] : $brand['brand_id']?>'>
           <input type='hidden'
                 class='margin_rate'
                 name='margin_rate[<?=$j?>][margin_idx]'
-                value='<?=$m['idx']?>'
-                <?=!empty($brand['marginRate']) && ( isset($brand['marginRate'][$j]['idx']) && $brand['marginRate'][$j]['available'] == 1 ) ? '' : 'disabled' ?>>
+                value='<?=$m['idx']?>'>
+          <input type='hidden'
+                class='margin_rate'
+                name='margin_rate[<?=$j?>][margin_level]'
+                value='<?=$m['idx']?>'>
           <label class='form-check-label d-flex flex-row align-items-center justify-content-center'>
             <input type='checkbox' 
                   class='me-1 value-change margin_section'
-                  data-old='<?=!empty($brand['marginRate'][$j]) ? $brand['marginRate'][$j]['available'] : '' ?>'
-                  data-find-parent='div.form-check'
-                  data-find-target='[name="margin_rate[<?=$j?>][margin_rate]"]'
-                  data-condition='[{"condition": "0", "action": "disabled", "value": true}, {"condition": "1", "action": "disabled", "value": false}, {"condition": "0", "action": "required", "value": false}, {"condition": "1", "action": "required", "value": true}]'
                   name='margin_rate[<?=$j?>][available]'
                   value='<?=(!empty($brand['marginRate']) && isset($brand['marginRate'][$j]['available'])) ? $brand['marginRate'][$j]['available'] : 0 ?>'
                   <?=!empty($brand['marginRate']) && (isset($brand['marginRate'][$j]['margin_idx']) && $brand['marginRate'][$j]['available'] == 1 ) && $brand['marginRate'][$j]['margin_idx'] == $m['idx'] ? 'checked' : '' ?>>
@@ -152,7 +146,7 @@
       <div class='form-check form-check-inline my-1 min-height-auto'>
         <label class='form-check-label'>
           <input class='form-check-input'
-            name='brand[<?=$brand['brand_id']?>][available]'
+            name='brand[available]'
             data-old='<?=$brand['available']?>'
             type='radio'
             value='1'
@@ -164,7 +158,7 @@
       <div class='form-check form-check-inline my-1 min-height-auto'>
         <label class='form-check-label'>
           <input class='form-check-input'
-            name='brand[<?=$brand['brand_id']?>][available]'
+            name='brand[available]'
             data-old='<?=$brand['available']?>'
             type='radio'
             value='0'
