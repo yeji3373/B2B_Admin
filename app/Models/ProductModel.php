@@ -5,7 +5,9 @@ use CodeIgniter\Model;
 class ProductModel extends Model {
   protected $table = 'product';
   protected $primaryKey = 'id';
-  protected $useSoftDeletes = false;
+
+  protected $returnType = 'array';
+  protected $useSoftDeletes = true;
 
   protected $allowedFields = [
     'brand_id', 'category_ids', 'barcode', 'productCode',
@@ -23,7 +25,33 @@ class ProductModel extends Model {
   protected $useTimestamps = true;
   protected $createdField = 'created_at';
   protected $updatedField = 'updated_at';
+  protected $deletedField = 'deleted_at';
   protected $dateFormat = "datetime";
+
+  // protected $allowCallbacks = true;
+  // protected $beforeInsert = ['before'];
+  // protected $afterInsert = ['after'];
+
+  // protected $beforeUpdate = ['before'];
+  // protected $afterUpdate = ['after'];
+
+  // // function __construct() {
+  // //   $this->transStrict(false);
+  // //   $this->transBegin();
+  // // }
+
+  // function test($a) {
+  //   $id = $a['id'];
+  //   // unset($a['id']);
+  //   // $a = array_values($a);
+
+  //   // return "$id ".implode(',', $a);
+  //   // return $a;
+  //   // $this->query("INSERT INTO {$this->table}({explode(',', array_keys($a))}) VALUES ({array_values($a)})");
+  //   $this->query("UPDATE {$this->table} SET hs_code = NULL WHERE id = 1");
+  //   // $this->save($a);
+  //   // return $this->transStatus();
+  // }
 
   function productDefault() {
     $this->select("product.id")
@@ -72,4 +100,24 @@ class ProductModel extends Model {
         ->join('product_spq', 'product_spq.product_idx = product.id AND product_spq.available = 1', 'left outer');
     return $this;
   }
+
+  function productMinimalizeJoin() {
+    return $this->select('product.id')
+                ->select('brand.brand_id, UPPER(brand.brand_name) AS brand_name')
+                ->select('product.barcode, product.name, product.name_en')
+                ->join('brand', 'brand.brand_id = product.brand_id'); 
+  }
+
+  // function before() {
+  //   $this->transStrict(false);
+  //   $this->transBegin();
+  //   // $this->transStart();
+  // }
+
+  // function after() {
+  //   if ( $this->transStatus() ) {
+  //     $this->transCommit();
+  //   } else $this->transRollback();
+  //   // $this->transRollback();
+  // }
 }

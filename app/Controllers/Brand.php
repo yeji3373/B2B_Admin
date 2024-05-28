@@ -110,121 +110,68 @@ class Brand extends BaseController {
       }
       
       if ( !empty($data['margin_rate']) ) {
-        // product_price : supply_rate_applied, supply_rate, not_calculating_margin
+        $marginRate = $data['margin_rate'];
+        foreach($marginRate AS $i => $m) {
+          if ( !isset($m['available']) ) $m['available'] = 0;
+          if ( !empty($m['available']) ) {
+            if ( $m['margin_rate'] <= 0 ) return redirect()->back()->with('error', '마진율이 존재하지 않습니다'); 
+            else $m['margin_rate'] = ($m['margin_rate'] / 100);
+          }
+          
+          $getMarginRate = $this->marginRate->where(['idx' => $m['idx']]);
+          if ( !empty($getMarginRate) ) {
+            if ( !$this->marginRate->save($m) ) {
+              return redirect()->back()->with('error', '마진율 수정/입력에 오류가 있습니다.');
+            } else {
+              $marginRate[$i]['available'] = $m['available'];
+              if (isset($m['margin_rate'])) $marginRate[$i]['margin_rate'] = $m['margin_rate'];
+            }
+          } else return redircet()->back()->with('error', '등록된 마진율이 없습니다. 확인 부탁드립니다.');
+        }
+        // var_dump($marginRate);
+        // return;
         $products = $this->products->where(['brand_id' => $data['brand_id']])->findAll();
-        
         if ( !empty($products) ) {
-          foreach($products AS $product) {
+          foreach ( $products AS $product ) {
             $prdPrice = $this->productPrice->where(['product_idx' => $product['id'], 'available'=> 1])->first();
             if ( !empty($prdPrice) ) {
-              if ( empty($prdPrice['not_calculating_margin']) ) { // 마진값 직접 입력 안하고, 자동 계산하기
-                if ( !empty($prdPrice['supply_price']) ) {
-                  var_dump($prdPrice);
+              if ( empty($prdPrice['not_calculating_margin']) ) { // 마진값 직접 입력하는 값 사용 안하고, 자동으로 계산할때
+                if ( !empty($prdPrice['supply_price']) ) { // 마진값 계산 시 공급가를 기준으로 하기 때문에 공급가 여부 필요
+                  $prdIdx = ['product_idx' => $product['id']
+                            , 'product_price_idx' => $prdPrice['idx']];
 
-                  // // $supplyPrices = $this->supplyPrice->where(['product_idx' => $prdPrice['product_idx']])->findAll();
-                  // // if ( !empty($supplyPrices) ) {
-                  //   // foreach( $supplyPrices AS $supplyPrice ) { 
-                  //     // var_dump($supplyPrice);
-                  foreach($data['margin_rate'] AS $m) {
-                    var_dump($m);
-                    $supplyPrices = $this
-                                      ->supplyPrice
-                                      ->where(['product_idx'        => $prdPrice['product_idx']
-                                              , 'product_price_idx' => $prdPrice['idx']
-                                              , 'margin_idx'        => $m['margin_idx']
-                                              , 'margin_level'      => $m['margin_level']])
-                                      ->findAll();
-                  //   if ( !isset($m['available']) ) {
-                  //     $m['available'] = 0;
-                  //   } else {
-                  //     if ( !empty($m['margin_rate']) ) {
-                  //       $m['margin_rate'] = ($m['margin_rate'] / 100);
-                  //     } else $m['available'] = 0;
-                  //   }                      
-                  //   var_dump($m);
+                  foreach ( $marginRate AS $m ) {
+                    $price = array();
+                    $price = array_merge($prdIdx, [ 'available' => $m['available'] ]);
+                    if ( isset($m['margin_rate']) ) $price['price'] = ceil($prdPrice['supply_price'] * $m['margin_rate']);
+                    $supplyPrice = $this
+                                        ->supplyPrice
+                                        ->where(array_merge($prdIdx, 
+                                                            ['margin_idx'        => $m['margin_idx']
+                                                            , 'margin_level'      => $m['margin_level']]))
+                                        ->first();
+                    if ( !empty($supplyPrice) ) {
+                      $price['idx'] = $supplyPrice['idx'];
+                      var_dump($m);
+                      var_dump($supplyPrice);
+                    } else {
+                      if ( empty($m['available']) ) continue;
+                      $price['margin_idx'] = $m['margin_idx']; 
+                      $price['margin_level'] = $m['margin_level'];
+                    }
+                    var_dump($price);
+                    $this->supplyPrice->save($price);
                   }
-                  //   // }
-                  // // }
-                }
+                } else return redirect()->back()->with('error', '공급가가 누락되었습니다. 공급가가 없으면 계산이 불가능합니다.');
               }
+            } else {
+              return redircet()->back()->with('error', '제품의 가격 정보가 없습니다.');
             }
           }
         }
       }
-      return;
-
-
-      // if ( $data['supply_rate_control'] == true ) {
-      //   if ( !empty($data['brand_opt']) ) {
-      //     $brandOpt = $data['brand_opt'][$data['brand_id']];
-      //     $brandOpt['brand_id'] = $data['brand_id'];
-
-      //     // $brandOptCheck = $this->brandOpt->where(['brand_id'=> $brandOpt['brand_id'], 'available' => 1])->first();
-      //     // if ( !empty($brandOptCheck) ) {
-      //     //   $this->brandOpt->save(['idx'=> $brandOpt['idx'], 'available'=> 0]);
-      //     // }
-          
-      //     if ( !empty($brandOpt['supply_rate_by_brand']) ) {
-      //       $brandOpt['supply_rate_by_brand'] = round(($brandOpt['supply_rate_by_brand'] / 100), 2);
-      //       $brandOpt['available'] = 1;
-      //     } else {
-      //       $brandOpt['available'] = 0;
-      //     } 
-      //     if ( !$this->brandOpt->save($brandOpt) ) {
-      //       return redirect()->back()->withInput()->with('error', '공급률 수정 중 오류');
-      //     }
-
-      //     if ( $brandOpt['available'] == 1 ) {
-      //       // 차후에 공급률 미적용을 선택시, confirm(현재 공급률 유지?) Yes일 때만
-      //       $this->appliedSupplyRate();
-      //     } else { 
-      //       $supplyRateAppliedCheck = $this->productPrice
-      //                                     ->join('product', 'product.id = product_price.product_idx')
-      //                                     ->where(['brand_id'=> $brandOpt['brand_id']
-      //                                           , 'supply_rate_applied' => 1])
-      //                                     ->findAll();
-            
-      //       if ( !empty($supplyRateAppliedCheck) ) {
-      //         foreach( $supplyRateAppliedCheck AS $applied ) {
-      //           $this->productPrice->save(['idx' => $applied['idx']
-      //                                     , 'supply_rate_applied' => 0
-      //                                     , 'supply_rate' => 0]);
-      //         }
-      //       }
-      //     }
-      //     unset($data['brand_opt'][$data['brand_id']]);
-      //   }
-      // }
-
-      // if ( $data['margin_rate_control'] == true ) {
-      //   if ( !empty($data['margin_rate']) ) {
-      //     foreach($data['margin_rate'] as $marginRate ) {
-      //       if ( !isset($marginRate['available']) ) $marginRate['available'] = 0;
-      //       if ( isset($marginRate['margin_rate'] ) ) $marginRate['margin_rate'] = ($marginRate['margin_rate'] / 100);
-
-      //       if ( !$this->marginRate->save($marginRate) ) {
-      //         return redirect()->back()->withInput()->with('error', '수정 중 오류');
-      //       }
-      //       unset($data['margin_rate']);
-      //     }          
-      //     $this->appliedMargin();
-      //   }
-      // }
-
-      // if ( !empty($data['brand']) ) {
-      //   $brand = $data['brand'][$data['brand_id']];
-      //   $brand['brand_id'] = $data['brand_id'];
-      //   $brand['brand_name'] = addslashes($brand['brand_name']);
-
-      //   if ( !$this->brands->save($brand) ) {
-      //     return redirect()->back()->withInput()->with('error', '브랜드 수정 중 오류');
-      //   }
-      // }
-      
-      // // // if ( $data['margin_rate_control'] == true || $data['supply_rate_control'] == true) { // supply price change 체크용
-      // // //   $this->cart->where('brand_id', $data['brand_id'])->set('supply_price_changed', 1)->update();
-      // // // }
-      // return redirect()->back();
+      // return;
+      return redirect()->back();
     }
   }
 

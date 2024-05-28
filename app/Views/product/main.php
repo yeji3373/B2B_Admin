@@ -49,6 +49,8 @@
       <legend>상품정보 Downloads</legend>
       <div class='d-flex flex-row'>
         <input type='hidden' name='prd-include' value='1'>
+        <input type='hidden' name='prd-price-include' value='1'>
+        <input type='hidden' name='prd-moq-include' value='1'>
         <select name='brand_id'
           class='form-select form-select-sm text-uppercase w-25 me-2'>
           <option value>브랜드 선택</option>
