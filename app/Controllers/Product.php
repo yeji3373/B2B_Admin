@@ -468,7 +468,6 @@ class Product extends BaseController
                 }
               }
             }
-            
             $contents[$i][0] = self::setProductInfo($productArr[$i]);
           }
           array_splice($excelFields, 1, (count($product_header) - 1));
@@ -477,9 +476,10 @@ class Product extends BaseController
         }
 
         if (!empty($options['prd-price-include'])) {
-          // var_dump($contents);
-          // var_dump($product_price_header);
           foreach ($contents as $i => $fileRowsData) {
+            if ( empty($options['prd-include']) ) {
+              array_splice($fileRowsData, 1, count($this->status->getHeader('default')['export']) - 1);
+            }
             $k = 0;
             foreach ($product_price_header as $j => $price_header) {
               if (preg_replace('/\s+/', '', $price_header['headerValid']) == preg_replace('/\s+/', '', $excelFields[$j])) {
@@ -497,10 +497,12 @@ class Product extends BaseController
           }
           array_splice($excelFields, 1, (count($product_price_header) - 1));
         }
-        // return;
 
         if (!empty($options['prd-moq-include'])) {
           foreach ($contents as $i => $fileRowsData) {
+            if ( empty($options['prd-include']) ) {
+              array_splice($fileRowsData, 1, count($this->status->getHeader('default')['export']) - 1);
+            }
             $k = 0;
             foreach ($product_moq_header as $j => $moq_header) {
               if (preg_replace('/\s+/', '', $moq_header['headerValid']) == preg_replace('/\s+/', '', $excelFields[$j])) {
@@ -512,7 +514,7 @@ class Product extends BaseController
           }
         }
       }
-      // return redirect()->back()->with('error', '완료');
+      return redirect()->back()->with('error', '완료');
     }
   }
 
@@ -588,6 +590,9 @@ class Product extends BaseController
           if (empty($header)) {
             $header = $this->status->getHeader('default')['export'];
             $product = $this->products->productMinimalizeJoin();
+          } else {
+            $this->products->select('product_price.product_idx AS product_idx')
+            ->select('product_price.idx AS product_price_idx');
           }
           $header = array_merge($header, $this->status->getHeader('supplyPrice')['export']);
           $products = $this->products->productPriceJoin();
@@ -609,7 +614,8 @@ class Product extends BaseController
   }
 
   public function setProductInfo($product = array()) {
-    if ( is_null($product['brand_id']) ) return;    
+    if ( is_null($product['brand_id']) ) return;
+    if ( is_null($product['brand']) ) return;
     if ( is_null($product['name_en']) ) return;
     if ( !is_null($product['barcode']) ) $product['barcode'] = preg_replace('/\s+/', '', $product['barcode']);
     
@@ -628,7 +634,15 @@ class Product extends BaseController
     if ( is_null($product['productCode']) ) $product['productCode'] = NULL;
     if ( is_null($product['img_url']) ) $product['img_url'] = 'img/no-image.png';
 
-    var_dump($product);
+    // var_dump($product);
+    $getBrands = $this->brands->where(['UPPER(brand_name)' => strtoupper($product['brand'])] )->first();
+    if ( !empty($getBrands) ) {
+      if ( $getBrands['brand_id'] != $product['brand_id'] ) {
+        $product['brand_id'] = $getBrands['brand_id'];
+      }
+    } else return; // 일치하는 브랜드가 없음.
+    // var_dump($product);
+    // return;
     
     if ( is_null($product['id']) ) {
       $prd = $this
@@ -643,12 +657,11 @@ class Product extends BaseController
                         "UPPER(REPLACE(type_en, ' ', '')) = '" . addslashes(preg_replace('/\s+/', '', strtoupper($product['type_en']))) ."'")
               ->first();
 
-      echo "select <br/>".$this->products->getLastQuery()."<br/><br/>";
       if ( !empty($prd) ) {
         unset($prd['created_at']);
         unset($prd['updated_at']);
         $diff = array_diff($prd, $product);
-        var_dump($diff);
+        // var_dump($diff);
         if ( !empty($diff) ) {
           if ( array_key_exists('id', $diff) ) {
             $diff['productCode'] = NULL; // 임시, 가격 등록 완료 후 삭제하기
@@ -658,13 +671,12 @@ class Product extends BaseController
         return $prd['id'];
       } else {
         if ( $this->products->save($product) ) {
-          echo $this->products->getLastQuery()."<br/><br/>";
           return $this->products->getInsertID();
         } 
       }
     } else {
       $prd = $this->where('id', $product['id'])->findAll();
-      var_dump($prd);
+
       if ( !empty($prd) ) {
         $temp = array_diff($product, $prd);
         $temp['id'] = $product['id'];
@@ -681,7 +693,6 @@ class Product extends BaseController
   }
 
   public function setProductPriceInfo($price = array() ) {
-    var_dump($price);
     if (is_null($price['id'])) return;
     if (is_null($price['retail_price'])) $price['retail_price'] = 0;
     if (is_null($price['supply_rate_applied'])) $price['supply_rate_applied'] = 0;
@@ -695,20 +706,19 @@ class Product extends BaseController
 
     $prdPrice = $this
                   ->productPrice
-                  ->where(['product_idx' => $price['product_idx']
-                          , 'available' => 1])
+                  ->where(['product_idx' => $price['product_idx']])
                   ->first();
-                  
-    if ( empty($prdPrice) ) {
-      $price['available'] = 1;
+    
+    $price['available'] = 1;
 
+    if ( empty($prdPrice) ) {
       if ( $this->productPrice->save($price) ) {
         unset($price['available']);
         unset($price['retail_price']);
         unset($price['supply_rate_applied']);
         unset($price['taxation']);
         $price['product_price_idx'] = $this->productPrice->getInsertID();
-        self::setProductSupplyPriceInfo($price);
+        // self::setProductSupplyPriceInfo($price);
       }
     } else {
       $price['idx'] = $prdPrice['idx'];
@@ -721,12 +731,15 @@ class Product extends BaseController
         unset($price['retail_price']);
         unset($price['supply_rate_applied']);
         unset($price['taxation']);
-        self::setProductSupplyPriceInfo($price);
       }
     }
+    self::setProductSupplyPriceInfo($price);
   }
   
   public function setProductSupplyPriceInfo($supplyPrice = array()) {
+    if (is_null($supplyPrice['product_idx'])) return;
+    if (is_null($supplyPrice['product_price_idx'])) return;
+
     $supplies = self::convertSupplyPriceInfo($supplyPrice);
 
     foreach($supplies AS $supply) {
@@ -738,10 +751,8 @@ class Product extends BaseController
                                   , 'margin_level' => $supply['margin_level']])
                           ->orderBy('margin_level ASC')
                           ->first();
-      echo $this->supplyPrice->getLastQuery()."<br/>";
-      var_dump($supply);
+
       if ( !empty($prdSupplyPrice) ) {
-        var_dump($prdSupplyPrice);
         if ( $supply['price'] != $prdSupplyPrice['price'] ) {
           if ( $prdSupplyPrice['available'] ) {
             $this->supplyPrice->save(['idx' => $prdSupplyPrice['idx'], 'available' => 0]);
@@ -753,23 +764,20 @@ class Product extends BaseController
       if ( !array_key_exists('available', $supply) ) {
         $supply['available'] = 1;
       }
-      var_dump($supply);
-      // return;
       $this->supplyPrice->save($supply);
     }
   }
 
   public function setProductMoqInfo($spq = array()) {
-    var_dump($spq);
     if (empty($spq['id']) ) return;
 
     $spq['product_idx'] = $spq['id'];
+    $spq['available'] = 1;
     unset($spq['id']);
 
     $prdSpq = $this
                 ->productSpq
-                ->where(['product_idx' => $spq['product_idx']
-                        , 'available' => 1])
+                ->where(['product_idx' => $spq['product_idx']])
                 ->first();
 
     if ( !empty($prdSpq) ) {
@@ -781,7 +789,14 @@ class Product extends BaseController
   public function convertSupplyPriceInfo($supplyPrice = array()) {
     $tmpSupplyPrice = array();
     if ( !empty($supplyPrice['not_calculating_margin']) ) {
-      $margins = $this->margin->where('available', 1)->orderBy('margin_level ASC')->findAll();
+      $margins = $this
+                  ->margin
+                  ->join('margin_rate', 'margin_rate.margin_idx = margin.idx', 'STRAIGHT')
+                  ->where('margin_rate.brand_id', $supplyPrice['brand_id'])
+                  ->where('margin_rate.available', 1)
+                  ->orderBy('margin_level ASC')
+                  ->findAll();
+      
       if ( !empty($margins) ) {
         $tmpPrice = array();
         if ( !empty($supplyPrice['price']) ) {
@@ -789,11 +804,11 @@ class Product extends BaseController
 
           if ( count($tmpPrice) == count($margins) ) {
             foreach($margins as $i => $margin) {
-              $tmpSupplyPrice[]['margin_idx'] = $margin['idx'];
-              $tmpSupplyPrice[]['margin_level'] = $margin['margin_level'];
-              $tmpSupplyPrice[]['price'] = $tmpPrice[$i];
-              $tmpSupplyPrice[]['product_idx'] = $supplyPrice['product_idx'];
-              $tmpSupplyPrice[]['product_price_idx'] = $supplyPrice['product_price_idx'];
+              $tmpSupplyPrice[$i]['margin_idx'] = $margin['idx'];
+              $tmpSupplyPrice[$i]['margin_level'] = $margin['margin_level'];
+              $tmpSupplyPrice[$i]['price'] = $tmpPrice[$i];
+              $tmpSupplyPrice[$i]['product_idx'] = $supplyPrice['product_idx'];
+              $tmpSupplyPrice[$i]['product_price_idx'] = $supplyPrice['product_price_idx'];
               // $this->supplyPrice->save($supplyPrice);
             }
           }
