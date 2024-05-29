@@ -1,0 +1,5 @@
+public/csvfile/*.csv
+writable/*
+app/ThirdParty/DataFile/Config/DataFile copy.php
+app/Views/orders/detail copy 2.php
+.env
