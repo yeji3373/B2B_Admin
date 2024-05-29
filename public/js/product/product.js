@@ -1,8 +1,14 @@
 $(document).ready(function() {
-  if($('.group_choose').val() == "new_group") {
+  if( $('.group_choose').val() == "new_group" ) {
     $('.group_name').removeAttr('disabled');
-  }else{
+  } else {
     $('.group_name').attr('disabled', 'disabled');
+  }
+
+  if ( $(".single-product-regist-edit-container [name='product_price[not_calculating_margin]']").length ) {
+    if ( $(".single-product-regist-edit-container [name='product_price[not_calculating_margin]']").val() == '1' ) {
+      $('.supply-price-input').prop('disabled', false);
+    }
   }
 });
 $(document).on('focusin', '[name="product_price[supply_price]"]', function() {
