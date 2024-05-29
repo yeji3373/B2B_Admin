@@ -20,12 +20,19 @@
             <input type='hidden' name="product[brand_id]" value='<?=isset($product) ? $product['brand_id'] : ''?>'>
             <span class='brand_name'><?=isset($product) && !empty($product['brand_name']) ? $product['brand_name'] : ''?></span>
             <?php else : ?>
-            <?=brand_select(['class' => 'w-50'],
-                              [ ['value' => '', 'text' => '브랜드 선택하기'],
-                                ['value' => base_url('/brand'), 'text' => '브랜드 등록'] ],
-                              [ ['data-opt' => [['name' => 'data-supply-applied', 'value' => 'supply_rate_based'],
-                                                ['name' => 'data-supply-rate', 'value' => 'supply_rate_by_brand', 'opt' => '* 100']]]
-                              ])?>
+            <?=brand_select(  [
+                                'select'      =>  ['class' => 'w-50'],
+                                'defaultOpts' =>  [
+                                                    ['value' => '', 'text' => '브랜드 선택하기'],
+                                                    ['value' => base_url('/brand'), 'text' => '브랜드 등록'] 
+                                                  ]
+                              ],
+                              [ 'data-opt'    =>  [
+                                                    ['name' => 'data-supply-applied', 'value' => 'supply_rate_based'],
+                                                    ['name' => 'data-supply-rate', 'value' => 'supply_rate_by_brand', 'opt' => '* 100']
+                                                  ]
+                              ]
+                          )?>
             <?php endif; ?>
             <?php if ( !empty($product) && !empty($product['supply_rate_based']) ) : 
                 $class = '';

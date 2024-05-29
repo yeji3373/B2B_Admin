@@ -22,7 +22,7 @@ class Product extends BaseController
   public static $productMoqArr = array();
 
   public function __construct() {
-    helper(['data', 'select']);
+    helper(['data', 'brand']);
     $this->status = config('Status');
     $this->products = new ProductModel();
     $this->brands = new BrandModel();

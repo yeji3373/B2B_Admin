@@ -16,12 +16,20 @@
             </th>
             <td class='text-start'>
               <div class='d-flex flex-row'>
-                <?=brand_select(['class' => 'w-50'],
-                                [ ['value' => '', 'text' => '브랜드 선택하기'],
-                                  ['value' => base_url('/brand'), 'text' => '브랜드 등록'] ],
-                                [ ['data-opt' => [['name' => 'data-supply-applied', 'value' => 'supply_rate_based'],
-                                                  ['name' => 'data-supply-rate', 'value' => 'supply_rate_by_brand', 'opt' => '* 100']]]
-                                ])?>
+                <?=brand_select(  [ 
+                                    'select'      =>  ['class' => 'w-50'],
+                                    'defaultOpts' =>  [ 
+                                                        ['value' => '', 'text' => '브랜드 선택하기'],
+                                                        ['value' => base_url('/brand'), 'text' => '브랜드 등록'] 
+                                                      ]
+                                  ],
+                                  [ 
+                                    'data-opt'    =>  [ 
+                                                        ['name' => 'data-supply-applied', 'value' => 'supply_rate_based'],
+                                                        ['name' => 'data-supply-rate', 'value' => 'supply_rate_by_brand', 'opt' => '* 100']
+                                                      ]
+                                  ]
+                              )?>
                 <div class='d-flex flex-row flex-wrap align-items-center ms-4 px-2 text-bg-danger d-none '>
                   <span class='me-1'>공급률</span>
                   <span class='applied_rate'></span>

@@ -14,9 +14,10 @@ function get_brand() {
 }
 
 function brand_select_default_options(Array $options = []) {
-  $default_option = '';
+  $default_option = '<option value="">-</option>';
   
   if ( !empty($options) ) {
+    $default_option = '';
     foreach($options AS $opt) {
       $default_option .= "<option value='{$opt['value']}'>{$opt['text']}</option>";
     }
@@ -60,13 +61,20 @@ function brand_options(Array $opt = []) {
 }
 
 if ( ! function_exists('brand_select') ) {
-  function brand_select(Array $selectOpt = [], Array $defaultOpt = [], Array $valueOpt = []) {
+  function brand_select(Array $selectOpt = [], Array $valueOpt = []) {
     $selectName = 'brand_id';
     $selectClass = '';
+    $defaultOpt = [];
 
     if ( !empty($selectOpt) ) {
-      if ( isset($selectOpt['name']) ) $selectName = $selectOpt['name'];
-      if ( isset($selectOpt['class']) ) $selectClass = $selectOpt['class'];
+      if ( !empty($selectOpt['select'] ) ) {
+        if ( isset($selectOpt['select']['name']) ) $selectName = $selectOpt['select']['name'];
+        if ( isset($selectOpt['select']['class']) ) $selectClass = $selectOpt['select']['class'];
+      }
+
+      if ( !empty($selectOpt['defaultOpts']) ) {
+        $defaultOpt = $selectOpt['defaultOpts'];
+      }
     }
 
     $select_html = "<select class='form-select form-select-sm text-uppercase $selectClass' name='$selectName'>".
