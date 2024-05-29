@@ -16,20 +16,12 @@
             </th>
             <td class='text-start'>
               <div class='d-flex flex-row'>
-                <?php 
-                if ( !empty($brands) ) : ?>
-                <select name='brand_id' class='form-select form-select-sm w-50'>
-                  <option value selected><?=lang('Product.brandChoose')?></option>
-                  <option value='<?=base_url('brand')?>' data-link='1'>브랜드 등록</option>
-                  <?php foreach ( $brands as $brand) : ?>
-                    <option value="<?=$brand['brand_id']?>" 
-                      data-supply-applied='<?=$brand['supply_rate_based']?>' 
-                      data-supply-rate='<?=($brand['supply_rate_by_brand'] * 100)?>'>
-                      <?=stripslashes(htmlspecialchars(strtoupper($brand['brand_name'])))?>
-                    </option>
-                  <?php endforeach ?>
-                </select>
-                <?php endif; ?>
+                <?=brand_select(['class' => 'w-50'],
+                                [ ['value' => '', 'text' => '브랜드 선택하기'],
+                                  ['value' => base_url('/brand'), 'text' => '브랜드 등록'] ],
+                                [ ['data-opt' => [['name' => 'data-supply-applied', 'value' => 'supply_rate_based'],
+                                                  ['name' => 'data-supply-rate', 'value' => 'supply_rate_by_brand', 'opt' => '* 100']]]
+                                ])?>
                 <div class='d-flex flex-row flex-wrap align-items-center ms-4 px-2 text-bg-danger d-none '>
                   <span class='me-1'>공급률</span>
                   <span class='applied_rate'></span>
