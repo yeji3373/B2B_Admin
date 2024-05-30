@@ -27,7 +27,6 @@ $(document).on('click', '.brand-btn', function() {
 // }).on('change', '.supply_rate_based', function() {
 }).on('change', '[name$="[supply_rate_based]"]', function() {
   let target = $(this).closest('form').find('[name="brand_opt[supply_rate_by_brand]"]');
-  // console.log(target);
   if ( target.length ) {
     target.prop('disabled', !Boolean(parseInt($(this).val())));
   }
@@ -45,27 +44,6 @@ $(document).on('click', '.brand-btn', function() {
       // }
     }
   }
-  // if ( $(this).data('old') == $(this).val() ) {
-  //   $(this).closest('form').find('[name=margin_rate_control]').val(0);
-  //   $(this).closest('form').find('input[type=hidden].margin_rate').prop('disabled', true);
-
-  //   if ( parseInt($(this).val()) == 1 ) {
-  //     $(this).closest('form').find('input[type=hidden].margin_rate').prop('disabled', false);  
-  //   }
-  // } else { 
-  //   $(this).closest('form').find('[name=margin_rate_control]').val(1);
-  //   $(this).closest('form').find('input[type=hidden].margin_rate').prop('disabled', false);
-  // }
-// }).on('change', '[name$="[brand_name]"], [name$="[available]"], [name$="[own-brand]"]', function() {
-//   if ( $(this).val() != $(this).data('old') ) {
-//     $(this).closest('form').find('[name=brand_control]').val(1);
-//   } else {
-//     if ( parseInt($(this).val()) == 0 ) $(this).closest('form').find('[name=brand_control]').val(0);
-//   } 
-// }).on('keyup', '[name$="[margin_rate]"]', function() {
-//   // if ( $(this).val() != $(this).data('old') ) {
-//     $(this).closest('form').find('[name=margin_rate_control]').val(1);
-//   // } else $(this).closest('form').find('[name=margin_rate_control]').val(0);
 }).on('keypress', 'form', function(e) {
   if ( e.keyCode == 13 ) return false;
 });

@@ -71,7 +71,7 @@
   <?php if (!empty($buyers)) : ?>
   <div class='buyer-list'>
     <table>
-      <colgroup class='print-hide'>
+      <colgroup>
         <col style='width: 3%;'>
         <col style='width: 10%;'>
         <col style='width: 10%;'>
@@ -85,7 +85,7 @@
         <col style='width: 3%;'>
         <col style='width: 10%;'>
       </colgroup>
-      <thead class='print-hide'>
+      <thead>
         <tr>
           <th rowspan='2'>No</th>
           <th colspan='5'>업체(buyer) 정보</th>
@@ -95,7 +95,7 @@
           <th rowspan='2'>가입일</th>
           <th rowspan='2'>승인</th>
           <th rowspan='2'>view</th>
-        </tr>        
+        </tr>
         <tr>
           <th>업체명</th>
           <th>사업자등록증</th>
@@ -113,7 +113,7 @@
           <td class='p-1'>
             <?=$buyer['name']?>
           </td>
-          <td class='p-1 print-hide'>
+          <td class='p-1'>
             <?php if ( !empty($buyer['certificate_business']) ) :           
               $ext = substr(strchr($buyer['certificate_business'], '.'), 1);
               $path = "//beautynetkorea.daouimg.com/b2b/documents/register/certification/"; ?>
@@ -122,10 +122,10 @@
               <span class='text-bg-danger'>사업자등록증 미등록</span>
             <?php endif; ?>
           </td>
-          <td class='p-1 print-hide'>
+          <td class='p-1'>
             <?=$buyer['business_number']?>
           </td>
-          <td class='p-1 print-hide'>
+          <td class='p-1'>
             <?=$buyer['phone']?>
           </td>
           <td class='p-1'>
@@ -145,10 +145,10 @@
           <td>
             <?=date('Y-m-d', strtotime($buyer['created_at']))?>
           </td>
-          <td class='print-hide'>
+          <td>
             <?=$buyer['confirmation'] == 0 ? '미승인' : '승인'?>
           </td>
-          <td class='p-1 print-hide'>
+          <td class='p-1'>
             <a class='btn-link' href='/buyer/detail/<?=$buyer['id']?>'>변경</a>
           </td>
         </tr>

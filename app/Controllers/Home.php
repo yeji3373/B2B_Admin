@@ -22,7 +22,7 @@ class Home extends BaseController
 
   public function index() {
     $data['header'] = ['css' => ['/table.css', '/main.css'],
-                       'js'  => ['/main.js', '/example.js']];
+                       'js'  => ['/main.js']];
 
     $data['buyers'] = $this->buyers->getBuyers()->where(['confirmation' => 0])->findAll($this->limit);
     $data['managers'] = $this->buyers->getManagers()->where(['role_id' => 2])->findAll($this->limit);
@@ -61,12 +61,5 @@ class Home extends BaseController
     }
 
     return redirect()->back()->with('error', '환율설정 완료');
-  }
-
-  public function test() {
-    $data['header'] = ['css' => ['/table.css', '/main.css'],
-                        'js'  => ['/main.js', '/example.js']];
-    
-    return $this->menuLayout('dashboard/example', $data);
   }
 }
