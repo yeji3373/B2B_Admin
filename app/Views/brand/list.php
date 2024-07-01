@@ -107,19 +107,15 @@
         foreach ( $margin as $j => $m ) : ?>
         <div class='form-check d-flex flex-row align-items-center ps-0 w-50'>
           <input type='hidden'
-                class='margin_rate'
                 name='margin_rate[<?=$j?>][idx]' 
                 value='<?=!empty($brand['marginRate']) && isset($brand['marginRate'][$j]['idx']) ? $brand['marginRate'][$j]['idx'] : '' ?>'>
           <input type='hidden' 
-                class='margin_rate'
                 name='margin_rate[<?=$j?>][brand_id]'
                 value='<?=!empty($brand['marginRate']) && isset($brand['marginRate'][$j]['brand_id']) ? $brand['marginRate'][$j]['brand_id'] : $brand['brand_id']?>'>
           <input type='hidden'
-                class='margin_rate'
                 name='margin_rate[<?=$j?>][margin_idx]'
                 value='<?=$m['idx']?>'>
           <input type='hidden'
-                class='margin_rate'
                 name='margin_rate[<?=$j?>][margin_level]'
                 value='<?=$m['idx']?>'>
           <label class='form-check-label d-flex flex-row align-items-center justify-content-center'>
@@ -127,6 +123,7 @@
                   class='me-1 value-change margin_section'
                   name='margin_rate[<?=$j?>][available]'
                   value='<?=(!empty($brand['marginRate']) && isset($brand['marginRate'][$j]['available'])) ? $brand['marginRate'][$j]['available'] : 0 ?>'
+                  data-target='margin_rate[<?=$j?>][margin_rate]'
                   <?=!empty($brand['marginRate']) && (isset($brand['marginRate'][$j]['margin_idx']) && $brand['marginRate'][$j]['available'] == 1 ) && $brand['marginRate'][$j]['margin_idx'] == $m['idx'] ? 'checked' : '' ?>>
             <?=$m['margin_section']?>
           </label>

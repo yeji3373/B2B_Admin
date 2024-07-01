@@ -22,7 +22,7 @@ class Product extends BaseController
   public static $productMoqArr = array();
 
   public function __construct() {
-    helper('data');
+    helper(['data', 'select']);
     $this->status = config('Status');
     $this->products = new ProductModel();
     $this->brands = new BrandModel();
@@ -657,26 +657,29 @@ class Product extends BaseController
                         "UPPER(REPLACE(type_en, ' ', '')) = '" . addslashes(preg_replace('/\s+/', '', strtoupper($product['type_en']))) ."'")
               ->first();
 
+      echo $this->products->getLastQuery()."<br/>";
       if ( !empty($prd) ) {
         unset($prd['created_at']);
         unset($prd['updated_at']);
         $diff = array_diff($prd, $product);
-        // var_dump($diff);
+
         if ( !empty($diff) ) {
           if ( array_key_exists('id', $diff) ) {
-            $diff['productCode'] = NULL; // 임시, 가격 등록 완료 후 삭제하기
-            $this->products->save($diff);
+            if ( count($diff) > 1 ) {
+              $this->products->save($diff);
+            }
           }
         }
         return $prd['id'];
       } else {
+        echo "!empty save<br/>";
         if ( $this->products->save($product) ) {
           return $this->products->getInsertID();
         } 
       }
     } else {
       $prd = $this->where('id', $product['id'])->findAll();
-
+      var_dump($prd);
       if ( !empty($prd) ) {
         $temp = array_diff($product, $prd);
         $temp['id'] = $product['id'];
@@ -689,7 +692,7 @@ class Product extends BaseController
         }
       }
     }
-    return;
+    return null;
   }
 
   public function setProductPriceInfo($price = array() ) {
@@ -804,7 +807,7 @@ class Product extends BaseController
 
           if ( count($tmpPrice) == count($margins) ) {
             foreach($margins as $i => $margin) {
-              $tmpSupplyPrice[$i]['margin_idx'] = $margin['idx'];
+              $tmpSupplyPrice[$i]['margin_idx'] = $margin['margin_idx'];
               $tmpSupplyPrice[$i]['margin_level'] = $margin['margin_level'];
               $tmpSupplyPrice[$i]['price'] = $tmpPrice[$i];
               $tmpSupplyPrice[$i]['product_idx'] = $supplyPrice['product_idx'];

@@ -20,18 +20,12 @@
             <input type='hidden' name="product[brand_id]" value='<?=isset($product) ? $product['brand_id'] : ''?>'>
             <span class='brand_name'><?=isset($product) && !empty($product['brand_name']) ? $product['brand_name'] : ''?></span>
             <?php else : ?>
-            <select name="product[brand_id]" class='form-select form-select-sm w-50' required>
-              <option value><?=lang('Product.brandChoose')?></option>
-              <option value='<?=base_url('brand')?>' data-link='1'>브랜드 등록</option>
-              <?php foreach ( $brands as $brand ) : ?>
-                <option value="<?=$brand['brand_id']?>" 
-                  data-supply-applied='<?=$brand['supply_rate_based']?>' 
-                  data-supply-rate='<?=($brand['supply_rate_by_brand'] * 100)?>'
-                  <?php if ( isset($product) && $product['brand_id'] == $brand['brand_id'] ) { echo 'selected'; } ?>>
-                  <?=$brand['brand_name']?>
-                </option>
-              <?php endforeach ?>
-            </select>
+            <?=brand_select(['class' => 'w-50'],
+                              [ ['value' => '', 'text' => '브랜드 선택하기'],
+                                ['value' => base_url('/brand'), 'text' => '브랜드 등록'] ],
+                              [ ['data-opt' => [['name' => 'data-supply-applied', 'value' => 'supply_rate_based'],
+                                                ['name' => 'data-supply-rate', 'value' => 'supply_rate_by_brand', 'opt' => '* 100']]]
+                              ])?>
             <?php endif; ?>
             <?php if ( !empty($product) && !empty($product['supply_rate_based']) ) : 
                 $class = '';
