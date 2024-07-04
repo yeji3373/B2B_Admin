@@ -28,9 +28,17 @@
       <li>
         <a href='<?=base_url('orders/paypalList')?>'>paypal</a>
       </li>
+      <li>
+        <a href='/' class='text-decoration-none' data-bs-toggle='dropdown' data-bs-auto-close='true' aria-expanded='false'>
+          cafe24
+        </a>
+        <ul class='dropdown-menu shadow mt-2'>
+          <li><a class='dropdown-item' href='<?=base_url('cafe24/ipList')?>'>IP등록</a></li>
+        </ul>
+      </li>
     </ul>
     <div>
-      <a class='text-secondary' href="/logout">logout</a>    
+      <a class='text-secondary' href='/logout'>logout</a>    
     </div>
   </nav>
 </header>
