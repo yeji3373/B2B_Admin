@@ -9,8 +9,8 @@ $(document).ready(function(){
 		$.ajax({
 			type: 'GET',
 			dataType: 'json',
-			// url: 'https://extreme-ip-lookup.com/json/' + $ip + '?key=PvE6F2vw1kVEUTJYtbx6',
-			url: 'http://127.0.0.8/ipcheck/ip_lookup/' + $ip,
+			url: 'https://extreme-ip-lookup.com/json/' + $ip + '?key=PvE6F2vw1kVEUTJYtbx6',
+			// url: 'http://127.0.0.8/ipcheck/ip_lookup/' + $ip,
 			async: false,
 			success: function(result) {
 				if(result.status == 'success'){

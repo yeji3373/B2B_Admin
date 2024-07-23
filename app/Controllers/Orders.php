@@ -241,8 +241,6 @@ class Orders extends BaseController {
             }
           }
         }
-        var_dump($data);
-        return;
 
         if ( floatval(sprintf('%0.2f', $data['receipt']['rq_amount'] + $data['receipt']['due_amount'] + $data['amount_paid'])) != $data['order_amount'] ) {
           return redirect()->back()->with('error', 'PI 가격 계산 중 오류 발생')->withInput();
@@ -606,12 +604,11 @@ class Orders extends BaseController {
     $requirement = $this->request->getPost('requirement');
     $order = $this->request->getPost('order');
     $packaging = $this->request->getPost('packaging');
-  
-    // var_dump($this->request->getPost());
-    var_dump($details);
-    var_dump($requirement);
-    var_dump($order);
-    var_dump($packaging);
+
+    // var_dump($details);
+    // var_dump($requirement);
+    // var_dump($order);
+    // var_dump($packaging);
     // return;
 
     // if ( site_url(previous_url()) != site_url(uri_string()) && !empty($params) ) {
