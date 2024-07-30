@@ -2,6 +2,8 @@
 namespace App\Controllers;
 
 use App\Models\Cafe24Model;
+use App\Models\Cafe24IpSetModel;
+use App\Models\CountryModel;
 
 class Cafe24 extends BaseController {
   protected $mallID;
@@ -11,6 +13,7 @@ class Cafe24 extends BaseController {
 
   public function __construct() {
     $this->cafe24Ip = new Cafe24Model();
+    $this->ipSet = new Cafe24IpSetModel();
 
     $this->mallID = 'beautynetkr';
     $this->clientID = '45icFc2YGBpryVwZjZBkdC';
@@ -20,14 +23,14 @@ class Cafe24 extends BaseController {
   }
 
   public function ipList() {
-
-    $this->data['nation'] = $this->cafe24Ip->getCountries();
+    $this->data['nation'] = $this->ipSet->getCountries();
+    $this->data['countries'] = $this->ipSet->where(['cafe24_ip_set.idx' => NULL])->getCountries('RIGHT');
 
     $params = $this->request->getGet();
 
     if(!empty($params)){
       if(!empty($params['ip_nation'])){
-        $this->cafe24Ip->where('ip_nation', $params['ip_nation']);
+        $this->cafe24Ip->where('ip_set_idx', $params['ip_nation']);
       }
       if(!empty($params['ip'])){
         $this->cafe24Ip->like('ip', $params['ip']);
@@ -40,23 +43,49 @@ class Cafe24 extends BaseController {
     $this->data['list'] = $this->cafe24Ip->getCafe24IpByPages()->paginate(20);
     $this->data['pager'] = $this->cafe24Ip->pager;
     $this->data['bnkIP'] = $this->cafe24Ip->where('own_ip', 1)->first();
+
     return $this->menuLayout('cafe24/ipList', $this->data);
   }
 
   public function ipRegister() {
     $params = $this->request->getPost();
     
-    if(!empty($params)){
-      $exist_ip = $this->cafe24Ip->where('ip', $params['modal_ip'])->first();
+    if(!empty($params)) {
+      if ( isset($params['country_reg']) ) {
+        $key = 'error';
+        $msg;
+        if ( empty($this->ipSet->where(['country_id' => $params['country_id']])->first()) ) {
+          unset($params['country_reg']);
+          $countryModel = new CountryModel();
+          $country = $countryModel->where(['id' => $params['country_id']])->first();
+        
+          if ( !empty($country) ) {
+            $params['country_code'] = $country['country_code'];
+            if ( $this->ipSet->save($params) ) {
+              $key = 'success';
+              $msg = $country['name']." 등록 성공";
+            } else {
+              $msg = '등록 중 오류 발생';
+            }
+          } else {            
+            $msg = '해당하는 국가 정보가 없음';
+          }
+        } else {
+          $msg = '이미 있음';
+        }
+        return redirect()->back()->with($key, $msg);
+      } else {
+        $exist_ip = $this->cafe24Ip->where('ip', $params['modal_ip'])->first();
 
-      if(!empty($exist_ip)){
-        return redirect()->back()->with('error', '이미 등록된 IP 입니다.');
-      }else{
-        $data['ip'] = $params['modal_ip'];
-        $data['ip_nation'] = $params['modal_ip_nation'];
-        $data['corp_name'] = $params['modal_corp_name'];
-        $this->cafe24Ip->save($data);
-        return redirect()->back()->with('success', 'IP가 성공적으로 등록되었습니다.');
+        if(!empty($exist_ip)){
+          return redirect()->back()->with('error', '이미 등록된 IP 입니다.');
+        }else{
+          $data['ip'] = $params['modal_ip'];
+          $data['ip_nation'] = $params['modal_ip_nation'];
+          $data['corp_name'] = $params['modal_corp_name'];
+          $this->cafe24Ip->save($data);
+          return redirect()->back()->with('success', 'IP가 성공적으로 등록되었습니다.');
+        }
       }
     }
   }

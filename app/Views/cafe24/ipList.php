@@ -7,13 +7,17 @@
 					<div class='d-flex flex-row'>
 						<div class='form-group me-2'>
 							<label>국가</label>
-							<select class='form-select' name='ip_nation'>
+							<select class='form-select' name='ip_nation' style='min-width: 13rem;'>
 								<option value=''>전체</option>
-								<?php if(!empty($nation)) : 
+								<?php 
+                if(!empty($nation)) :
 									foreach($nation AS $i => $n) : ?>
-									<option value='<?=$n['ip_nation']?>' <?=(isset($_GET['ip_nation']) && $_GET['ip_nation'] == $n['ip_nation']) ? 'selected' : ''?>><?=$n['name_en']?></option>
+                  <option value='<?=$n['ip_set_idx']?>'
+                    <?=isset($_GET['ip_nation']) && $_GET['ip_nation'] == $n['ip_set_idx'] ? 'selected' : '' ?>>
+                    <?=$n['name']?>
+                  </option>
 									<?php endforeach;
-									endif;?>
+								endif;?>
 								<?php ?>
 							</select>
 						</div>
@@ -47,6 +51,7 @@
 			<p class='fs-3 mb-0'>Cafe24 IP LIST</p>
 		</div>
 		<div>
+      <button type='button' data-bs-toggle='modal' data-bs-target='#registerModal' data-bs-whatever='country' class='btn btn-outline-success'>차단국가 등록</button>
 			<button type='button' data-bs-toggle='modal' data-bs-target='#ipRegisterModal' class='btn btn-outline-primary'>IP 등록</button>
 			<button type='button' id='ipDelete' class='btn btn-outline-danger'>삭제</button>
 		</div>
@@ -90,6 +95,39 @@
 		<div>is empty!</div>
 	<?php endif ?>
 	<?=$pager->links('default', 'pager')?>
+  <div class='modal' id='registerModal' tabindex='-1' aria-hidden='true'>
+    <div class='modal-dialog modal-dialog-centered'>
+			<form method='POST' action='<?=base_url('cafe24/ipRegister')?>' id='ipModalForm' class='ip-modal-form mx-auto'>
+				<div class='modal-content'>
+					<div class='modal-header'>
+						<h5 class="modal-title" id="exampleModalLabel">차단국가 등록</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class='modal-body'>
+						<fieldset class='my-2 px-2 pb-2 d-flex'>
+							<div class='d-flex flex-column'>
+								<div class='form-group'>
+									<label>국가</label>
+                  <input type='hidden' name='country_reg' value=1>
+									<select class='form-control' type='text' name='country_id'>
+                    <?php if ( !empty($countries) ) : 
+                      foreach( $countries AS $country ) : ?>
+                      <option value='<?=$country['id']?>'><?=$country['name']?></option>
+                    <?php endforeach; 
+                    endif; ?>
+                  </select>
+								</div>
+							</div>
+						</fieldset>
+					</div>
+					<div class='modal-footer'>
+						<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Close</button>
+						<button type='button' class='btn btn-primary save-btn'>Save changes</button>
+					</div>
+				</div>
+			</form>
+		</div>
+  </div>
 	<div class='modal' id='ipRegisterModal' tabindex='-1' aria-hidden='true'>
 		<div class='modal-dialog modal-dialog-centered'>
 			<form method='POST' action='<?=base_url('cafe24/ipRegister')?>' id='ipModalForm' class='ip-modal-form mx-auto'>

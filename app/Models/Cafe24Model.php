@@ -4,7 +4,7 @@ namespace App\Models;
 use CodeIgniter\Model;
 
 class Cafe24Model extends Model {
-	protected $table = 'cafe24_available_ip_copy';
+	protected $table = 'cafe24_available_ip';
 	protected $primaryKey = 'idx';
 	protected $useAutoIncrement = true;
 
