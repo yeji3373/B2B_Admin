@@ -103,10 +103,12 @@ class Cafe24 extends BaseController {
 
       if(empty($old_bnk_ip)){
         $this->cafe24Ip->save($data);
+        return redirect()->back()->with('success', 'beautynetkorea IP가 성공적으로 등록 되었습니다.');
       }else{
         if(count($old_bnk_ip) == 1){
           $data['idx'] = $old_bnk_ip[0]['idx'];
           $this->cafe24Ip->save($data);
+          return redirect()->back()->with('success', 'beautynetkorea IP가 성공적으로 업데이트 되었습니다.');
         }else{
           return redirect()->back()->with('error', 'beautynetkorea IP가 한개 이상입니다.');
         }

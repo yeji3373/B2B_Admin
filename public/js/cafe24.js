@@ -96,7 +96,12 @@ $(document).ready(function(){
 		}
 	});
 	if(check){
-		$('#bnkIpModalForm').submit();
+		var bnk_ip = $('#bnkIpModalForm input[name=modal_bnk_ip]').val();
+		if(IPvalidationCheck(bnk_ip)){
+			$('#bnkIpModalForm').submit();
+		}else{
+			alert('IP 형식이 맞지 않습니다.');
+		}
 	}else{
 		alert('IP를 입력해주세요');
 	}
